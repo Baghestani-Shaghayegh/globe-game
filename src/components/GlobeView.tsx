@@ -15,17 +15,18 @@ const GlobeView = () => {
   return (
     <Globe
       ref={globeEl}
+      rendererConfig={{ antialias: true, alpha: true }}
+      backgroundColor="white"
       globeMaterial={
         new THREE.MeshPhongMaterial({
           color: "white",
-          shininess: 2,
+          shininess: 0,
         })
       }
-      backgroundColor="white"
       polygonsData={countries.features}
       polygonCapColor={() => "white"}
       polygonStrokeColor={() => "black"}
-      polygonAltitude={() => 0.01}
+      polygonAltitude={() => 0.002}
       polygonsTransitionDuration={0}
     />
   );
