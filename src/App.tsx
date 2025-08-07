@@ -1,4 +1,3 @@
-import React from "react";
 import GlobeView from "./components/GlobeView";
 
 function App() {

@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
+import countriesList from "../../data/countriesList";
 
 interface Props {
   selectedCountry: any;
@@ -11,6 +12,8 @@ interface Props {
 
 const CountryGuessModal = ({ selectedCountry, guess, setGuess, onSubmit, onClose }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [filteredCountries, setFilteredCountries] = useState<string[]>([]);
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
   useEffect(() => {
     if (selectedCountry && inputRef.current) {
@@ -18,17 +21,64 @@ const CountryGuessModal = ({ selectedCountry, guess, setGuess, onSubmit, onClose
     }
   }, [selectedCountry]);
 
+  useEffect(() => {
+    const matches = countriesList.filter((country: string) =>
+      country.toLowerCase().includes(guess.trim().toLowerCase())
+    );
+    setFilteredCountries(matches.slice(0, 5));
+    setHighlightedIndex(-1);
+  }, [guess]);
+
+  useEffect(() => {
+    setHighlightedIndex(-1);
+  }, [filteredCountries]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      onSubmit();
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        filteredCountries.length === 0 ? -1 : (prev + 1) % filteredCountries.length
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        filteredCountries.length === 0 ? -1 : prev <= 0 ? filteredCountries.length - 1 : prev - 1
+      );
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (!guess.trim()) return;
+
+      if (highlightedIndex >= 0 && filteredCountries[highlightedIndex]) {
+        // User selected with arrow keys
+        handleSelect(filteredCountries[highlightedIndex]);
+      } else {
+        // User typed and pressed enter directly
+        setFilteredCountries([]);
+        onSubmit();
+      }
     }
+  };
+
+  const handleSelect = (country: string) => {
+    setGuess(country);
+    if (filteredCountries.length > 0) {
+      setFilteredCountries([]);
+    }
+    onSubmit();
   };
 
   if (!selectedCountry) return;
 
   return (
-    <Overlay onClick={onClose}>
-      <ModalBox>
+    <Overlay
+      onClick={() => {
+        onClose();
+        if (filteredCountries.length > 0) {
+          setFilteredCountries([]);
+        }
+      }}
+    >
+      <ModalBox onClick={(e) => e.stopPropagation()}>
         <Input
           ref={inputRef}
           type="text"
@@ -38,6 +88,19 @@ const CountryGuessModal = ({ selectedCountry, guess, setGuess, onSubmit, onClose
           placeholder="Type your guess and press Enter"
           autoComplete="off"
         />
+        {guess && filteredCountries.length > 0 && (
+          <Suggestions>
+            {filteredCountries.map((country, index) => (
+              <SuggestionItem
+                key={country}
+                onClick={() => handleSelect(country)}
+                $highlighted={index === highlightedIndex}
+              >
+                {country}
+              </SuggestionItem>
+            ))}
+          </Suggestions>
+        )}
       </ModalBox>
     </Overlay>
   );
@@ -58,6 +121,7 @@ const Overlay = styled.div`
 
 const ModalBox = styled.div`
   display: flex;
+  flex-direction: column;
   background-color: white;
   padding: 20px;
   border-radius: 10px;
@@ -67,7 +131,6 @@ const ModalBox = styled.div`
 `;
 
 const Input = styled.input`
-  width: 100%;
   padding: 10px;
   font-size: 16px;
   border-radius: 6px;
@@ -77,6 +140,27 @@ const Input = styled.input`
 
   &:focus {
     border-color: #007bff;
+  }
+`;
+
+const Suggestions = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: white;
+`;
+
+const SuggestionItem = styled.li<{ $highlighted: boolean }>`
+  padding: 8px 12px;
+  cursor: pointer;
+  background-color: ${({ $highlighted }) => ($highlighted ? "#e0e0e0" : "white")};
+
+  &:hover {
+    background-color: #f2f2f2;
   }
 `;
 
