@@ -1,18 +1,26 @@
 import { useEffect, useRef, useState } from "react";
-import styled from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 import countriesList from "../../data/countriesList";
 
 interface Props {
   selectedCountry: any;
   guess: string;
+  isWrong: boolean;
   setGuess: (val: string) => void;
-  onSubmit: () => void;
+  onSubmit: (guess?: string) => void;
   onClose: () => void;
 }
 
-const CountryGuessModal = ({ selectedCountry, guess, setGuess, onSubmit, onClose }: Props) => {
+const CountryGuessModal = ({
+  selectedCountry,
+  guess,
+  isWrong,
+  setGuess,
+  onSubmit,
+  onClose,
+}: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [filteredCountries, setFilteredCountries] = useState<string[]>([]);
+  const [filteredCountries, setFilteredCountries] = useState<{ name: string; color: string }[]>([]);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
   useEffect(() => {
@@ -22,8 +30,8 @@ const CountryGuessModal = ({ selectedCountry, guess, setGuess, onSubmit, onClose
   }, [selectedCountry]);
 
   useEffect(() => {
-    const matches = countriesList.filter((country: string) =>
-      country.toLowerCase().includes(guess.trim().toLowerCase())
+    const matches = countriesList.filter((country: { name: string; color: string }) =>
+      country.name.toLowerCase().includes(guess.trim().toLowerCase())
     );
     setFilteredCountries(matches.slice(0, 5));
     setHighlightedIndex(-1);
@@ -49,9 +57,11 @@ const CountryGuessModal = ({ selectedCountry, guess, setGuess, onSubmit, onClose
       if (!guess.trim()) return;
 
       if (highlightedIndex >= 0 && filteredCountries[highlightedIndex]) {
+        console.log(filteredCountries[highlightedIndex], "filteredCountries[highlightedIndex]");
         // User selected with arrow keys
-        handleSelect(filteredCountries[highlightedIndex]);
+        handleSelect(filteredCountries[highlightedIndex].name);
       } else {
+        console.log("this one");
         // User typed and pressed enter directly
         setFilteredCountries([]);
         onSubmit();
@@ -64,7 +74,7 @@ const CountryGuessModal = ({ selectedCountry, guess, setGuess, onSubmit, onClose
     if (filteredCountries.length > 0) {
       setFilteredCountries([]);
     }
-    onSubmit();
+    onSubmit(country);
   };
 
   if (!selectedCountry) return;
@@ -87,16 +97,17 @@ const CountryGuessModal = ({ selectedCountry, guess, setGuess, onSubmit, onClose
           onKeyDown={handleKeyDown}
           placeholder="Type your guess and press Enter"
           autoComplete="off"
+          $isError={isWrong}
         />
         {guess && filteredCountries.length > 0 && (
           <Suggestions>
             {filteredCountries.map((country, index) => (
               <SuggestionItem
-                key={country}
-                onClick={() => handleSelect(country)}
+                key={country.name}
+                onClick={() => handleSelect(country.name)}
                 $highlighted={index === highlightedIndex}
               >
-                {country}
+                {country.name}
               </SuggestionItem>
             ))}
           </Suggestions>
@@ -130,17 +141,32 @@ const ModalBox = styled.div`
   text-align: center;
 `;
 
-const Input = styled.input`
+const shake = keyframes`
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+  100% { transform: translateX(0); }
+`;
+
+const Input = styled.input<{ $isError: boolean }>`
   padding: 10px;
   font-size: 16px;
   border-radius: 6px;
-  border: 1.5px solid #ccc;
+  border: 1.5px solid ${({ $isError }) => ($isError ? "red" : "#ccc")};
   outline: none;
   transition: border-color 0.2s;
 
   &:focus {
-    border-color: #007bff;
+    border-color: ${({ $isError }) => ($isError ? "red" : "")};
   }
+
+  ${({ $isError }) =>
+    $isError &&
+    css`
+      animation: ${shake} 0.5s;
+    `}
 `;
 
 const Suggestions = styled.ul`
@@ -152,6 +178,18 @@ const Suggestions = styled.ul`
   border: 1px solid #ccc;
   border-radius: 6px;
   background: white;
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    width: 0px;
+    background: transparent; /* Optional: just to be safe */
+  }
+
+  /* Hide scrollbar for Firefox */
+  scrollbar-width: none;
+
+  /* Hide scrollbar for IE, Edge */
+  -ms-overflow-style: none;
 `;
 
 const SuggestionItem = styled.li<{ $highlighted: boolean }>`
