@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import styled, { css, keyframes } from "styled-components";
-import countriesList from "../../data/countriesList";
+import { recognizedCountries } from '../../data/recognizedCountries';
 
 interface Props {
   selectedCountry: any;
@@ -20,7 +20,7 @@ const CountryGuessModal = ({
   onClose,
 }: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [filteredCountries, setFilteredCountries] = useState<{ name: string; color: string }[]>([]);
+  const [filteredCountries, setFilteredCountries] = useState<string[]>([]);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
   useEffect(() => {
@@ -30,10 +30,10 @@ const CountryGuessModal = ({
   }, [selectedCountry]);
 
   useEffect(() => {
-    const matches = countriesList.filter((country: { name: string; color: string }) =>
-      country.name.toLowerCase().includes(guess.trim().toLowerCase())
+    const matches = recognizedCountries.filter((country: string) =>
+      country.toLowerCase().includes(guess.trim().toLowerCase())
     );
-    setFilteredCountries(matches.slice(0, 5));
+    setFilteredCountries(matches);
     setHighlightedIndex(-1);
   }, [guess]);
 
@@ -59,7 +59,7 @@ const CountryGuessModal = ({
       if (highlightedIndex >= 0 && filteredCountries[highlightedIndex]) {
         console.log(filteredCountries[highlightedIndex], "filteredCountries[highlightedIndex]");
         // User selected with arrow keys
-        handleSelect(filteredCountries[highlightedIndex].name);
+        handleSelect(filteredCountries[highlightedIndex]);
       } else {
         console.log("this one");
         // User typed and pressed enter directly
@@ -103,11 +103,11 @@ const CountryGuessModal = ({
           <Suggestions>
             {filteredCountries.map((country, index) => (
               <SuggestionItem
-                key={country.name}
-                onClick={() => handleSelect(country.name)}
+                key={country}
+                onClick={() => handleSelect(country)}
                 $highlighted={index === highlightedIndex}
               >
-                {country.name}
+                {country}
               </SuggestionItem>
             ))}
           </Suggestions>
@@ -157,6 +157,8 @@ const Input = styled.input<{ $isError: boolean }>`
   border: 1.5px solid ${({ $isError }) => ($isError ? "red" : "#ccc")};
   outline: none;
   transition: border-color 0.2s;
+  background-color: white;
+  color: black;
 
   &:focus {
     border-color: ${({ $isError }) => ($isError ? "red" : "")};
@@ -196,6 +198,7 @@ const SuggestionItem = styled.li<{ $highlighted: boolean }>`
   padding: 8px 12px;
   cursor: pointer;
   background-color: ${({ $highlighted }) => ($highlighted ? "#e0e0e0" : "white")};
+  color: black;
 
   &:hover {
     background-color: #f2f2f2;

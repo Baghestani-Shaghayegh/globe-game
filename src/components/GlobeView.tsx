@@ -3,10 +3,40 @@ import type { GlobeMethods } from "react-globe.gl";
 import Globe from "react-globe.gl";
 import * as THREE from "three";
 import CountryGuessModal from "./modals/CountryGuessModal";
-import countriesList from "../data/countriesList";
+import { recognizedCountries } from '../data/recognizedCountries';
 
 const GlobeView = () => {
-  const countryColorMap = new Map(countriesList.map((c) => [c.name, c.color]));
+
+  const COLORS = [
+  "#e6194b", // red
+  "#3cb44b", // green
+  "#ffe119", // yellow
+  "#4363d8", // blue
+  "#f58231", // orange
+  "#911eb4", // purple
+  "#46f0f0", // cyan
+  "#f032e6", // magenta
+  "#bcf60c", // lime
+  "#fabebe", // pink
+  "#008080", // teal
+  "#e6beff", // lavender
+  "#9a6324", // brown
+  "#fffac8", // light yellow
+  "#800000", // maroon
+  "#aaffc3", // mint
+  "#808000", // olive
+  "#ffd8b1", // apricot
+  "#000075", // navy
+  "#808080", // grey
+];
+
+const countriesWithColors = recognizedCountries.map((name, index) => ({
+  name,
+  color: COLORS[index % COLORS.length],
+}));
+
+
+  const countryColorMap = new Map(countriesWithColors.map((c) => [c.name, c.color]));
 
   const globeEl = useRef<GlobeMethods | undefined>(undefined);
   const [countries, setCountries] = useState({ features: [] });
@@ -20,7 +50,18 @@ const GlobeView = () => {
   useEffect(() => {
     fetch("https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson")
       .then((res) => res.json())
-      .then((data) => setCountries(data));
+  .then((data) => {
+      const recognizedSet = new Set(recognizedCountries);
+
+      const filtered = {
+        ...data,
+        features: data.features.filter((feature: { properties: { name: string } }) =>
+          recognizedSet.has(feature.properties.name)
+        ),
+      };
+
+      setCountries(filtered);
+    });
   }, []);
 
   const handleSubmitGuess = (overrideGuess?: string) => {
@@ -41,6 +82,7 @@ const GlobeView = () => {
       setGuess("");
     } else {
       // Show error animation
+      alert(actualName)
       setIsWrong(true);
       setTimeout(() => setIsWrong(false), 2000);
     }
@@ -59,7 +101,7 @@ const GlobeView = () => {
         backgroundColor="white"
         globeMaterial={
           new THREE.MeshPhongMaterial({
-            color: "white",
+            color: "#87CEEB",
             shininess: 0,
           })
         }
