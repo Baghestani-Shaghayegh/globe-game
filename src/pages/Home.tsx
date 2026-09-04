@@ -104,6 +104,7 @@ export default function Home() {
               label={mode.label}
               level={mode.level}
               accent={mode.accent}
+              noun={mode.noun}
               count={counts[mode.id] ?? null}
               best={bests[mode.id] ?? null}
               onSelect={() => navigate(`/play/${mode.id}`)}
@@ -126,6 +127,7 @@ export default function Home() {
                 key={mode.id}
                 name={mode.name}
                 accent={mode.accent}
+                noun={mode.noun}
                 count={counts[mode.id] ?? null}
                 best={bests[mode.id] ?? null}
                 onSelect={() => navigate(`/play/${mode.id}`)}

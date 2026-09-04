@@ -13,8 +13,11 @@ export type Run = {
 
 type Store = Partial<Record<ModeId, Run[]>>;
 
-// v2: runs gained found/total so a round you gave up on still counts.
-const KEY = "worldguess.records.v2";
+// v3: continent modes dropped territories, so their old totals no longer
+// match the map. Bumping the key retires that history rather than showing
+// scores measured against a different set of countries.
+const KEY = "worldguess.records.v3";
+const RETIRED_KEYS = ["worldguess.records.v1", "worldguess.records.v2"];
 /** A short history per mode — enough for a personal best without growing forever. */
 const MAX_RUNS = 20;
 
@@ -34,8 +37,18 @@ function isRun(value: unknown): value is Run {
   );
 }
 
+/** Clears superseded stores once, so old keys don't linger in the browser. */
+function dropRetired() {
+  try {
+    for (const key of RETIRED_KEYS) localStorage.removeItem(key);
+  } catch {
+    /* nothing to clean up if storage is unavailable */
+  }
+}
+
 function read(): Store {
   try {
+    dropRetired();
     const raw = localStorage.getItem(KEY);
     if (!raw) return {};
     const parsed: unknown = JSON.parse(raw);

@@ -17,6 +17,8 @@ export type Mode = {
   label: string;
   /** Filled bars out of three on the card. */
   level: 1 | 2 | 3;
+  /** What this mode's entries are called — Full map holds more than countries. */
+  noun: string;
   /** Accent hue for the card artwork. */
   accent: string;
   /** True for the continent modes, which get the compact card. */
@@ -32,6 +34,7 @@ export const MODES: Mode[] = [
     desc: "The world's sovereign countries. A good place to start.",
     label: "Easy",
     level: 1,
+    noun: "countries",
     accent: "#2dd4bf",
     regional: false,
     includes: (m) => m.tier === "country",
@@ -42,6 +45,7 @@ export const MODES: Mode[] = [
     desc: "Adds territories, islands and disputed regions.",
     label: "Hard",
     level: 3,
+    noun: "places",
     accent: "#a78bfa",
     regional: false,
     includes: () => true,
@@ -54,6 +58,7 @@ export const MODES: Mode[] = [
     desc: "",
     label: "Europe",
     level: 2,
+    noun: "countries",
     accent: "#38bdf8",
     regional: true,
     includes: (m) => m.continent === "europe" && m.tier === "country",
@@ -64,6 +69,7 @@ export const MODES: Mode[] = [
     desc: "",
     label: "Africa",
     level: 2,
+    noun: "countries",
     accent: "#fbbf24",
     regional: true,
     includes: (m) => m.continent === "africa" && m.tier === "country",
@@ -74,6 +80,7 @@ export const MODES: Mode[] = [
     desc: "",
     label: "Asia",
     level: 2,
+    noun: "countries",
     accent: "#fb7185",
     regional: true,
     includes: (m) => m.continent === "asia" && m.tier === "country",
@@ -84,6 +91,7 @@ export const MODES: Mode[] = [
     desc: "",
     label: "Americas",
     level: 2,
+    noun: "countries",
     accent: "#4ade80",
     regional: true,
     includes: (m) => m.continent === "americas" && m.tier === "country",
@@ -94,6 +102,7 @@ export const MODES: Mode[] = [
     desc: "",
     label: "Oceania",
     level: 1,
+    noun: "countries",
     accent: "#e879f9",
     regional: true,
     includes: (m) => m.continent === "oceania" && m.tier === "country",

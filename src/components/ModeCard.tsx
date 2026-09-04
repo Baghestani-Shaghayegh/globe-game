@@ -9,6 +9,8 @@ type ModeCardProps = {
   level: 1 | 2 | 3;
   /** Accent hue for the artwork. */
   accent: string;
+  /** What to call this mode's entries. */
+  noun: string;
   /** How many places this mode asks for. Null until the map has loaded. */
   count: number | null;
   /** The player's record in this mode — a clear time or a score — if they have one. */
@@ -70,6 +72,7 @@ export default function ModeCard({
   label,
   level,
   accent,
+  noun,
   count,
   best,
   onSelect,
@@ -116,7 +119,7 @@ export default function ModeCard({
 
       <div className="relative mt-5 flex items-center gap-3 border-t border-white/[0.07] pt-3 text-xs text-zinc-500">
         <span className="tabular-nums">
-          {count === null ? "—" : count} places
+          {count === null ? "—" : count} {noun}
         </span>
         <span aria-hidden="true" className="h-3 w-px bg-white/10" />
         <span className="flex items-center gap-1.5">

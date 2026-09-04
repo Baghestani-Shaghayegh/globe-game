@@ -7,6 +7,7 @@ type Props = {
   /** The player's record here — a clear time or a score — if they have one. */
   best: string | null;
   accent: string;
+  noun: string;
   onSelect: () => void;
 };
 
@@ -19,6 +20,7 @@ export default function ContinentCard({
   count,
   best,
   accent,
+  noun,
   onSelect,
 }: Props) {
   return (
@@ -34,7 +36,7 @@ export default function ContinentCard({
       <div className="pl-2">
         <p className="text-sm font-medium text-zinc-100">{name}</p>
         <p className="mt-0.5 text-xs tabular-nums text-zinc-500">
-          {count === null ? "—" : count} places
+          {count === null ? "—" : count} {noun}
           {best && (
             <>
               <span className="mx-1.5 text-zinc-700">·</span>
