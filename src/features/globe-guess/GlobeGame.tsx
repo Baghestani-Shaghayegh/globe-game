@@ -8,6 +8,8 @@ import { getCountryMeta } from "../../data/countries";
 import type { Difficulty } from "../../data/countries";
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { theme } from "../../lib/globeTheme";
+import { addRun, bestRun, formatDuration } from "../../lib/records";
+import type { Run } from "../../lib/records";
 
 type CountryFeature = {
   properties: { name: string };
@@ -34,7 +36,23 @@ export default function GlobeGame({ difficulty }: Props) {
   const [isWrong, setIsWrong] = useState(false);
   const [foundNames, setFoundNames] = useState<Set<string>>(new Set());
 
+  // Stopwatch. It starts when the map is playable, not when the page mounts,
+  // so a slow globe download doesn't land on the player's time.
+  const startedAt = useRef<number | null>(null);
+  const recorded = useRef(false);
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const [finishedMs, setFinishedMs] = useState<number | null>(null);
+  const [previousBest, setPreviousBest] = useState<Run | null>(null);
+
   useEffect(() => {
+    // Switching modes restarts the round, and with it the clock.
+    setFoundNames(new Set());
+    setElapsedMs(0);
+    setFinishedMs(null);
+    setPreviousBest(null);
+    startedAt.current = null;
+    recorded.current = false;
+
     let cancelled = false;
     fetch("/data/world.geojson")
       .then((res) => {
@@ -68,6 +86,25 @@ export default function GlobeGame({ difficulty }: Props) {
     framed.current = true;
   }, [features]);
 
+  // Start the clock as soon as there is something to click.
+  useEffect(() => {
+    if (features.length && startedAt.current === null) {
+      startedAt.current = performance.now();
+    }
+  }, [features]);
+
+  // Only the readout needs ticking; the elapsed time itself is a subtraction,
+  // so a coarse interval can't drift.
+  useEffect(() => {
+    if (!features.length || finishedMs !== null) return;
+    const id = window.setInterval(() => {
+      if (startedAt.current !== null) {
+        setElapsedMs(performance.now() - startedAt.current);
+      }
+    }, 250);
+    return () => window.clearInterval(id);
+  }, [features.length, finishedMs]);
+
   const suggestionNames = useMemo(
     () =>
       features
@@ -80,6 +117,16 @@ export default function GlobeGame({ difficulty }: Props) {
   const progress = features.length
     ? Math.round((foundNames.size / features.length) * 100)
     : 0;
+
+  // Stamp the finish time the moment the last country lands, and file the run.
+  useEffect(() => {
+    if (!isComplete || recorded.current || startedAt.current === null) return;
+    recorded.current = true;
+    const ms = performance.now() - startedAt.current;
+    setPreviousBest(bestRun(difficulty));
+    addRun(difficulty, ms);
+    setFinishedMs(ms);
+  }, [isComplete, difficulty]);
 
   const closeModal = () => {
     setSelected(null);
@@ -168,6 +215,16 @@ export default function GlobeGame({ difficulty }: Props) {
           />
         </span>
 
+        <span className="h-4 w-px bg-white/10" aria-hidden="true" />
+
+        <span
+          className="tabular-nums text-zinc-300"
+          aria-label="Time elapsed"
+          role="timer"
+        >
+          {formatDuration(finishedMs ?? elapsedMs)}
+        </span>
+
         <span className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-zinc-400">
           <span aria-hidden="true" className="flex items-end gap-[3px]">
             {["h-1.5", "h-2.5", "h-3.5"].map((height, i) => (
@@ -185,12 +242,28 @@ export default function GlobeGame({ difficulty }: Props) {
         </span>
       </div>
 
-      {isComplete && (
-        <div className="absolute inset-x-0 top-20 z-10 mx-auto w-fit rounded-xl border border-white/10 bg-[#141b23] px-6 py-4 text-center">
-          <p className="font-medium text-zinc-100">You found all {features.length}.</p>
+      {isComplete && finishedMs !== null && (
+        <div className="absolute inset-x-0 top-20 z-10 mx-auto w-fit rounded-xl border border-white/10 bg-[#141b23] px-8 py-5 text-center">
+          <p className="text-sm text-zinc-400">
+            You found all {features.length}
+          </p>
+          <p className="mt-1 text-4xl font-semibold tabular-nums text-zinc-50">
+            {formatDuration(finishedMs)}
+          </p>
+
+          {previousBest === null || finishedMs < previousBest.ms ? (
+            <p className="mt-2 text-xs uppercase tracking-wider text-emerald-300">
+              New personal best
+            </p>
+          ) : (
+            <p className="mt-2 text-xs tabular-nums text-zinc-500">
+              Your best {formatDuration(previousBest.ms)}
+            </p>
+          )}
+
           <Link
             to="/"
-            className="mt-1 inline-block text-sm text-zinc-400 underline underline-offset-4 hover:text-zinc-100"
+            className="mt-3 inline-block text-sm text-zinc-400 underline underline-offset-4 hover:text-zinc-100"
           >
             Play another mode
           </Link>

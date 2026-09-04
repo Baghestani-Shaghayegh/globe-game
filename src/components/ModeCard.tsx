@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { formatDuration } from "../lib/records";
 
 type ModeCardProps = {
   name: string;
@@ -6,6 +7,8 @@ type ModeCardProps = {
   difficulty: "Easy" | "Hard";
   /** How many places this mode asks for. Null until the map has loaded. */
   count: number | null;
+  /** The player's fastest run in this mode, or null if they haven't finished one. */
+  bestMs: number | null;
   onSelect: () => void;
 };
 
@@ -81,6 +84,7 @@ export default function ModeCard({
   desc,
   difficulty,
   count,
+  bestMs,
   onSelect,
 }: ModeCardProps) {
   const level = LEVEL[difficulty];
@@ -142,6 +146,11 @@ export default function ModeCard({
           </span>
           <span className="uppercase tracking-wider">{difficulty}</span>
         </span>
+        {bestMs !== null && (
+          <span className="ml-auto tabular-nums text-zinc-400">
+            Best {formatDuration(bestMs)}
+          </span>
+        )}
       </div>
     </button>
   );

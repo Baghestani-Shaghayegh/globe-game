@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ModeCard from "../components/ModeCard";
 import { getCountryMeta, type Difficulty } from "../data/countries";
+import { bestRun } from "../lib/records";
 
 // Three.js is heavy — let the menu paint first, then fade the globe in behind it.
 const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
@@ -62,6 +63,18 @@ function useModeCounts(): Record<Difficulty, number | null> {
 export default function Home() {
   const navigate = useNavigate();
   const counts = useModeCounts();
+  const [bests, setBests] = useState<Record<Difficulty, number | null>>({
+    easy: null,
+    hard: null,
+  });
+
+  // Read after mount — storage isn't available while rendering on every client.
+  useEffect(() => {
+    setBests({
+      easy: bestRun("easy")?.ms ?? null,
+      hard: bestRun("hard")?.ms ?? null,
+    });
+  }, []);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#07111c]">
@@ -97,6 +110,7 @@ export default function Home() {
               desc={mode.desc}
               difficulty={mode.difficulty}
               count={counts[mode.id]}
+              bestMs={bests[mode.id]}
               onSelect={() => navigate(`/play/${mode.id}`)}
             />
           ))}
