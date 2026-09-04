@@ -125,8 +125,8 @@ export const MODES: Mode[] = [
     noun: "countries",
     accent: "#38bdf8",
     regional: true,
-    includes: (m) => m.continent === "europe" && m.tier === "country",
-    view: { lat: 55, lng: 17, altitude: 1.05 },
+    includes: (m) => m.continents.includes("europe") && m.tier === "country",
+    view: { lat: 51, lng: 23, altitude: 1.3 },
   },
   {
     id: "africa",
@@ -137,7 +137,7 @@ export const MODES: Mode[] = [
     noun: "countries",
     accent: "#fbbf24",
     regional: true,
-    includes: (m) => m.continent === "africa" && m.tier === "country",
+    includes: (m) => m.continents.includes("africa") && m.tier === "country",
     view: { lat: 2, lng: 19, altitude: 1.5 },
   },
   {
@@ -149,7 +149,7 @@ export const MODES: Mode[] = [
     noun: "countries",
     accent: "#fb7185",
     regional: true,
-    includes: (m) => m.continent === "asia" && m.tier === "country",
+    includes: (m) => m.continents.includes("asia") && m.tier === "country",
     view: { lat: 31, lng: 88, altitude: 1.85 },
   },
   {
@@ -161,7 +161,7 @@ export const MODES: Mode[] = [
     noun: "countries",
     accent: "#4ade80",
     regional: true,
-    includes: (m) => m.continent === "americas" && m.tier === "country",
+    includes: (m) => m.continents.includes("americas") && m.tier === "country",
     view: { lat: 5, lng: -83, altitude: 1.95 },
   },
   {
@@ -173,7 +173,7 @@ export const MODES: Mode[] = [
     noun: "countries",
     accent: "#e879f9",
     regional: true,
-    includes: (m) => m.continent === "oceania" && m.tier === "country",
+    includes: (m) => m.continents.includes("oceania") && m.tier === "country",
     view: { lat: -23, lng: 149, altitude: 1.5 },
   },
 ];

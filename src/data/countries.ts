@@ -11,8 +11,8 @@ export type CountryMeta = {
   aliases: string[];
   /** "territory" features only appear in hard mode */
   tier: CountryTier;
-  /** Which continent mode this feature belongs to */
-  continent: Continent;
+  /** Which continent modes this feature appears in — some sit in two */
+  continents: Continent[];
 };
 
 // world.geojson uses some outdated or unofficial names. These overrides map
@@ -63,6 +63,6 @@ export function getCountryMeta(geoName: string): CountryMeta {
     aliases: override?.aliases ?? [],
     tier: TERRITORIES.has(geoName) ? "territory" : "country",
     // Anything unmapped would be new map data; keep it out of continent modes.
-    continent: CONTINENT_OF[geoName] ?? "antarctica",
+    continents: CONTINENT_OF[geoName] ?? [],
   };
 }
