@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ModeCard from "../components/ModeCard";
 import ContinentCard from "../components/ContinentCard";
 import { getCountryMeta } from "../data/countries";
@@ -217,6 +217,12 @@ export default function Home() {
           </div>
         </div>
         </div>
+        <Link
+          to="/records"
+          className="mt-6 text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+        >
+          Your records
+        </Link>
       </main>
     </div>
   );

@@ -1,5 +1,7 @@
 
 
+import type { GameType } from "../data/modes";
+
 export type Run = {
   /** How long the run lasted, in milliseconds. */
   ms: number;
@@ -68,6 +70,50 @@ function write(store: Store) {
     localStorage.setItem(KEY, JSON.stringify(store));
   } catch {
     /* the game plays fine without a saved history */
+  }
+}
+
+/** A stored bucket, decomposed back into the three things that identify it. */
+export type Bucket = {
+  key: string;
+  type: GameType;
+  modeId: string;
+  limitSeconds: number | null;
+  runs: Run[];
+};
+
+/**
+ * Every bucket that holds runs, newest activity first. Keys look like
+ * `europe`, `find:europe` or `find:europe@180`, so this is `recordKey` read
+ * backwards.
+ */
+export function allBuckets(): Bucket[] {
+  const store = read();
+  return Object.entries(store)
+    .map(([key, runs]) => {
+      const valid = Array.isArray(runs) ? runs.filter(isRun) : [];
+      if (!valid.length) return null;
+
+      const [head, limit] = key.split("@");
+      const type: GameType = head.startsWith("find:") ? "find" : "name";
+      return {
+        key,
+        type,
+        modeId: head.replace(/^find:/, ""),
+        limitSeconds: limit ? Number(limit) : null,
+        runs: valid,
+      };
+    })
+    .filter((bucket): bucket is Bucket => bucket !== null)
+    .sort((a, b) => (a.runs[0].at < b.runs[0].at ? 1 : -1));
+}
+
+/** Wipes every stored run. */
+export function clearAll() {
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    /* nothing stored means nothing to clear */
   }
 }
 
