@@ -46,8 +46,8 @@ export const MODES: Mode[] = [
     regional: false,
     includes: () => true,
   },
-  // Continent modes are a short round — everything in the region, territories
-  // included, since the mode is already narrow enough.
+  // Continent modes are a short round over the region's sovereign countries;
+  // territories stay exclusive to Full map.
   {
     id: "europe",
     name: "Europe",
@@ -56,7 +56,7 @@ export const MODES: Mode[] = [
     level: 2,
     accent: "#38bdf8",
     regional: true,
-    includes: (m) => m.continent === "europe",
+    includes: (m) => m.continent === "europe" && m.tier === "country",
   },
   {
     id: "africa",
@@ -66,7 +66,7 @@ export const MODES: Mode[] = [
     level: 2,
     accent: "#fbbf24",
     regional: true,
-    includes: (m) => m.continent === "africa",
+    includes: (m) => m.continent === "africa" && m.tier === "country",
   },
   {
     id: "asia",
@@ -76,7 +76,7 @@ export const MODES: Mode[] = [
     level: 2,
     accent: "#fb7185",
     regional: true,
-    includes: (m) => m.continent === "asia",
+    includes: (m) => m.continent === "asia" && m.tier === "country",
   },
   {
     id: "americas",
@@ -86,7 +86,7 @@ export const MODES: Mode[] = [
     level: 2,
     accent: "#4ade80",
     regional: true,
-    includes: (m) => m.continent === "americas",
+    includes: (m) => m.continent === "americas" && m.tier === "country",
   },
   {
     id: "oceania",
@@ -96,7 +96,7 @@ export const MODES: Mode[] = [
     level: 1,
     accent: "#e879f9",
     regional: true,
-    includes: (m) => m.continent === "oceania",
+    includes: (m) => m.continent === "oceania" && m.tier === "country",
   },
 ];
 
