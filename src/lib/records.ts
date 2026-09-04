@@ -1,4 +1,4 @@
-import type { Difficulty } from "../data/countries";
+import type { ModeId } from "../data/modes";
 
 export type Run = {
   /** How long the run lasted, in milliseconds. */
@@ -11,7 +11,7 @@ export type Run = {
   total: number;
 };
 
-type Store = Partial<Record<Difficulty, Run[]>>;
+type Store = Partial<Record<ModeId, Run[]>>;
 
 // v2: runs gained found/total so a round you gave up on still counts.
 const KEY = "worldguess.records.v2";
@@ -54,35 +54,35 @@ function write(store: Store) {
   }
 }
 
-export function getRuns(difficulty: Difficulty): Run[] {
-  const runs = read()[difficulty];
+export function getRuns(mode: ModeId): Run[] {
+  const runs = read()[mode];
   return Array.isArray(runs) ? runs.filter(isRun) : [];
 }
 
 /** Files a finished run, newest first, and returns the mode's updated history. */
-export function addRun(difficulty: Difficulty, run: Omit<Run, "at">): Run[] {
+export function addRun(mode: ModeId, run: Omit<Run, "at">): Run[] {
   const runs = [
     { ...run, ms: Math.round(run.ms), at: new Date().toISOString() },
-    ...getRuns(difficulty),
+    ...getRuns(mode),
   ].slice(0, MAX_RUNS);
 
   const store = read();
-  store[difficulty] = runs;
+  store[mode] = runs;
   write(store);
   return runs;
 }
 
 /** The fastest full clear, or null if the mode has never been completed. */
-export function bestTime(difficulty: Difficulty): Run | null {
-  const cleared = getRuns(difficulty).filter(isComplete);
+export function bestTime(mode: ModeId): Run | null {
+  const cleared = getRuns(mode).filter(isComplete);
   return cleared.length
     ? cleared.reduce((best, run) => (run.ms < best.ms ? run : best))
     : null;
 }
 
 /** The furthest anyone got in this mode — ties broken by the quicker run. */
-export function bestScore(difficulty: Difficulty): Run | null {
-  const runs = getRuns(difficulty);
+export function bestScore(mode: ModeId): Run | null {
+  const runs = getRuns(mode);
   return runs.length
     ? runs.reduce((best, run) =>
         run.found > best.found ||
@@ -97,10 +97,10 @@ export function bestScore(difficulty: Difficulty): Run | null {
  * What to show on a mode card: a clear time once the mode has been finished,
  * otherwise how far the player has got.
  */
-export function bestLabel(difficulty: Difficulty): string | null {
-  const cleared = bestTime(difficulty);
+export function bestLabel(mode: ModeId): string | null {
+  const cleared = bestTime(mode);
   if (cleared) return formatDuration(cleared.ms);
-  const score = bestScore(difficulty);
+  const score = bestScore(mode);
   return score ? `${score.found}/${score.total}` : null;
 }
 

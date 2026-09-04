@@ -6,7 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import GuessModal from "./GuessModal";
 import RoundSummary from "./RoundSummary";
 import { getCountryMeta } from "../../data/countries";
-import type { Difficulty } from "../../data/countries";
+import type { Mode } from "../../data/modes";
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { theme } from "../../lib/globeTheme";
 import { addRun, bestScore, bestTime, formatDuration } from "../../lib/records";
@@ -32,10 +32,10 @@ const globeMaterial = new THREE.MeshPhongMaterial({
 });
 
 type Props = {
-  difficulty: Difficulty;
+  mode: Mode;
 };
 
-export default function GlobeGame({ difficulty }: Props) {
+export default function GlobeGame({ mode }: Props) {
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const wrongTimer = useRef<number | undefined>(undefined);
@@ -84,13 +84,11 @@ export default function GlobeGame({ difficulty }: Props) {
       })
       .then((data: { features: CountryFeature[] }) => {
         if (cancelled) return;
-        const playable =
-          difficulty === "hard"
-            ? data.features
-            : data.features.filter(
-                (f) => getCountryMeta(f.properties.name).tier === "country"
-              );
-        setFeatures(playable);
+        setFeatures(
+          data.features.filter((f) =>
+            mode.includes(getCountryMeta(f.properties.name))
+          )
+        );
       })
       .catch(() => {
         if (!cancelled) setLoadError(true);
@@ -98,7 +96,7 @@ export default function GlobeGame({ difficulty }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [difficulty, resetRun]);
+  }, [mode, resetRun]);
 
   useEffect(() => () => window.clearTimeout(wrongTimer.current), []);
 
@@ -155,10 +153,10 @@ export default function GlobeGame({ difficulty }: Props) {
     const completed = total > 0 && found === total;
 
     // Read the records before filing this run, so we compare against the past.
-    const previousTime = bestTime(difficulty);
-    const previousScore = bestScore(difficulty);
+    const previousTime = bestTime(mode.id);
+    const previousScore = bestScore(mode.id);
     // A run with nothing found isn't a result worth keeping.
-    if (found > 0) addRun(difficulty, { ms, found, total });
+    if (found > 0) addRun(mode.id, { ms, found, total });
 
     setSummary({
       ms,
@@ -179,7 +177,7 @@ export default function GlobeGame({ difficulty }: Props) {
     });
     setSelected(null);
     setConfirmingExit(false);
-  }, [difficulty, features.length, foundNames, guesses]);
+  }, [mode, features.length, foundNames, guesses]);
 
   // Finding the last country ends the round on its own.
   useEffect(() => {
@@ -319,14 +317,12 @@ export default function GlobeGame({ difficulty }: Props) {
               <span
                 key={height}
                 className={`w-[3px] rounded-full ${height} ${
-                  i < (difficulty === "easy" ? 1 : 3)
-                    ? "bg-zinc-300"
-                    : "bg-white/15"
+                  i < mode.level ? "bg-zinc-300" : "bg-white/15"
                 }`}
               />
             ))}
           </span>
-          {difficulty === "easy" ? "Easy" : "Hard"}
+          {mode.label}
         </span>
 
         {!summary && features.length > 0 && (

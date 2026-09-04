@@ -1,42 +1,23 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ModeCard from "../components/ModeCard";
-import { getCountryMeta, type Difficulty } from "../data/countries";
+import ContinentCard from "../components/ContinentCard";
+import { getCountryMeta } from "../data/countries";
+import { MODES, type ModeId } from "../data/modes";
 import { bestLabel } from "../lib/records";
 
 // Three.js is heavy — let the menu paint first, then fade the globe in behind it.
 const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
 
-const modes: {
-  id: Difficulty;
-  name: string;
-  desc: string;
-  difficulty: "Easy" | "Hard";
-}[] = [
-  {
-    id: "easy",
-    name: "Countries only",
-    desc: "The world's sovereign countries. A good place to start.",
-    difficulty: "Easy",
-  },
-  {
-    id: "hard",
-    name: "Full map",
-    desc: "Adds territories, islands and disputed regions.",
-    difficulty: "Hard",
-  },
-];
+type Counts = Partial<Record<ModeId, number>>;
 
 /**
  * How many places each mode asks for, read from the same map the game uses so
  * the cards can't drift out of date. The globe behind the menu fetches this
  * file too, so it comes from the browser cache.
  */
-function useModeCounts(): Record<Difficulty, number | null> {
-  const [counts, setCounts] = useState<Record<Difficulty, number | null>>({
-    easy: null,
-    hard: null,
-  });
+function useModeCounts(): Counts {
+  const [counts, setCounts] = useState<Counts>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -44,10 +25,17 @@ function useModeCounts(): Record<Difficulty, number | null> {
       .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
       .then((data: { features: { properties: { name: string } }[] }) => {
         if (cancelled) return;
-        const countries = data.features.filter(
-          (f) => getCountryMeta(f.properties.name).tier === "country"
+        const metas = data.features.map((f) =>
+          getCountryMeta(f.properties.name)
         );
-        setCounts({ easy: countries.length, hard: data.features.length });
+        setCounts(
+          Object.fromEntries(
+            MODES.map((mode) => [
+              mode.id,
+              metas.filter((meta) => mode.includes(meta)).length,
+            ])
+          )
+        );
       })
       .catch(() => {
         /* the cards read fine without a count */
@@ -60,18 +48,26 @@ function useModeCounts(): Record<Difficulty, number | null> {
   return counts;
 }
 
-export default function Home() {
-  const navigate = useNavigate();
-  const counts = useModeCounts();
-  const [bests, setBests] = useState<Record<Difficulty, string | null>>({
-    easy: null,
-    hard: null,
-  });
+function useBests(): Partial<Record<ModeId, string | null>> {
+  const [bests, setBests] = useState<Partial<Record<ModeId, string | null>>>({});
 
   // Read after mount — storage isn't available while rendering on every client.
   useEffect(() => {
-    setBests({ easy: bestLabel("easy"), hard: bestLabel("hard") });
+    setBests(
+      Object.fromEntries(MODES.map((mode) => [mode.id, bestLabel(mode.id)]))
+    );
   }, []);
+
+  return bests;
+}
+
+export default function Home() {
+  const navigate = useNavigate();
+  const counts = useModeCounts();
+  const bests = useBests();
+
+  const headline = MODES.filter((mode) => !mode.regional);
+  const regional = MODES.filter((mode) => mode.regional);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#07111c]">
@@ -100,17 +96,42 @@ export default function Home() {
         </p>
 
         <div className="mt-10 grid w-full max-w-2xl gap-4 sm:grid-cols-2">
-          {modes.map((mode) => (
+          {headline.map((mode) => (
             <ModeCard
               key={mode.id}
               name={mode.name}
               desc={mode.desc}
-              difficulty={mode.difficulty}
-              count={counts[mode.id]}
-              best={bests[mode.id]}
+              label={mode.label}
+              level={mode.level}
+              accent={mode.accent}
+              count={counts[mode.id] ?? null}
+              best={bests[mode.id] ?? null}
               onSelect={() => navigate(`/play/${mode.id}`)}
             />
           ))}
+        </div>
+
+        <div className="mt-8 w-full max-w-2xl">
+          <div className="flex items-center gap-3">
+            <span className="text-xs uppercase tracking-wider text-zinc-500">
+              By continent
+            </span>
+            <span className="h-px flex-1 bg-white/[0.07]" aria-hidden="true" />
+            <span className="text-xs text-zinc-600">shorter rounds</span>
+          </div>
+
+          <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
+            {regional.map((mode) => (
+              <ContinentCard
+                key={mode.id}
+                name={mode.name}
+                accent={mode.accent}
+                count={counts[mode.id] ?? null}
+                best={bests[mode.id] ?? null}
+                onSelect={() => navigate(`/play/${mode.id}`)}
+              />
+            ))}
+          </div>
         </div>
       </main>
     </div>

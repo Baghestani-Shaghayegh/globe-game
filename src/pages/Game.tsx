@@ -1,13 +1,11 @@
 import { Navigate, useParams } from "react-router-dom";
 import GlobeGame from "../features/globe-guess/GlobeGame";
-import type { Difficulty } from "../data/countries";
+import { getMode } from "../data/modes";
 
 export default function Game() {
-  const { difficulty } = useParams();
+  const mode = getMode(useParams().mode);
 
-  if (difficulty !== "easy" && difficulty !== "hard") {
-    return <Navigate to="/" replace />;
-  }
+  if (!mode) return <Navigate to="/" replace />;
 
-  return <GlobeGame difficulty={difficulty as Difficulty} />;
+  return <GlobeGame mode={mode} />;
 }

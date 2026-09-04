@@ -3,7 +3,12 @@ import type { CSSProperties } from "react";
 type ModeCardProps = {
   name: string;
   desc: string;
-  difficulty: "Easy" | "Hard";
+  /** Short name shown beside the level meter. */
+  label: string;
+  /** Filled bars out of three. */
+  level: 1 | 2 | 3;
+  /** Accent hue for the artwork. */
+  accent: string;
   /** How many places this mode asks for. Null until the map has loaded. */
   count: number | null;
   /** The player's record in this mode — a clear time or a score — if they have one. */
@@ -11,32 +16,7 @@ type ModeCardProps = {
   onSelect: () => void;
 };
 
-/** Filled bars out of three — the difficulty read without a colour code. */
-const LEVEL: Record<ModeCardProps["difficulty"], number> = { Easy: 1, Hard: 3 };
 const BAR_HEIGHTS = ["h-1.5", "h-2.5", "h-3.5"];
-
-/**
- * One accent per mode, picked to sit on the navy page without fighting the
- * blue globe behind it. Only the artwork is tinted — the Easy/Hard label stays
- * neutral so it reads as a name, not a status colour.
- */
-const ACCENT: Record<
-  ModeCardProps["difficulty"],
-  { solid: string; soft: string; line: string; glow: string }
-> = {
-  Easy: {
-    solid: "#2dd4bf",
-    soft: "rgba(45,212,191,0.12)",
-    line: "rgba(45,212,191,0.4)",
-    glow: "rgba(45,212,191,0.22)",
-  },
-  Hard: {
-    solid: "#a78bfa",
-    soft: "rgba(167,139,250,0.12)",
-    line: "rgba(167,139,250,0.4)",
-    glow: "rgba(167,139,250,0.22)",
-  },
-};
 
 function EasyIcon() {
   return (
@@ -78,26 +58,33 @@ function HardIcon() {
   );
 }
 
+/** Turns "#2dd4bf" into "45,212,191" so it can carry an alpha channel. */
+function rgbChannels(hex: string): string {
+  const value = parseInt(hex.slice(1), 16);
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255].join(",");
+}
+
 export default function ModeCard({
   name,
   desc,
-  difficulty,
+  label,
+  level,
+  accent,
   count,
   best,
   onSelect,
 }: ModeCardProps) {
-  const level = LEVEL[difficulty];
-  const accent = ACCENT[difficulty];
+  const channels = rgbChannels(accent);
 
   return (
     <button
       onClick={onSelect}
       style={
         {
-          "--accent": accent.solid,
-          "--accent-soft": accent.soft,
-          "--accent-line": accent.line,
-          "--accent-glow": accent.glow,
+          "--accent": accent,
+          "--accent-soft": `rgba(${channels},0.12)`,
+          "--accent-line": `rgba(${channels},0.4)`,
+          "--accent-glow": `rgba(${channels},0.22)`,
         } as CSSProperties
       }
       className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-[var(--accent-line)] hover:bg-white/[0.07] focus-visible:-translate-y-0.5 focus-visible:border-[var(--accent-line)] focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
@@ -110,7 +97,7 @@ export default function ModeCard({
 
       <div className="relative flex items-start justify-between">
         <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--accent-line)] bg-[var(--accent-soft)] text-[var(--accent)]">
-          {difficulty === "Easy" ? <EasyIcon /> : <HardIcon />}
+          {level > 1 ? <HardIcon /> : <EasyIcon />}
         </span>
         <span
           aria-hidden="true"
@@ -143,7 +130,7 @@ export default function ModeCard({
               />
             ))}
           </span>
-          <span className="uppercase tracking-wider">{difficulty}</span>
+          <span className="uppercase tracking-wider">{label}</span>
         </span>
         {best && (
           <span className="ml-auto tabular-nums text-zinc-400">Best {best}</span>
