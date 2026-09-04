@@ -168,13 +168,19 @@ export default function GlobeGame({ difficulty }: Props) {
           />
         </span>
 
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-            difficulty === "easy"
-              ? "bg-emerald-500/10 text-emerald-300"
-              : "bg-amber-500/10 text-amber-300"
-          }`}
-        >
+        <span className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-zinc-400">
+          <span aria-hidden="true" className="flex items-end gap-[3px]">
+            {["h-1.5", "h-2.5", "h-3.5"].map((height, i) => (
+              <span
+                key={height}
+                className={`w-[3px] rounded-full ${height} ${
+                  i < (difficulty === "easy" ? 1 : 3)
+                    ? "bg-zinc-300"
+                    : "bg-white/15"
+                }`}
+              />
+            ))}
+          </span>
           {difficulty === "easy" ? "Easy" : "Hard"}
         </span>
       </div>
