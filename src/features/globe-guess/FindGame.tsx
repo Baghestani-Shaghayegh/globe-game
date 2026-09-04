@@ -10,13 +10,21 @@ import { useRound } from "./useRound";
 import { getCountryMeta } from "../../data/countries";
 import { recordKey, type Mode } from "../../data/modes";
 import { theme } from "../../lib/globeTheme";
+import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
 
-type CountryFeature = { properties: { name: string } };
+type CountryFeature = {
+  properties: { name: string };
+  geometry: Geometry;
+};
 
 const globeMaterial = new THREE.MeshPhongMaterial({
   color: theme.sphere,
   shininess: 0,
 });
+
+/** Long enough to fly the camera to the answer and let it register. */
+const FLIGHT_MS = 800;
+const REVEAL_HOLD_MS = 1500;
 
 /** Fisher-Yates, so each round asks for the countries in a different order. */
 function shuffled<T>(items: T[]): T[] {
@@ -134,16 +142,30 @@ export default function FindGame({ mode }: Props) {
     wrongTimer.current = window.setTimeout(() => setWrongName(null), 600);
   };
 
-  /** Gives up on the current country: shows where it was, then moves on. */
+  /**
+   * Gives up on the current country: turns the globe to it and lights it up,
+   * then moves on. Without the camera move the answer is often on the far side
+   * of the globe, so the player never sees it.
+   */
   const handlePass = () => {
     if (!target || revealed) return;
+
+    const feature = features.find((f) => f.properties.name === target);
+    if (feature) {
+      const { lat, lng, span } = featureCentre(feature.geometry);
+      globeRef.current?.pointOfView(
+        { lat, lng, altitude: altitudeFor(span) },
+        FLIGHT_MS
+      );
+    }
+
     setPassedNames((prev) => new Set(prev).add(target));
     setRevealed(target);
     window.clearTimeout(wrongTimer.current);
     wrongTimer.current = window.setTimeout(() => {
       setRevealed(null);
       advance();
-    }, 1100);
+    }, FLIGHT_MS + REVEAL_HOLD_MS);
   };
 
   const handleBack = () => {
@@ -207,8 +229,10 @@ export default function FindGame({ mode }: Props) {
         polygonCapColor={capColor}
         polygonSideColor={() => theme.sphere}
         polygonStrokeColor={() => theme.stroke}
-        polygonAltitude={() => 0.012}
-        polygonsTransitionDuration={0}
+        polygonAltitude={(d) =>
+          (d as CountryFeature).properties.name === revealed ? 0.06 : 0.012
+        }
+        polygonsTransitionDuration={200}
         onPolygonClick={(polygon) =>
           handleClick((polygon as CountryFeature).properties.name)
         }
