@@ -10,5 +10,7 @@ export const theme = {
   /** In game: not yet identified — a step darker so found/selected carry. */
   unfound: "#28455e",
   found: "#5bb98c",
+  /** Revealed at the end of a run: found by nobody. */
+  missed: "#a85466",
   selected: "#f2a93b",
 } as const;

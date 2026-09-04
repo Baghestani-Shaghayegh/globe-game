@@ -1,18 +1,29 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
 import * as THREE from "three";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import GuessModal from "./GuessModal";
+import RoundSummary from "./RoundSummary";
 import { getCountryMeta } from "../../data/countries";
 import type { Difficulty } from "../../data/countries";
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { theme } from "../../lib/globeTheme";
-import { addRun, bestRun, formatDuration } from "../../lib/records";
-import type { Run } from "../../lib/records";
+import { addRun, bestScore, bestTime, formatDuration } from "../../lib/records";
 
 type CountryFeature = {
   properties: { name: string };
+};
+
+/** Everything the summary screen needs, frozen at the moment the run ended. */
+type Summary = {
+  ms: number;
+  found: number;
+  total: number;
+  completed: boolean;
+  accuracy: number | null;
+  isBest: boolean;
+  previousBest: string | null;
 };
 
 const globeMaterial = new THREE.MeshPhongMaterial({
@@ -25,6 +36,7 @@ type Props = {
 };
 
 export default function GlobeGame({ difficulty }: Props) {
+  const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const wrongTimer = useRef<number | undefined>(undefined);
   const framed = useRef(false);
@@ -35,23 +47,34 @@ export default function GlobeGame({ difficulty }: Props) {
   const [guess, setGuess] = useState("");
   const [isWrong, setIsWrong] = useState(false);
   const [foundNames, setFoundNames] = useState<Set<string>>(new Set());
+  const [guesses, setGuesses] = useState(0);
+  const [confirmingExit, setConfirmingExit] = useState(false);
+  const [reviewingMap, setReviewingMap] = useState(false);
 
   // Stopwatch. It starts when the map is playable, not when the page mounts,
   // so a slow globe download doesn't land on the player's time.
   const startedAt = useRef<number | null>(null);
   const recorded = useRef(false);
   const [elapsedMs, setElapsedMs] = useState(0);
-  const [finishedMs, setFinishedMs] = useState<number | null>(null);
-  const [previousBest, setPreviousBest] = useState<Run | null>(null);
+  const [summary, setSummary] = useState<Summary | null>(null);
 
-  useEffect(() => {
-    // Switching modes restarts the round, and with it the clock.
+  const resetRun = useCallback(() => {
     setFoundNames(new Set());
+    setGuesses(0);
+    setSelected(null);
+    setGuess("");
+    setIsWrong(false);
+    setConfirmingExit(false);
+    setReviewingMap(false);
     setElapsedMs(0);
-    setFinishedMs(null);
-    setPreviousBest(null);
+    setSummary(null);
     startedAt.current = null;
     recorded.current = false;
+  }, []);
+
+  useEffect(() => {
+    // Switching modes starts a fresh round, and with it a fresh clock.
+    resetRun();
 
     let cancelled = false;
     fetch("/data/world.geojson")
@@ -75,7 +98,7 @@ export default function GlobeGame({ difficulty }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [difficulty]);
+  }, [difficulty, resetRun]);
 
   useEffect(() => () => window.clearTimeout(wrongTimer.current), []);
 
@@ -96,14 +119,14 @@ export default function GlobeGame({ difficulty }: Props) {
   // Only the readout needs ticking; the elapsed time itself is a subtraction,
   // so a coarse interval can't drift.
   useEffect(() => {
-    if (!features.length || finishedMs !== null) return;
+    if (!features.length || summary) return;
     const id = window.setInterval(() => {
       if (startedAt.current !== null) {
         setElapsedMs(performance.now() - startedAt.current);
       }
     }, 250);
     return () => window.clearInterval(id);
-  }, [features.length, finishedMs]);
+  }, [features.length, summary]);
 
   const suggestionNames = useMemo(
     () =>
@@ -113,20 +136,62 @@ export default function GlobeGame({ difficulty }: Props) {
     [features]
   );
 
-  const isComplete = features.length > 0 && foundNames.size === features.length;
+  const allFound = features.length > 0 && foundNames.size === features.length;
   const progress = features.length
     ? Math.round((foundNames.size / features.length) * 100)
     : 0;
 
-  // Stamp the finish time the moment the last country lands, and file the run.
-  useEffect(() => {
-    if (!isComplete || recorded.current || startedAt.current === null) return;
+  /**
+   * Ends the round — whether the player found everything or stopped early —
+   * and files it, so a partial run still counts towards their records.
+   */
+  const endRun = useCallback(() => {
+    if (recorded.current || startedAt.current === null) return;
     recorded.current = true;
+
     const ms = performance.now() - startedAt.current;
-    setPreviousBest(bestRun(difficulty));
-    addRun(difficulty, ms);
-    setFinishedMs(ms);
-  }, [isComplete, difficulty]);
+    const found = foundNames.size;
+    const total = features.length;
+    const completed = total > 0 && found === total;
+
+    // Read the records before filing this run, so we compare against the past.
+    const previousTime = bestTime(difficulty);
+    const previousScore = bestScore(difficulty);
+    addRun(difficulty, { ms, found, total });
+
+    setSummary({
+      ms,
+      found,
+      total,
+      completed,
+      accuracy: guesses > 0 ? Math.round((found / guesses) * 100) : null,
+      isBest: completed
+        ? !previousTime || ms < previousTime.ms
+        : !previousScore || found > previousScore.found,
+      previousBest: completed
+        ? previousTime
+          ? formatDuration(previousTime.ms)
+          : null
+        : previousScore
+          ? `${previousScore.found}/${previousScore.total}`
+          : null,
+    });
+    setSelected(null);
+    setConfirmingExit(false);
+  }, [difficulty, features.length, foundNames, guesses]);
+
+  // Finding the last country ends the round on its own.
+  useEffect(() => {
+    if (allFound) endRun();
+  }, [allFound, endRun]);
+
+  const missedNames = useMemo(() => {
+    if (!summary) return [];
+    return features
+      .filter((f) => !foundNames.has(f.properties.name))
+      .map((f) => getCountryMeta(f.properties.name).displayName)
+      .sort((a, b) => a.localeCompare(b));
+  }, [summary, features, foundNames]);
 
   const closeModal = () => {
     setSelected(null);
@@ -137,6 +202,7 @@ export default function GlobeGame({ difficulty }: Props) {
   const handleSubmit = (value: string) => {
     if (!selected || !value.trim()) return;
 
+    setGuesses((n) => n + 1);
     const country = getCountryMeta(selected.properties.name);
     if (isCorrectGuess(value, country)) {
       setFoundNames((prev) => new Set(prev).add(country.geoName));
@@ -146,6 +212,15 @@ export default function GlobeGame({ difficulty }: Props) {
       window.clearTimeout(wrongTimer.current);
       wrongTimer.current = window.setTimeout(() => setIsWrong(false), 600);
     }
+  };
+
+  /** The back arrow only interrupts when there is progress worth keeping. */
+  const handleBack = () => {
+    if (summary || foundNames.size === 0) {
+      navigate("/");
+      return;
+    }
+    setConfirmingExit(true);
   };
 
   if (loadError) {
@@ -179,6 +254,8 @@ export default function GlobeGame({ difficulty }: Props) {
         polygonCapColor={(d) => {
           const { name } = (d as CountryFeature).properties;
           if (foundNames.has(name)) return theme.found;
+          // Once the run is over, everything left is shown as missed.
+          if (summary) return theme.missed;
           if (selected && selected.properties.name === name)
             return theme.selected;
           return theme.unfound;
@@ -188,6 +265,7 @@ export default function GlobeGame({ difficulty }: Props) {
         polygonAltitude={() => 0.012}
         polygonsTransitionDuration={0}
         onPolygonClick={(polygon) => {
+          if (summary) return;
           const feature = polygon as CountryFeature;
           if (!foundNames.has(feature.properties.name)) {
             setSelected(feature);
@@ -197,9 +275,24 @@ export default function GlobeGame({ difficulty }: Props) {
 
       {/* HUD */}
       <div className="absolute left-4 top-4 z-10 flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm backdrop-blur">
-        <Link to="/" className="text-zinc-400 transition-colors hover:text-zinc-100">
-          Modes
-        </Link>
+        <button
+          onClick={handleBack}
+          aria-label="Back to modes"
+          className="flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-100"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-4 w-4"
+            aria-hidden="true"
+          >
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+        </button>
 
         <span className="h-4 w-px bg-white/10" aria-hidden="true" />
 
@@ -222,8 +315,10 @@ export default function GlobeGame({ difficulty }: Props) {
           aria-label="Time elapsed"
           role="timer"
         >
-          {formatDuration(finishedMs ?? elapsedMs)}
+          {formatDuration(summary ? summary.ms : elapsedMs)}
         </span>
+
+        <span className="h-4 w-px bg-white/10" aria-hidden="true" />
 
         <span className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-zinc-400">
           <span aria-hidden="true" className="flex items-end gap-[3px]">
@@ -240,34 +335,84 @@ export default function GlobeGame({ difficulty }: Props) {
           </span>
           {difficulty === "easy" ? "Easy" : "Hard"}
         </span>
+
+        {!summary && features.length > 0 && (
+          <>
+            <span className="h-4 w-px bg-white/10" aria-hidden="true" />
+            <button
+              onClick={endRun}
+              className="rounded-md px-2 py-0.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-100"
+            >
+              Finish
+            </button>
+          </>
+        )}
       </div>
 
-      {isComplete && finishedMs !== null && (
-        <div className="absolute inset-x-0 top-20 z-10 mx-auto w-fit rounded-xl border border-white/10 bg-[#141b23] px-8 py-5 text-center">
-          <p className="text-sm text-zinc-400">
-            You found all {features.length}
-          </p>
-          <p className="mt-1 text-4xl font-semibold tabular-nums text-zinc-50">
-            {formatDuration(finishedMs)}
-          </p>
-
-          {previousBest === null || finishedMs < previousBest.ms ? (
-            <p className="mt-2 text-xs uppercase tracking-wider text-emerald-300">
-              New personal best
+      {confirmingExit && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#07111c]/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#141b23] p-6 text-center">
+            <p className="font-medium text-zinc-100">Leave this run?</p>
+            <p className="mt-1.5 text-sm text-zinc-400">
+              You've found {foundNames.size} of {features.length}. Finishing
+              saves it to your records.
             </p>
-          ) : (
-            <p className="mt-2 text-xs tabular-nums text-zinc-500">
-              Your best {formatDuration(previousBest.ms)}
-            </p>
-          )}
-
-          <Link
-            to="/"
-            className="mt-3 inline-block text-sm text-zinc-400 underline underline-offset-4 hover:text-zinc-100"
-          >
-            Play another mode
-          </Link>
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                onClick={endRun}
+                className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/15"
+              >
+                Finish &amp; save
+              </button>
+              <button
+                onClick={() => setConfirmingExit(false)}
+                className="rounded-lg border border-white/10 px-4 py-2 text-sm text-zinc-300 transition-colors hover:border-white/25 hover:text-zinc-100"
+              >
+                Keep playing
+              </button>
+              <button
+                onClick={() => navigate("/")}
+                className="px-4 py-1 text-xs text-zinc-500 transition-colors hover:text-zinc-300"
+              >
+                Discard and leave
+              </button>
+            </div>
+          </div>
         </div>
+      )}
+
+      {summary && reviewingMap && (
+        <div className="absolute inset-x-0 bottom-6 z-20 mx-auto flex w-fit items-center gap-3 rounded-full border border-white/10 bg-[#141b23]/90 py-2 pl-4 pr-2 text-sm backdrop-blur">
+          <span className="flex items-center gap-2 text-zinc-400">
+            <span
+              aria-hidden="true"
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: theme.missed }}
+            />
+            {missedNames.length} missed
+          </span>
+          <button
+            onClick={() => setReviewingMap(false)}
+            className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-zinc-100 transition-colors hover:bg-white/15"
+          >
+            Show summary
+          </button>
+        </div>
+      )}
+
+      {summary && !reviewingMap && (
+        <RoundSummary
+          completed={summary.completed}
+          ms={summary.ms}
+          found={summary.found}
+          total={summary.total}
+          accuracy={summary.accuracy}
+          isBest={summary.isBest}
+          previousBest={summary.previousBest}
+          missed={missedNames}
+          onPlayAgain={resetRun}
+          onReviewMap={() => setReviewingMap(true)}
+        />
       )}
 
       <GuessModal
