@@ -17,10 +17,9 @@ Goal: make the existing game genuinely fun and complete before adding social fea
 | **Find the Country** (reverse mode) | Game says "Click on Mongolia" and the player must find it on the globe — great for learning |
 
 ### 1.2 Difficulty levels (apply to every mode)
-- **Easy** — ~50 well-known countries (USA, France, Japan, Brazil…)
-- **Medium** — all 195 UN-recognized countries (your current `recognizedCountries` list)
-- **Hard** — countries + territories, dependencies, and islands (Greenland, Faroe Islands, Réunion, Guam…)
-- Optional: **Continent filters** (only Europe, only Africa…) — very popular in geography games because it's how people actually study.
+- **Easy** — all sovereign countries *(built)*
+- **Hard** — countries + territories, dependencies, and islands *(built)*
+- **Continent filters** — Europe, Africa, Asia, Americas, Oceania, sovereign countries only *(built)*. These are the beginner on-ramp; a curated "~50 well-known countries" tier was considered and dropped as unnecessary.
 
 ### 1.3 Timer & round options
 - **Relaxed** — no timer, learn at your own pace

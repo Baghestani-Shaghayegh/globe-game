@@ -265,7 +265,7 @@ export default function GlobeGame({ mode }: Props) {
       />
 
       {/* HUD */}
-      <div className="absolute left-4 top-4 z-10 flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm backdrop-blur">
+      <div className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-sm backdrop-blur sm:left-4 sm:top-4 sm:gap-3 sm:px-3">
         <button
           onClick={handleBack}
           aria-label="Back to modes"
@@ -292,14 +292,17 @@ export default function GlobeGame({ mode }: Props) {
           <span className="text-zinc-500"> / {features.length}</span>
         </span>
 
-        <span className="h-1 w-20 overflow-hidden rounded-full bg-white/10">
+        <span className="hidden h-1 w-20 overflow-hidden rounded-full bg-white/10 sm:block">
           <span
             className="block h-full rounded-full bg-emerald-400 transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </span>
 
-        <span className="h-4 w-px bg-white/10" aria-hidden="true" />
+        <span
+          className="hidden h-4 w-px bg-white/10 sm:block"
+          aria-hidden="true"
+        />
 
         <span
           className="tabular-nums text-zinc-300"
@@ -309,9 +312,12 @@ export default function GlobeGame({ mode }: Props) {
           {formatDuration(summary ? summary.ms : elapsedMs)}
         </span>
 
-        <span className="h-4 w-px bg-white/10" aria-hidden="true" />
+        <span
+          className="hidden h-4 w-px bg-white/10 sm:block"
+          aria-hidden="true"
+        />
 
-        <span className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-zinc-400">
+        <span className="hidden items-center gap-1.5 text-xs uppercase tracking-wider text-zinc-400 sm:flex">
           <span aria-hidden="true" className="flex items-end gap-[3px]">
             {["h-1.5", "h-2.5", "h-3.5"].map((height, i) => (
               <span
