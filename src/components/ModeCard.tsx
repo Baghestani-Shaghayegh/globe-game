@@ -1,6 +1,4 @@
-// src/components/ModeCard.tsx
 type ModeCardProps = {
-  icon: string;
   name: string;
   desc: string;
   difficulty: "Easy" | "Hard";
@@ -8,7 +6,6 @@ type ModeCardProps = {
 };
 
 export default function ModeCard({
-  icon,
   name,
   desc,
   difficulty,
@@ -17,21 +14,28 @@ export default function ModeCard({
   return (
     <button
       onClick={onSelect}
-      className="backdrop-blur-md bg-white/20 border border-white/30 
-                 rounded-2xl shadow-lg p-8 flex flex-col items-center 
-                 hover:scale-105 hover:shadow-2xl transition w-72"
+      className="group flex items-start gap-4 rounded-lg border border-white/10 bg-white/5 p-4 text-left backdrop-blur-sm transition-colors hover:border-white/25 hover:bg-white/10 focus-visible:border-white/40 focus-visible:outline-none"
     >
-      <span className="text-6xl mb-4">{icon}</span>
-      <h2 className="text-2xl font-semibold text-white">{name}</h2>
-      <p className="text-gray-200 mt-2 text-center">{desc}</p>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-base font-medium text-zinc-100">{name}</h2>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+              difficulty === "Easy"
+                ? "bg-emerald-500/10 text-emerald-300"
+                : "bg-amber-500/10 text-amber-300"
+            }`}
+          >
+            {difficulty}
+          </span>
+        </div>
+        <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{desc}</p>
+      </div>
       <span
-        className={`mt-3 text-sm font-bold px-3 py-1 rounded-full ${
-          difficulty === "Easy"
-            ? "bg-green-200/30 text-green-100 border border-green-300/30"
-            : "bg-red-200/30 text-red-100 border border-red-300/30"
-        }`}
+        aria-hidden="true"
+        className="mt-1 text-zinc-600 transition-colors group-hover:text-zinc-300"
       >
-        {difficulty}
+        →
       </span>
     </button>
   );

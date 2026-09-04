@@ -1,12 +1,27 @@
-import GlobeView from "./components/GlobeView";
-import Home from "./pages/Home"
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import Home from "./pages/Home";
+
+// The game page pulls in three.js (~2 MB) — load it only when a game starts.
+const Game = lazy(() => import("./pages/Game"));
 
 function App() {
   return (
-    <div style={{ width: "100vw", height: "100vh", background: "white" }}>
-      {/* <GlobeView /> */}
-      <Home/>
-    </div>
+    <BrowserRouter>
+      <Suspense
+        fallback={
+          <div className="flex min-h-screen items-center justify-center bg-white text-lg text-gray-600">
+            Loading the globe…
+          </div>
+        }
+      >
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/play/:difficulty" element={<Game />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
   );
 }
 
