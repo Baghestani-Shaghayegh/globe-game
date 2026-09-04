@@ -82,6 +82,13 @@ export type Mode = {
   regional: boolean;
   /** Decides which map features this mode asks for. */
   includes: (meta: CountryMeta) => boolean;
+  /**
+   * Opening camera for a regional round. Set by hand: there are only five
+   * regions, and no rule derived from the data beats choosing the view. A
+   * median centre puts Oceania east of Australia, because most of its
+   * countries are; an average puts Europe in Siberia, because Russia is.
+   */
+  view?: { lat: number; lng: number; altitude: number };
 };
 
 export const MODES: Mode[] = [
@@ -119,6 +126,7 @@ export const MODES: Mode[] = [
     accent: "#38bdf8",
     regional: true,
     includes: (m) => m.continent === "europe" && m.tier === "country",
+    view: { lat: 55, lng: 17, altitude: 1.05 },
   },
   {
     id: "africa",
@@ -130,6 +138,7 @@ export const MODES: Mode[] = [
     accent: "#fbbf24",
     regional: true,
     includes: (m) => m.continent === "africa" && m.tier === "country",
+    view: { lat: 2, lng: 19, altitude: 1.5 },
   },
   {
     id: "asia",
@@ -141,6 +150,7 @@ export const MODES: Mode[] = [
     accent: "#fb7185",
     regional: true,
     includes: (m) => m.continent === "asia" && m.tier === "country",
+    view: { lat: 31, lng: 88, altitude: 1.85 },
   },
   {
     id: "americas",
@@ -152,6 +162,7 @@ export const MODES: Mode[] = [
     accent: "#4ade80",
     regional: true,
     includes: (m) => m.continent === "americas" && m.tier === "country",
+    view: { lat: 5, lng: -83, altitude: 1.95 },
   },
   {
     id: "oceania",
@@ -163,6 +174,7 @@ export const MODES: Mode[] = [
     accent: "#e879f9",
     regional: true,
     includes: (m) => m.continent === "oceania" && m.tier === "country",
+    view: { lat: -23, lng: 149, altitude: 1.5 },
   },
 ];
 
