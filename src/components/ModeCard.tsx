@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 type ModeCardProps = {
   name: string;
   desc: string;
@@ -10,6 +12,29 @@ type ModeCardProps = {
 /** Filled bars out of three — the difficulty read without a colour code. */
 const LEVEL: Record<ModeCardProps["difficulty"], number> = { Easy: 1, Hard: 3 };
 const BAR_HEIGHTS = ["h-1.5", "h-2.5", "h-3.5"];
+
+/**
+ * One accent per mode, picked to sit on the navy page without fighting the
+ * blue globe behind it. Only the artwork is tinted — the Easy/Hard label stays
+ * neutral so it reads as a name, not a status colour.
+ */
+const ACCENT: Record<
+  ModeCardProps["difficulty"],
+  { solid: string; soft: string; line: string; glow: string }
+> = {
+  Easy: {
+    solid: "#2dd4bf",
+    soft: "rgba(45,212,191,0.12)",
+    line: "rgba(45,212,191,0.4)",
+    glow: "rgba(45,212,191,0.22)",
+  },
+  Hard: {
+    solid: "#a78bfa",
+    soft: "rgba(167,139,250,0.12)",
+    line: "rgba(167,139,250,0.4)",
+    glow: "rgba(167,139,250,0.22)",
+  },
+};
 
 function EasyIcon() {
   return (
@@ -59,36 +84,47 @@ export default function ModeCard({
   onSelect,
 }: ModeCardProps) {
   const level = LEVEL[difficulty];
+  const accent = ACCENT[difficulty];
 
   return (
     <button
       onClick={onSelect}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.07] focus-visible:-translate-y-0.5 focus-visible:border-white/40 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+      style={
+        {
+          "--accent": accent.solid,
+          "--accent-soft": accent.soft,
+          "--accent-line": accent.line,
+          "--accent-glow": accent.glow,
+        } as CSSProperties
+      }
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-[var(--accent-line)] hover:bg-white/[0.07] focus-visible:-translate-y-0.5 focus-visible:border-[var(--accent-line)] focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
     >
-      {/* Light catching the top edge on hover */}
+      {/* Accent light pooling behind the icon */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+        className="pointer-events-none absolute -left-10 -top-12 h-36 w-36 rounded-full bg-[var(--accent-glow)] opacity-70 blur-2xl transition-opacity duration-200 group-hover:opacity-100"
       />
 
-      <div className="flex items-start justify-between">
-        <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-zinc-400 transition-colors duration-200 group-hover:border-white/20 group-hover:text-zinc-100">
+      <div className="relative flex items-start justify-between">
+        <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--accent-line)] bg-[var(--accent-soft)] text-[var(--accent)]">
           {difficulty === "Easy" ? <EasyIcon /> : <HardIcon />}
         </span>
         <span
           aria-hidden="true"
-          className="text-zinc-600 transition duration-200 group-hover:translate-x-0.5 group-hover:text-zinc-300"
+          className="text-zinc-600 transition duration-200 group-hover:translate-x-0.5 group-hover:text-[var(--accent)]"
         >
           →
         </span>
       </div>
 
-      <h2 className="mt-4 text-lg font-medium tracking-tight text-zinc-100">
+      <h2 className="relative mt-4 text-lg font-medium tracking-tight text-zinc-100">
         {name}
       </h2>
-      <p className="mt-1.5 text-sm leading-relaxed text-zinc-400">{desc}</p>
+      <p className="relative mt-1.5 text-sm leading-relaxed text-zinc-400">
+        {desc}
+      </p>
 
-      <div className="mt-5 flex items-center gap-3 border-t border-white/[0.07] pt-3 text-xs text-zinc-500">
+      <div className="relative mt-5 flex items-center gap-3 border-t border-white/[0.07] pt-3 text-xs text-zinc-500">
         <span className="tabular-nums">
           {count === null ? "—" : count} places
         </span>
@@ -99,9 +135,7 @@ export default function ModeCard({
               <span
                 key={height}
                 className={`w-[3px] rounded-full ${height} ${
-                  i < level
-                    ? "bg-zinc-300 transition-colors group-hover:bg-white"
-                    : "bg-white/15"
+                  i < level ? "bg-[var(--accent)]" : "bg-white/15"
                 }`}
               />
             ))}
