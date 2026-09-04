@@ -12,10 +12,12 @@ import { getCountryMeta } from "../../data/countries";
 import { recordKey, type Mode } from "../../data/modes";
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { theme } from "../../lib/globeTheme";
+import { featureCentre, regionFraming, type Geometry } from "../../lib/geo";
 
 
 type CountryFeature = {
   properties: { name: string };
+  geometry: Geometry;
 };
 
 const globeMaterial = new THREE.MeshPhongMaterial({
@@ -82,12 +84,19 @@ export default function GlobeGame({ mode, limitMs }: Props) {
 
   useEffect(() => () => window.clearTimeout(wrongTimer.current), []);
 
-  // Frame the globe a little closer than the default, once the map arrives.
+  // Frame the globe once the map arrives: on the region for a continent round,
+  // or the familiar world view for the modes that span it.
   useEffect(() => {
     if (!features.length || framed.current) return;
-    globeRef.current?.pointOfView({ lat: 12, lng: 20, altitude: 2.1 }, 0);
+    const framing =
+      mode.regional &&
+      regionFraming(features.map((f) => featureCentre(f.geometry)));
+    globeRef.current?.pointOfView(
+      framing || { lat: 12, lng: 20, altitude: 2.1 },
+      0
+    );
     framed.current = true;
-  }, [features]);
+  }, [features, mode]);
 
   useEffect(() => {
     if (features.length) begin();

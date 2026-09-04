@@ -67,3 +67,39 @@ export function featureCentre(geometry: Geometry): {
 export function altitudeFor(span: number): number {
   return Math.min(2.2, Math.max(0.38, 0.25 + span / 22));
 }
+
+/** Value at a percentile of a sorted copy of the list. */
+function percentile(sorted: number[], p: number): number {
+  const i = Math.min(sorted.length - 1, Math.max(0, Math.round(p * (sorted.length - 1))));
+  return sorted[i];
+}
+
+/**
+ * Where to sit to take in a whole region.
+ *
+ * Built from each country's centre rather than a bounding box over every
+ * coordinate, and read at the 10th/90th percentile rather than the extremes,
+ * because one outlier ruins the framing: Russia counts as Europe, and its
+ * largest landmass is in Siberia, which would otherwise drag the continent's
+ * view thousands of kilometres east.
+ */
+export function regionFraming(
+  centres: { lat: number; lng: number }[]
+): { lat: number; lng: number; altitude: number } | null {
+  if (centres.length === 0) return null;
+
+  const lats = centres.map((c) => c.lat).sort((a, b) => a - b);
+  const lngs = centres.map((c) => c.lng).sort((a, b) => a - b);
+  const lat = percentile(lats, 0.5);
+  const lng = percentile(lngs, 0.5);
+
+  const latSpan = percentile(lats, 0.9) - percentile(lats, 0.1);
+  const lngSpan =
+    (percentile(lngs, 0.9) - percentile(lngs, 0.1)) *
+    Math.cos((lat * Math.PI) / 180);
+  const span = Math.max(latSpan, Math.abs(lngSpan));
+
+  // A gentler curve than altitudeFor: this frames a whole region, not one
+  // country, so it should sit back far enough to keep the edges in view.
+  return { lat, lng, altitude: Math.min(1.95, Math.max(0.6, 0.38 + span / 44)) };
+}
