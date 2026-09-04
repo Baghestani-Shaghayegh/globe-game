@@ -7,18 +7,8 @@ import type { CountryMeta } from "./countries";
 export type GameType = "name" | "find";
 
 export const GAME_TYPES: { id: GameType; label: string; blurb: string }[] = [
-  {
-    id: "name",
-    label: "Name it",
-    blurb:
-      "Click any country on the globe and type its name. No timer, no multiple choice — just how much of the map you can actually recall.",
-  },
-  {
-    id: "find",
-    label: "Find it",
-    blurb:
-      "We name a country, you find it on the globe. The same map, from the other direction.",
-  },
+  { id: "name", label: "Name it", blurb: "Click a country, type its name." },
+  { id: "find", label: "Find it", blurb: "We name a country, you find it." },
 ];
 
 /** Where a game type sends the player. */

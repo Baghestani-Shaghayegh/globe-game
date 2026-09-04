@@ -103,34 +103,41 @@ export default function Home() {
         <h1 className="text-center text-5xl font-semibold tracking-tight text-zinc-50 sm:text-6xl">
           WorldGuess
         </h1>
-        <p className="mt-4 min-h-[4.5rem] max-w-md text-center text-zinc-300">
-          {blurb}
+        <p className="mt-4 max-w-md text-center text-zinc-300">
+          How much of the world map can you actually recall?
         </p>
 
-        {/* Which way round the game runs — the modes below are the same either way. */}
-        <div
-          role="tablist"
-          aria-label="Game type"
-          className="mt-2 flex gap-1 rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur"
-        >
-          {GAME_TYPES.map((t) => (
-            <button
-              key={t.id}
-              role="tab"
-              aria-selected={gameType === t.id}
-              onClick={() => setGameType(t.id)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                gameType === t.id
-                  ? "bg-white/15 text-zinc-50"
-                  : "text-zinc-400 hover:text-zinc-100"
-              }`}
+        <div className="mt-10 w-full max-w-2xl rounded-2xl border border-white/[0.07] bg-white/[0.02] p-3 backdrop-blur-sm sm:p-4">
+          {/* Anchored to the cards because it changes what every one of them does. */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1 pb-3">
+            <span className="text-xs uppercase tracking-wider text-zinc-500">
+              How to play
+            </span>
+            <div
+              role="tablist"
+              aria-label="Game type"
+              className="flex gap-1 rounded-full border border-white/10 bg-white/5 p-1"
             >
-              {t.label}
-            </button>
-          ))}
-        </div>
+              {GAME_TYPES.map((t) => (
+                <button
+                  key={t.id}
+                  role="tab"
+                  aria-selected={gameType === t.id}
+                  onClick={() => setGameType(t.id)}
+                  className={`rounded-full px-3.5 py-1 text-sm font-medium transition-colors ${
+                    gameType === t.id
+                      ? "bg-white/15 text-zinc-50"
+                      : "text-zinc-400 hover:text-zinc-100"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <span className="text-sm text-zinc-400">{blurb}</span>
+          </div>
 
-        <div className="mt-10 grid w-full max-w-2xl gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           {headline.map((mode) => (
             <ModeCard
               key={mode.id}
@@ -147,7 +154,7 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="mt-8 w-full max-w-2xl">
+        <div className="mt-6 px-1">
           <div className="flex items-center gap-3">
             <span className="text-xs uppercase tracking-wider text-zinc-500">
               By continent
@@ -169,6 +176,7 @@ export default function Home() {
               />
             ))}
           </div>
+        </div>
         </div>
       </main>
     </div>
