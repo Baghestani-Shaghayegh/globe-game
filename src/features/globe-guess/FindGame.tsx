@@ -24,7 +24,9 @@ const globeMaterial = new THREE.MeshPhongMaterial({
 
 /** Long enough to fly the camera to the answer and let it register. */
 const FLIGHT_MS = 800;
-const REVEAL_HOLD_MS = 1500;
+const REVEAL_HOLD_MS = 1300;
+/** Flying back is quicker — it happens while the next country is being read. */
+const RETURN_MS = 700;
 
 /** Fisher-Yates, so each round asks for the countries in a different order. */
 function shuffled<T>(items: T[]): T[] {
@@ -150,6 +152,9 @@ export default function FindGame({ mode }: Props) {
   const handlePass = () => {
     if (!target || revealed) return;
 
+    // Remember where the player was looking, so they get their view back
+    // rather than being left zoomed in on the country they just missed.
+    const origin = globeRef.current?.pointOfView();
     const feature = features.find((f) => f.properties.name === target);
     if (feature) {
       const { lat, lng, span } = featureCentre(feature.geometry);
@@ -165,6 +170,8 @@ export default function FindGame({ mode }: Props) {
     wrongTimer.current = window.setTimeout(() => {
       setRevealed(null);
       advance();
+      // Pulls back while the next country is being read, so it costs no time.
+      if (origin) globeRef.current?.pointOfView(origin, RETURN_MS);
     }, FLIGHT_MS + REVEAL_HOLD_MS);
   };
 
