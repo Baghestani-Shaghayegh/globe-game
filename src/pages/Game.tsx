@@ -1,12 +1,20 @@
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useParams, useSearchParams } from "react-router-dom";
 import GlobeGame from "../features/globe-guess/GlobeGame";
 import FindGame from "../features/globe-guess/FindGame";
-import { getMode, type GameType } from "../data/modes";
+import { getMode, parseLimit, type GameType } from "../data/modes";
 
 export default function Game({ type }: { type: GameType }) {
   const mode = getMode(useParams().mode);
+  const [params] = useSearchParams();
 
   if (!mode) return <Navigate to="/" replace />;
 
-  return type === "find" ? <FindGame mode={mode} /> : <GlobeGame mode={mode} />;
+  const seconds = parseLimit(params.get("limit"));
+  const limitMs = seconds === null ? null : seconds * 1000;
+
+  return type === "find" ? (
+    <FindGame mode={mode} limitMs={limitMs} />
+  ) : (
+    <GlobeGame mode={mode} limitMs={limitMs} />
+  );
 }

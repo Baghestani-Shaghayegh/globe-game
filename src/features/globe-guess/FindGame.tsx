@@ -38,10 +38,10 @@ function shuffled<T>(items: T[]): T[] {
   return out;
 }
 
-type Props = { mode: Mode };
+type Props = { mode: Mode; limitMs: number | null };
 
 /** "Find it": the game names a country and the player clicks it on the globe. */
-export default function FindGame({ mode }: Props) {
+export default function FindGame({ mode, limitMs }: Props) {
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const wrongTimer = useRef<number | undefined>(undefined);
@@ -59,7 +59,7 @@ export default function FindGame({ mode }: Props) {
   /** The answer, revealed after a pass. */
   const [revealed, setRevealed] = useState<string | null>(null);
 
-  const round = useRound(recordKey("find", mode.id));
+  const round = useRound(recordKey("find", mode.id, limitMs), limitMs);
   const { begin, reset, tick, end, summary } = round;
 
   useEffect(() => {
@@ -117,6 +117,11 @@ export default function FindGame({ mode }: Props) {
   const endRound = useCallback(() => {
     end({ found: foundNames.size, total: features.length, guesses });
   }, [end, foundNames.size, features.length, guesses]);
+
+  // The countdown reaching zero ends the round wherever the player is.
+  useEffect(() => {
+    if (round.timeUp) endRound();
+  }, [round.timeUp, endRound]);
 
   // Nothing left to ask means the round is over.
   useEffect(() => {
@@ -250,6 +255,7 @@ export default function FindGame({ mode }: Props) {
         found={foundNames.size}
         total={features.length}
         ms={round.displayMs}
+        countdown={round.countdown}
         modeLabel={mode.label}
         modeLevel={mode.level}
         onFinish={summary ? null : endRound}
@@ -309,6 +315,7 @@ export default function FindGame({ mode }: Props) {
       {summary && !round.reviewingMap && (
         <RoundSummary
           completed={summary.completed}
+          outOfTime={round.countdown && !summary.completed}
           ms={summary.ms}
           found={summary.found}
           total={summary.total}

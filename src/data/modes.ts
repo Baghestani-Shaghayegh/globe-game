@@ -11,17 +11,50 @@ export const GAME_TYPES: { id: GameType; label: string; blurb: string }[] = [
   { id: "find", label: "Find it", blurb: "We name a country, you find it." },
 ];
 
+/**
+ * How long a round may last. `null` is the open-ended clock that counts up;
+ * every other option counts down and stops the game when it reaches zero.
+ */
+export const TIME_LIMITS: { seconds: number | null; label: string }[] = [
+  { seconds: null, label: "Count up" },
+  { seconds: 60, label: "1 min" },
+  { seconds: 180, label: "3 min" },
+  { seconds: 300, label: "5 min" },
+  { seconds: 600, label: "10 min" },
+];
+
+/** Only limits we offer are accepted, so a hand-edited URL can't set an odd one. */
+export function parseLimit(raw: string | null): number | null {
+  const seconds = Number(raw);
+  return TIME_LIMITS.some((l) => l.seconds !== null && l.seconds === seconds)
+    ? seconds
+    : null;
+}
+
 /** Where a game type sends the player. */
-export function gamePath(type: GameType, modeId: string): string {
-  return type === "find" ? `/find/${modeId}` : `/play/${modeId}`;
+export function gamePath(
+  type: GameType,
+  modeId: string,
+  limitSeconds: number | null
+): string {
+  const base = type === "find" ? `/find/${modeId}` : `/play/${modeId}`;
+  return limitSeconds === null ? base : `${base}?limit=${limitSeconds}`;
 }
 
 /**
  * Which record bucket a round belongs to. "name" keeps the bare mode id it used
  * before there was a second game type, so those records carry over.
  */
-export function recordKey(type: GameType, modeId: string): string {
-  return type === "find" ? `find:${modeId}` : modeId;
+export function recordKey(
+  type: GameType,
+  modeId: string,
+  limitSeconds: number | null
+): string {
+  const base = type === "find" ? `find:${modeId}` : modeId;
+  // A timed round and an open one aren't comparable — under a countdown the
+  // clock always reads the same, so only the score means anything. Each limit
+  // keeps its own record.
+  return limitSeconds === null ? base : `${base}@${limitSeconds}`;
 }
 
 export type ModeId =

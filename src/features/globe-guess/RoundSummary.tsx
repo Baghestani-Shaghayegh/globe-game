@@ -5,6 +5,8 @@ import { theme } from "../../lib/globeTheme";
 type Props = {
   /** True when every country was found, false when the player finished early. */
   completed: boolean;
+  /** The round was stopped by the countdown rather than by the player. */
+  outOfTime: boolean;
   ms: number;
   found: number;
   total: number;
@@ -23,6 +25,7 @@ type Props = {
 
 export default function RoundSummary({
   completed,
+  outOfTime,
   ms,
   found,
   total,
@@ -38,7 +41,11 @@ export default function RoundSummary({
       <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-[#141b23] shadow-2xl">
         <div className="px-6 pt-6 text-center">
           <p className="text-sm text-zinc-400">
-            {completed ? `You found all ${total}` : "Run ended"}
+            {completed
+              ? `You found all ${total}`
+              : outOfTime
+                ? "Time's up"
+                : "Run ended"}
           </p>
           <p className="mt-1 text-4xl font-semibold tabular-nums text-zinc-50">
             {formatDuration(ms)}

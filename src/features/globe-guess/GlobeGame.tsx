@@ -25,9 +25,10 @@ const globeMaterial = new THREE.MeshPhongMaterial({
 
 type Props = {
   mode: Mode;
+  limitMs: number | null;
 };
 
-export default function GlobeGame({ mode }: Props) {
+export default function GlobeGame({ mode, limitMs }: Props) {
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const wrongTimer = useRef<number | undefined>(undefined);
@@ -41,7 +42,7 @@ export default function GlobeGame({ mode }: Props) {
   const [foundNames, setFoundNames] = useState<Set<string>>(new Set());
   const [guesses, setGuesses] = useState(0);
 
-  const round = useRound(recordKey("name", mode.id));
+  const round = useRound(recordKey("name", mode.id, limitMs), limitMs);
   const { begin, reset, tick, end, summary } = round;
 
   const resetRun = useCallback(() => {
@@ -112,6 +113,11 @@ export default function GlobeGame({ mode }: Props) {
     end({ found: foundNames.size, total: features.length, guesses });
     setSelected(null);
   }, [end, foundNames.size, features.length, guesses]);
+
+  // The countdown reaching zero ends the round wherever the player is.
+  useEffect(() => {
+    if (round.timeUp) endRun();
+  }, [round.timeUp, endRun]);
 
   // Finding the last country ends the round on its own.
   useEffect(() => {
@@ -203,6 +209,7 @@ export default function GlobeGame({ mode }: Props) {
         found={foundNames.size}
         total={features.length}
         ms={round.displayMs}
+        countdown={round.countdown}
         modeLabel={mode.label}
         modeLevel={mode.level}
         onFinish={summary ? null : endRun}
@@ -240,6 +247,7 @@ export default function GlobeGame({ mode }: Props) {
       {summary && !round.reviewingMap && (
         <RoundSummary
           completed={summary.completed}
+          outOfTime={round.countdown && !summary.completed}
           ms={summary.ms}
           found={summary.found}
           total={summary.total}

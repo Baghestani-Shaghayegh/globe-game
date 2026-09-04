@@ -5,6 +5,8 @@ type Props = {
   found: number;
   total: number;
   ms: number;
+  /** True when the clock counts down, so it can warn as it empties. */
+  countdown: boolean;
   modeLabel: string;
   modeLevel: 1 | 2 | 3;
   /** Ends the round. Null once it has already ended. */
@@ -23,6 +25,7 @@ export default function GameHud({
   found,
   total,
   ms,
+  countdown,
   modeLabel,
   modeLevel,
   onFinish,
@@ -67,8 +70,14 @@ export default function GameHud({
       <span className="h-4 w-px bg-white/10" aria-hidden="true" />
 
       <span
-        className="tabular-nums text-zinc-300"
-        aria-label="Time elapsed"
+        className={`tabular-nums ${
+          countdown && ms <= 10_000
+            ? "font-medium text-rose-400"
+            : countdown && ms <= 30_000
+              ? "text-amber-300"
+              : "text-zinc-300"
+        }`}
+        aria-label={countdown ? "Time remaining" : "Time elapsed"}
         role="timer"
       >
         {formatDuration(ms)}
