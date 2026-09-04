@@ -1,11 +1,12 @@
 import { Navigate, useParams } from "react-router-dom";
 import GlobeGame from "../features/globe-guess/GlobeGame";
-import { getMode } from "../data/modes";
+import FindGame from "../features/globe-guess/FindGame";
+import { getMode, type GameType } from "../data/modes";
 
-export default function Game() {
+export default function Game({ type }: { type: GameType }) {
   const mode = getMode(useParams().mode);
 
   if (!mode) return <Navigate to="/" replace />;
 
-  return <GlobeGame mode={mode} />;
+  return type === "find" ? <FindGame mode={mode} /> : <GlobeGame mode={mode} />;
 }

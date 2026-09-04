@@ -1,5 +1,39 @@
 import type { CountryMeta } from "./countries";
 
+/**
+ * The two ways a round can be played: "name" shows a country and asks for its
+ * name, "find" names a country and asks where it is.
+ */
+export type GameType = "name" | "find";
+
+export const GAME_TYPES: { id: GameType; label: string; blurb: string }[] = [
+  {
+    id: "name",
+    label: "Name it",
+    blurb:
+      "Click any country on the globe and type its name. No timer, no multiple choice — just how much of the map you can actually recall.",
+  },
+  {
+    id: "find",
+    label: "Find it",
+    blurb:
+      "We name a country, you find it on the globe. The same map, from the other direction.",
+  },
+];
+
+/** Where a game type sends the player. */
+export function gamePath(type: GameType, modeId: string): string {
+  return type === "find" ? `/find/${modeId}` : `/play/${modeId}`;
+}
+
+/**
+ * Which record bucket a round belongs to. "name" keeps the bare mode id it used
+ * before there was a second game type, so those records carry over.
+ */
+export function recordKey(type: GameType, modeId: string): string {
+  return type === "find" ? `find:${modeId}` : modeId;
+}
+
 export type ModeId =
   | "easy"
   | "hard"

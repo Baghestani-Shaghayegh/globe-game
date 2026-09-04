@@ -1,4 +1,4 @@
-import type { ModeId } from "../data/modes";
+
 
 export type Run = {
   /** How long the run lasted, in milliseconds. */
@@ -11,7 +11,11 @@ export type Run = {
   total: number;
 };
 
-type Store = Partial<Record<ModeId, Run[]>>;
+/**
+ * Keyed by `recordKey(gameType, modeId)` — the classic game keeps the bare mode
+ * id it has always used, so existing records survive.
+ */
+type Store = Record<string, Run[] | undefined>;
 
 // v3: continent modes dropped territories, so their old totals no longer
 // match the map. Bumping the key retires that history rather than showing
@@ -67,35 +71,35 @@ function write(store: Store) {
   }
 }
 
-export function getRuns(mode: ModeId): Run[] {
-  const runs = read()[mode];
+export function getRuns(key: string): Run[] {
+  const runs = read()[key];
   return Array.isArray(runs) ? runs.filter(isRun) : [];
 }
 
 /** Files a finished run, newest first, and returns the mode's updated history. */
-export function addRun(mode: ModeId, run: Omit<Run, "at">): Run[] {
+export function addRun(key: string, run: Omit<Run, "at">): Run[] {
   const runs = [
     { ...run, ms: Math.round(run.ms), at: new Date().toISOString() },
-    ...getRuns(mode),
+    ...getRuns(key),
   ].slice(0, MAX_RUNS);
 
   const store = read();
-  store[mode] = runs;
+  store[key] = runs;
   write(store);
   return runs;
 }
 
 /** The fastest full clear, or null if the mode has never been completed. */
-export function bestTime(mode: ModeId): Run | null {
-  const cleared = getRuns(mode).filter(isComplete);
+export function bestTime(key: string): Run | null {
+  const cleared = getRuns(key).filter(isComplete);
   return cleared.length
     ? cleared.reduce((best, run) => (run.ms < best.ms ? run : best))
     : null;
 }
 
 /** The furthest anyone got in this mode — ties broken by the quicker run. */
-export function bestScore(mode: ModeId): Run | null {
-  const runs = getRuns(mode);
+export function bestScore(key: string): Run | null {
+  const runs = getRuns(key);
   return runs.length
     ? runs.reduce((best, run) =>
         run.found > best.found ||
@@ -110,10 +114,10 @@ export function bestScore(mode: ModeId): Run | null {
  * What to show on a mode card: a clear time once the mode has been finished,
  * otherwise how far the player has got.
  */
-export function bestLabel(mode: ModeId): string | null {
-  const cleared = bestTime(mode);
+export function bestLabel(key: string): string | null {
+  const cleared = bestTime(key);
   if (cleared) return formatDuration(cleared.ms);
-  const score = bestScore(mode);
+  const score = bestScore(key);
   return score ? `${score.found}/${score.total}` : null;
 }
 

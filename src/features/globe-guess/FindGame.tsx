@@ -3,31 +3,35 @@ import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
 import * as THREE from "three";
 import { Link, useNavigate } from "react-router-dom";
-import GuessModal from "./GuessModal";
 import RoundSummary from "./RoundSummary";
 import GameHud from "./GameHud";
 import ExitConfirm from "./ExitConfirm";
 import { useRound } from "./useRound";
 import { getCountryMeta } from "../../data/countries";
 import { recordKey, type Mode } from "../../data/modes";
-import { isCorrectGuess } from "../../lib/answerMatch";
 import { theme } from "../../lib/globeTheme";
 
-
-type CountryFeature = {
-  properties: { name: string };
-};
+type CountryFeature = { properties: { name: string } };
 
 const globeMaterial = new THREE.MeshPhongMaterial({
   color: theme.sphere,
   shininess: 0,
 });
 
-type Props = {
-  mode: Mode;
-};
+/** Fisher-Yates, so each round asks for the countries in a different order. */
+function shuffled<T>(items: T[]): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
 
-export default function GlobeGame({ mode }: Props) {
+type Props = { mode: Mode };
+
+/** "Find it": the game names a country and the player clicks it on the globe. */
+export default function FindGame({ mode }: Props) {
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const wrongTimer = useRef<number | undefined>(undefined);
@@ -35,27 +39,27 @@ export default function GlobeGame({ mode }: Props) {
 
   const [features, setFeatures] = useState<CountryFeature[]>([]);
   const [loadError, setLoadError] = useState(false);
-  const [selected, setSelected] = useState<CountryFeature | null>(null);
-  const [guess, setGuess] = useState("");
-  const [isWrong, setIsWrong] = useState(false);
+  /** Names still to ask for, in the order they'll be asked. */
+  const [queue, setQueue] = useState<string[]>([]);
   const [foundNames, setFoundNames] = useState<Set<string>>(new Set());
+  const [passedNames, setPassedNames] = useState<Set<string>>(new Set());
   const [guesses, setGuesses] = useState(0);
+  /** The country just clicked in error, flashed red for a moment. */
+  const [wrongName, setWrongName] = useState<string | null>(null);
+  /** The answer, revealed after a pass. */
+  const [revealed, setRevealed] = useState<string | null>(null);
 
-  const round = useRound(recordKey("name", mode.id));
+  const round = useRound(recordKey("find", mode.id));
   const { begin, reset, tick, end, summary } = round;
 
-  const resetRun = useCallback(() => {
+  useEffect(() => {
     reset();
     setFoundNames(new Set());
+    setPassedNames(new Set());
+    setQueue([]);
     setGuesses(0);
-    setSelected(null);
-    setGuess("");
-    setIsWrong(false);
-  }, [reset]);
-
-  useEffect(() => {
-    // Switching modes starts a fresh round, and with it a fresh clock.
-    resetRun();
+    setWrongName(null);
+    setRevealed(null);
 
     let cancelled = false;
     fetch("/data/world.geojson")
@@ -65,11 +69,11 @@ export default function GlobeGame({ mode }: Props) {
       })
       .then((data: { features: CountryFeature[] }) => {
         if (cancelled) return;
-        setFeatures(
-          data.features.filter((f) =>
-            mode.includes(getCountryMeta(f.properties.name))
-          )
+        const playable = data.features.filter((f) =>
+          mode.includes(getCountryMeta(f.properties.name))
         );
+        setFeatures(playable);
+        setQueue(shuffled(playable.map((f) => f.properties.name)));
       })
       .catch(() => {
         if (!cancelled) setLoadError(true);
@@ -77,11 +81,10 @@ export default function GlobeGame({ mode }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [mode, resetRun]);
+  }, [mode, reset]);
 
   useEffect(() => () => window.clearTimeout(wrongTimer.current), []);
 
-  // Frame the globe a little closer than the default, once the map arrives.
   useEffect(() => {
     if (!features.length || framed.current) return;
     globeRef.current?.pointOfView({ lat: 12, lng: 20, altitude: 2.1 }, 0);
@@ -98,48 +101,51 @@ export default function GlobeGame({ mode }: Props) {
     return () => window.clearInterval(id);
   }, [features.length, summary, tick]);
 
-  const suggestionNames = useMemo(
-    () =>
-      features
-        .map((f) => getCountryMeta(f.properties.name).displayName)
-        .sort((a, b) => a.localeCompare(b)),
-    [features]
-  );
+  const target = queue[0] ?? null;
+  const targetLabel = target ? getCountryMeta(target).displayName : "";
 
-  const allFound = features.length > 0 && foundNames.size === features.length;
-
-  const endRun = useCallback(() => {
+  const endRound = useCallback(() => {
     end({ found: foundNames.size, total: features.length, guesses });
-    setSelected(null);
   }, [end, foundNames.size, features.length, guesses]);
 
-  // Finding the last country ends the round on its own.
+  // Nothing left to ask means the round is over.
   useEffect(() => {
-    if (allFound) endRun();
-  }, [allFound, endRun]);
+    if (features.length > 0 && queue.length === 0) endRound();
+  }, [features.length, queue.length, endRound]);
 
-  const closeModal = () => {
-    setSelected(null);
-    setGuess("");
-    setIsWrong(false);
+  const advance = () => {
+    setQueue((prev) => prev.slice(1));
+    setWrongName(null);
   };
 
-  const handleSubmit = (value: string) => {
-    if (!selected || !value.trim()) return;
-
+  const handleClick = (name: string) => {
+    if (summary || !target || revealed) return;
     setGuesses((n) => n + 1);
-    const country = getCountryMeta(selected.properties.name);
-    if (isCorrectGuess(value, country)) {
-      setFoundNames((prev) => new Set(prev).add(country.geoName));
-      closeModal();
-    } else {
-      setIsWrong(true);
-      window.clearTimeout(wrongTimer.current);
-      wrongTimer.current = window.setTimeout(() => setIsWrong(false), 600);
+
+    if (name === target) {
+      setFoundNames((prev) => new Set(prev).add(name));
+      advance();
+      return;
     }
+
+    // Wrong country — flash it, and leave the same target in place to retry.
+    setWrongName(name);
+    window.clearTimeout(wrongTimer.current);
+    wrongTimer.current = window.setTimeout(() => setWrongName(null), 600);
   };
 
-  /** The back arrow only interrupts when there is progress worth keeping. */
+  /** Gives up on the current country: shows where it was, then moves on. */
+  const handlePass = () => {
+    if (!target || revealed) return;
+    setPassedNames((prev) => new Set(prev).add(target));
+    setRevealed(target);
+    window.clearTimeout(wrongTimer.current);
+    wrongTimer.current = window.setTimeout(() => {
+      setRevealed(null);
+      advance();
+    }, 1100);
+  };
+
   const handleBack = () => {
     if (summary || foundNames.size === 0) {
       navigate("/");
@@ -147,6 +153,28 @@ export default function GlobeGame({ mode }: Props) {
     }
     round.setConfirmingExit(true);
   };
+
+  const playAgain = () => {
+    reset();
+    setFoundNames(new Set());
+    setPassedNames(new Set());
+    setGuesses(0);
+    setWrongName(null);
+    setRevealed(null);
+    setQueue(shuffled(features.map((f) => f.properties.name)));
+  };
+
+  const capColor = useMemo(
+    () => (d: object) => {
+      const { name } = (d as CountryFeature).properties;
+      if (name === wrongName) return theme.missed;
+      if (name === revealed) return theme.selected;
+      if (foundNames.has(name)) return theme.found;
+      if (summary) return passedNames.has(name) ? theme.missed : theme.unfound;
+      return theme.unfound;
+    },
+    [wrongName, revealed, foundNames, passedNames, summary]
+  );
 
   if (loadError) {
     return (
@@ -176,26 +204,14 @@ export default function GlobeGame({ mode }: Props) {
         atmosphereColor={theme.atmosphere}
         atmosphereAltitude={0.14}
         polygonsData={features}
-        polygonCapColor={(d) => {
-          const { name } = (d as CountryFeature).properties;
-          if (foundNames.has(name)) return theme.found;
-          // Once the run is over, everything left is shown as missed.
-          if (summary) return theme.missed;
-          if (selected && selected.properties.name === name)
-            return theme.selected;
-          return theme.unfound;
-        }}
+        polygonCapColor={capColor}
         polygonSideColor={() => theme.sphere}
         polygonStrokeColor={() => theme.stroke}
         polygonAltitude={() => 0.012}
         polygonsTransitionDuration={0}
-        onPolygonClick={(polygon) => {
-          if (summary) return;
-          const feature = polygon as CountryFeature;
-          if (!foundNames.has(feature.properties.name)) {
-            setSelected(feature);
-          }
-        }}
+        onPolygonClick={(polygon) =>
+          handleClick((polygon as CountryFeature).properties.name)
+        }
       />
 
       <GameHud
@@ -205,14 +221,36 @@ export default function GlobeGame({ mode }: Props) {
         ms={round.displayMs}
         modeLabel={mode.label}
         modeLevel={mode.level}
-        onFinish={summary ? null : endRun}
+        onFinish={summary ? null : endRound}
       />
+
+      {!summary && target && (
+        <div
+          className={`absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-2 rounded-xl border border-white/10 bg-[#141b23]/90 px-6 py-3 text-center backdrop-blur sm:top-24 ${
+            wrongName ? "animate-shake" : ""
+          }`}
+        >
+          <p className="text-xs uppercase tracking-wider text-zinc-500">
+            {revealed ? "It was here" : "Find"}
+          </p>
+          <p className="text-xl font-medium text-zinc-50 sm:text-2xl">
+            {targetLabel}
+          </p>
+          <button
+            onClick={handlePass}
+            disabled={revealed !== null}
+            className="text-xs text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300 disabled:no-underline disabled:opacity-40"
+          >
+            Show me
+          </button>
+        </div>
+      )}
 
       {round.confirmingExit && (
         <ExitConfirm
           found={foundNames.size}
           total={features.length}
-          onFinish={endRun}
+          onFinish={endRound}
           onKeepPlaying={() => round.setConfirmingExit(false)}
           onDiscard={() => navigate("/")}
         />
@@ -247,20 +285,10 @@ export default function GlobeGame({ mode }: Props) {
           isBest={summary.isBest}
           previousBest={summary.previousBest}
           missedCount={summary.total - summary.found}
-          onPlayAgain={resetRun}
+          onPlayAgain={playAgain}
           onReviewMap={() => round.setReviewingMap(true)}
         />
       )}
-
-      <GuessModal
-        open={selected !== null}
-        names={suggestionNames}
-        value={guess}
-        isWrong={isWrong}
-        onChange={setGuess}
-        onSubmit={handleSubmit}
-        onClose={closeModal}
-      />
     </div>
   );
 }

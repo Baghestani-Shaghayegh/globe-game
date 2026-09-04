@@ -3,7 +3,14 @@ import { useNavigate } from "react-router-dom";
 import ModeCard from "../components/ModeCard";
 import ContinentCard from "../components/ContinentCard";
 import { getCountryMeta } from "../data/countries";
-import { MODES, type ModeId } from "../data/modes";
+import {
+  GAME_TYPES,
+  MODES,
+  gamePath,
+  recordKey,
+  type GameType,
+  type ModeId,
+} from "../data/modes";
 import { bestLabel } from "../lib/records";
 
 // Three.js is heavy — let the menu paint first, then fade the globe in behind it.
@@ -48,15 +55,18 @@ function useModeCounts(): Counts {
   return counts;
 }
 
-function useBests(): Partial<Record<ModeId, string | null>> {
+/** Records are per game type, so the labels change with the toggle. */
+function useBests(type: GameType): Partial<Record<ModeId, string | null>> {
   const [bests, setBests] = useState<Partial<Record<ModeId, string | null>>>({});
 
   // Read after mount — storage isn't available while rendering on every client.
   useEffect(() => {
     setBests(
-      Object.fromEntries(MODES.map((mode) => [mode.id, bestLabel(mode.id)]))
+      Object.fromEntries(
+        MODES.map((mode) => [mode.id, bestLabel(recordKey(type, mode.id))])
+      )
     );
-  }, []);
+  }, [type]);
 
   return bests;
 }
@@ -64,7 +74,10 @@ function useBests(): Partial<Record<ModeId, string | null>> {
 export default function Home() {
   const navigate = useNavigate();
   const counts = useModeCounts();
-  const bests = useBests();
+  const [gameType, setGameType] = useState<GameType>("name");
+  const bests = useBests(gameType);
+  const blurb =
+    GAME_TYPES.find((t) => t.id === gameType)?.blurb ?? GAME_TYPES[0].blurb;
 
   const headline = MODES.filter((mode) => !mode.regional);
   const regional = MODES.filter((mode) => mode.regional);
@@ -90,10 +103,32 @@ export default function Home() {
         <h1 className="text-center text-5xl font-semibold tracking-tight text-zinc-50 sm:text-6xl">
           WorldGuess
         </h1>
-        <p className="mt-4 max-w-md text-center text-zinc-300">
-          Click any country on the globe and type its name. No timer, no
-          multiple choice — just how much of the map you can actually recall.
+        <p className="mt-4 min-h-[4.5rem] max-w-md text-center text-zinc-300">
+          {blurb}
         </p>
+
+        {/* Which way round the game runs — the modes below are the same either way. */}
+        <div
+          role="tablist"
+          aria-label="Game type"
+          className="mt-2 flex gap-1 rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur"
+        >
+          {GAME_TYPES.map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={gameType === t.id}
+              onClick={() => setGameType(t.id)}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                gameType === t.id
+                  ? "bg-white/15 text-zinc-50"
+                  : "text-zinc-400 hover:text-zinc-100"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
         <div className="mt-10 grid w-full max-w-2xl gap-4 sm:grid-cols-2">
           {headline.map((mode) => (
@@ -107,7 +142,7 @@ export default function Home() {
               noun={mode.noun}
               count={counts[mode.id] ?? null}
               best={bests[mode.id] ?? null}
-              onSelect={() => navigate(`/play/${mode.id}`)}
+              onSelect={() => navigate(gamePath(gameType, mode.id))}
             />
           ))}
         </div>
@@ -130,7 +165,7 @@ export default function Home() {
                 noun={mode.noun}
                 count={counts[mode.id] ?? null}
                 best={bests[mode.id] ?? null}
-                onSelect={() => navigate(`/play/${mode.id}`)}
+                onSelect={() => navigate(gamePath(gameType, mode.id))}
               />
             ))}
           </div>
