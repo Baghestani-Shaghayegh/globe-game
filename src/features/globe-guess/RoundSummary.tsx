@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { formatDuration } from "../../lib/records";
+import { theme } from "../../lib/globeTheme";
 
 type Props = {
   /** True when every country was found, false when the player finished early. */
@@ -13,8 +14,8 @@ type Props = {
   isBest: boolean;
   /** The record this run was measured against, if there was one. */
   previousBest: string | null;
-  /** Display names of everything left unfound, already sorted. */
-  missed: string[];
+  /** How many countries were left unfound. */
+  missedCount: number;
   onPlayAgain: () => void;
   /** Hides the panel so the revealed globe can be studied. */
   onReviewMap: () => void;
@@ -28,13 +29,13 @@ export default function RoundSummary({
   accuracy,
   isBest,
   previousBest,
-  missed,
+  missedCount,
   onPlayAgain,
   onReviewMap,
 }: Props) {
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#07111c]/55 p-4">
-      <div className="flex max-h-full w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#141b23] shadow-2xl">
+      <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-[#141b23] shadow-2xl">
         <div className="px-6 pt-6 text-center">
           <p className="text-sm text-zinc-400">
             {completed ? `You found all ${total}` : "Run ended"}
@@ -66,29 +67,22 @@ export default function RoundSummary({
           )}
         </div>
 
-        {missed.length > 0 && (
-          <div className="mt-5 min-h-0 flex-1 overflow-y-auto border-t border-white/[0.07] px-6 py-4">
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="text-xs uppercase tracking-wider text-zinc-500">
-                Missed ({missed.length})
-              </p>
-              <button
-                onClick={onReviewMap}
-                className="text-xs text-zinc-400 underline underline-offset-4 transition-colors hover:text-zinc-100"
-              >
-                Show on globe
-              </button>
-            </div>
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {missed.map((name) => (
-                <span
-                  key={name}
-                  className="rounded-md bg-white/[0.06] px-2 py-1 text-xs text-zinc-300"
-                >
-                  {name}
-                </span>
-              ))}
-            </div>
+        {missedCount > 0 && (
+          <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/[0.07] px-6 py-3.5">
+            <span className="flex items-center gap-2 text-sm text-zinc-400">
+              <span
+                aria-hidden="true"
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: theme.missed }}
+              />
+              <span className="tabular-nums">{missedCount}</span> missed
+            </span>
+            <button
+              onClick={onReviewMap}
+              className="text-xs text-zinc-400 underline underline-offset-4 transition-colors hover:text-zinc-100"
+            >
+              Show on globe
+            </button>
           </div>
         )}
 

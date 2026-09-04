@@ -157,7 +157,8 @@ export default function GlobeGame({ difficulty }: Props) {
     // Read the records before filing this run, so we compare against the past.
     const previousTime = bestTime(difficulty);
     const previousScore = bestScore(difficulty);
-    addRun(difficulty, { ms, found, total });
+    // A run with nothing found isn't a result worth keeping.
+    if (found > 0) addRun(difficulty, { ms, found, total });
 
     setSummary({
       ms,
@@ -167,7 +168,7 @@ export default function GlobeGame({ difficulty }: Props) {
       accuracy: guesses > 0 ? Math.round((found / guesses) * 100) : null,
       isBest: completed
         ? !previousTime || ms < previousTime.ms
-        : !previousScore || found > previousScore.found,
+        : found > 0 && (!previousScore || found > previousScore.found),
       previousBest: completed
         ? previousTime
           ? formatDuration(previousTime.ms)
@@ -184,14 +185,6 @@ export default function GlobeGame({ difficulty }: Props) {
   useEffect(() => {
     if (allFound) endRun();
   }, [allFound, endRun]);
-
-  const missedNames = useMemo(() => {
-    if (!summary) return [];
-    return features
-      .filter((f) => !foundNames.has(f.properties.name))
-      .map((f) => getCountryMeta(f.properties.name).displayName)
-      .sort((a, b) => a.localeCompare(b));
-  }, [summary, features, foundNames]);
 
   const closeModal = () => {
     setSelected(null);
@@ -389,7 +382,7 @@ export default function GlobeGame({ difficulty }: Props) {
               className="h-2 w-2 rounded-full"
               style={{ backgroundColor: theme.missed }}
             />
-            {missedNames.length} missed
+            {summary.total - summary.found} missed
           </span>
           <button
             onClick={() => setReviewingMap(false)}
@@ -409,7 +402,7 @@ export default function GlobeGame({ difficulty }: Props) {
           accuracy={summary.accuracy}
           isBest={summary.isBest}
           previousBest={summary.previousBest}
-          missed={missedNames}
+          missedCount={summary.total - summary.found}
           onPlayAgain={resetRun}
           onReviewMap={() => setReviewingMap(true)}
         />
