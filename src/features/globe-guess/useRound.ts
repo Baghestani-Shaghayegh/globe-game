@@ -1,9 +1,19 @@
 import { useCallback, useRef, useState } from "react";
 import { addRun, bestScore, bestTime, formatDuration } from "../../lib/records";
+import {
+  emptyScore,
+  scoreCorrect,
+  scoreHint,
+  scoreWrong,
+  type HintKind,
+  type Score,
+} from "../../lib/scoring";
 
 /** Everything the summary screen needs, frozen at the moment the run ended. */
 export type Summary = {
   ms: number;
+  points: number;
+  bestStreak: number;
   found: number;
   total: number;
   completed: boolean;
@@ -30,6 +40,7 @@ export function useRound(recordKey: string, limitMs: number | null) {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [confirmingExit, setConfirmingExit] = useState(false);
   const [reviewingMap, setReviewingMap] = useState(false);
+  const [score, setScore] = useState<Score>(emptyScore);
 
   /** Starts the clock the first time it's called; later calls do nothing. */
   const begin = useCallback(() => {
@@ -43,6 +54,7 @@ export function useRound(recordKey: string, limitMs: number | null) {
     setSummary(null);
     setConfirmingExit(false);
     setReviewingMap(false);
+    setScore(emptyScore);
   }, []);
 
   const tick = useCallback(() => {
@@ -70,10 +82,20 @@ export function useRound(recordKey: string, limitMs: number | null) {
       const previousTime = bestTime(recordKey);
       const previousScore = bestScore(recordKey);
       // A run with nothing found isn't a result worth keeping.
-      if (found > 0) addRun(recordKey, { ms, found, total });
+      if (found > 0) {
+        addRun(recordKey, {
+          ms,
+          found,
+          total,
+          points: score.points,
+          bestStreak: score.bestStreak,
+        });
+      }
 
       setSummary({
         ms,
+        points: score.points,
+        bestStreak: score.bestStreak,
         found,
         total,
         completed,
@@ -91,7 +113,7 @@ export function useRound(recordKey: string, limitMs: number | null) {
       });
       setConfirmingExit(false);
     },
-    [recordKey, limitMs]
+    [recordKey, limitMs, score]
   );
 
   const remainingMs =
@@ -102,6 +124,16 @@ export function useRound(recordKey: string, limitMs: number | null) {
     reset,
     tick,
     end,
+    score,
+    /** Records a correct answer, continuing the streak. */
+    correct: useCallback(() => setScore(scoreCorrect), []),
+    /** Records a wrong answer, which only costs the streak. */
+    wrong: useCallback(() => setScore(scoreWrong), []),
+    /** Charges for a hint. */
+    spendHint: useCallback(
+      (hint: HintKind) => setScore((s) => scoreHint(s, hint)),
+      []
+    ),
     summary,
     /** True once a countdown has run out and the round hasn't been filed yet. */
     timeUp: remainingMs === 0 && !summary,

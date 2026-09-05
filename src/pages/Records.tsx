@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   allBuckets,
+  bestPoints,
   clearAll,
   formatDuration,
   isComplete,
@@ -42,6 +43,7 @@ function runLabel(run: Run): string {
 }
 
 function BucketCard({ bucket }: { bucket: Bucket }) {
+  const topScore = bestPoints(bucket.key)?.points ?? null;
   const cleared = bucket.runs.filter(isComplete);
   const best = cleared.length
     ? cleared.reduce((a, b) => (a.ms < b.ms ? a : b))
@@ -63,7 +65,12 @@ function BucketCard({ bucket }: { bucket: Bucket }) {
         <span className="text-xs text-zinc-500">
           {typeLabel(bucket.type)} · {limitLabel(bucket.limitSeconds)}
         </span>
-        <span className="ml-auto text-sm tabular-nums text-zinc-300">
+        <span className="ml-auto flex items-center gap-2 text-sm tabular-nums text-zinc-300">
+          {topScore !== null && (
+            <span className="rounded-md bg-white/5 px-1.5 py-0.5 text-xs text-zinc-400">
+              {topScore.toLocaleString()} pts
+            </span>
+          )}
           Best {runLabel(best)}
         </span>
       </div>
@@ -92,6 +99,16 @@ function BucketCard({ bucket }: { bucket: Bucket }) {
             <span className="tabular-nums text-zinc-500">
               {formatDuration(run.ms)}
             </span>
+            {typeof run.points === "number" && (
+              <span className="tabular-nums text-zinc-500">
+                {run.points.toLocaleString()} pts
+              </span>
+            )}
+            {typeof run.bestStreak === "number" && run.bestStreak > 1 && (
+              <span className="tabular-nums text-amber-300/70">
+                {run.bestStreak}× streak
+              </span>
+            )}
             {run === best && (
               <span className="rounded bg-white/10 px-1.5 py-0.5 text-[11px] uppercase tracking-wider text-zinc-300">
                 Best

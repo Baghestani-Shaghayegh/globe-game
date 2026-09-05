@@ -9,6 +9,8 @@ type Props = {
   countdown: boolean;
   modeLabel: string;
   modeLevel: 1 | 2 | 3;
+  points: number;
+  streak: number;
   /** Ends the round. Null once it has already ended. */
   onFinish: (() => void) | null;
 };
@@ -28,6 +30,8 @@ export default function GameHud({
   countdown,
   modeLabel,
   modeLevel,
+  points,
+  streak,
   onFinish,
 }: Props) {
   const progress = total ? Math.round((found / total) * 100) : 0;
@@ -55,7 +59,22 @@ export default function GameHud({
 
       <span className="h-4 w-px bg-white/10" aria-hidden="true" />
 
-      <span className="tabular-nums text-zinc-100">
+      <span className="tabular-nums font-medium text-zinc-100" aria-label="Score">
+        {points.toLocaleString()}
+      </span>
+
+      {streak > 1 && (
+        <span
+          className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-xs font-medium tabular-nums text-amber-300"
+          aria-label={`Streak of ${streak}`}
+        >
+          {streak}×
+        </span>
+      )}
+
+      <span className="h-4 w-px bg-white/10" aria-hidden="true" />
+
+      <span className="hidden tabular-nums text-zinc-100 sm:inline">
         <b className="font-medium">{found}</b>
         <span className="text-zinc-500"> / {total}</span>
       </span>

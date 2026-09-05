@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { normalizeAnswer } from "../../lib/answerMatch";
+import { HINT_COST } from "../../lib/scoring";
 
 type Props = {
   open: boolean;
+  /** Hints already bought for this country, so each is paid for once. */
+  hints: { letter?: string; continent?: string };
+  onHint: (kind: "letter" | "continent") => void;
   /** Country names offered as autocomplete suggestions */
   names: string[];
   value: string;
@@ -16,6 +20,8 @@ const MAX_SUGGESTIONS = 6;
 
 export default function GuessModal({
   open,
+  hints,
+  onHint,
   names,
   value,
   isWrong,
@@ -131,6 +137,35 @@ export default function GuessModal({
             ))}
           </ul>
         )}
+
+        {/* Hints cost points, so each is bought once and then just displayed. */}
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          {hints.letter ? (
+            <span className="rounded-md bg-white/5 px-2 py-1 text-zinc-300">
+              Starts with <b className="font-medium">{hints.letter}</b>
+            </span>
+          ) : (
+            <button
+              onClick={() => onHint("letter")}
+              className="rounded-md border border-white/10 px-2 py-1 text-zinc-400 transition-colors hover:border-white/25 hover:text-zinc-100"
+            >
+              First letter <span className="text-zinc-600">−{HINT_COST.letter}</span>
+            </button>
+          )}
+
+          {hints.continent ? (
+            <span className="rounded-md bg-white/5 px-2 py-1 capitalize text-zinc-300">
+              {hints.continent}
+            </span>
+          ) : (
+            <button
+              onClick={() => onHint("continent")}
+              className="rounded-md border border-white/10 px-2 py-1 text-zinc-400 transition-colors hover:border-white/25 hover:text-zinc-100"
+            >
+              Continent <span className="text-zinc-600">−{HINT_COST.continent}</span>
+            </button>
+          )}
+        </div>
 
         <div className="mt-4 flex items-center gap-2">
           <button

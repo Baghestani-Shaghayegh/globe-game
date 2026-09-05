@@ -11,6 +11,10 @@ export type Run = {
   found: number;
   /** How many the mode asked for. */
   total: number;
+  /** Points scored. Absent on runs recorded before scoring existed. */
+  points?: number;
+  /** Longest run of correct answers. Absent on older runs. */
+  bestStreak?: number;
 };
 
 /**
@@ -140,6 +144,14 @@ export function bestTime(key: string): Run | null {
   const cleared = getRuns(key).filter(isComplete);
   return cleared.length
     ? cleared.reduce((best, run) => (run.ms < best.ms ? run : best))
+    : null;
+}
+
+/** The highest score in this mode, ignoring runs from before scoring existed. */
+export function bestPoints(key: string): Run | null {
+  const scored = getRuns(key).filter((run) => typeof run.points === "number");
+  return scored.length
+    ? scored.reduce((best, run) => (run.points! > best.points! ? run : best))
     : null;
 }
 

@@ -8,6 +8,8 @@ type Props = {
   /** The round was stopped by the countdown rather than by the player. */
   outOfTime: boolean;
   ms: number;
+  points: number;
+  bestStreak: number;
   found: number;
   total: number;
   /** Share of guesses that landed, or null if the player never guessed. */
@@ -27,6 +29,8 @@ export default function RoundSummary({
   completed,
   outOfTime,
   ms,
+  points,
+  bestStreak,
   found,
   total,
   accuracy,
@@ -48,7 +52,20 @@ export default function RoundSummary({
                 : "Run ended"}
           </p>
           <p className="mt-1 text-4xl font-semibold tabular-nums text-zinc-50">
+            {points.toLocaleString()}
+          </p>
+          <p className="mt-0.5 text-xs uppercase tracking-wider text-zinc-500">
+            points
+          </p>
+
+          <p className="mt-3 text-sm tabular-nums text-zinc-400">
             {formatDuration(ms)}
+            {bestStreak > 1 && (
+              <>
+                <span className="mx-1.5 text-zinc-600">·</span>
+                best streak {bestStreak}
+              </>
+            )}
           </p>
 
           <p className="mt-2 text-sm tabular-nums text-zinc-400">

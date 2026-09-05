@@ -43,9 +43,14 @@ export default function GlobeGame({ mode, limitMs }: Props) {
   const [isWrong, setIsWrong] = useState(false);
   const [foundNames, setFoundNames] = useState<Set<string>>(new Set());
   const [guesses, setGuesses] = useState(0);
+  /** Hints bought for the country currently being guessed. */
+  const [hints, setHints] = useState<{ letter?: string; continent?: string }>(
+    {}
+  );
 
   const round = useRound(recordKey("name", mode.id, limitMs), limitMs);
-  const { begin, reset, tick, end, summary } = round;
+  const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
+    round;
 
   const resetRun = useCallback(() => {
     reset();
@@ -54,6 +59,7 @@ export default function GlobeGame({ mode, limitMs }: Props) {
     setSelected(null);
     setGuess("");
     setIsWrong(false);
+    setHints({});
   }, [reset]);
 
   useEffect(() => {
@@ -134,6 +140,21 @@ export default function GlobeGame({ mode, limitMs }: Props) {
     setSelected(null);
     setGuess("");
     setIsWrong(false);
+    setHints({});
+  };
+
+  /** Buys a hint about the country on screen, once each. */
+  const handleHint = (kind: "letter" | "continent") => {
+    if (!selected || hints[kind]) return;
+    const country = getCountryMeta(selected.properties.name);
+    spendHint(kind);
+    setHints((prev) => ({
+      ...prev,
+      [kind]:
+        kind === "letter"
+          ? country.displayName.charAt(0).toUpperCase()
+          : country.continents[0],
+    }));
   };
 
   const handleSubmit = (value: string) => {
@@ -143,8 +164,10 @@ export default function GlobeGame({ mode, limitMs }: Props) {
     const country = getCountryMeta(selected.properties.name);
     if (isCorrectGuess(value, country)) {
       setFoundNames((prev) => new Set(prev).add(country.geoName));
+      correct();
       closeModal();
     } else {
+      wrong();
       setIsWrong(true);
       window.clearTimeout(wrongTimer.current);
       wrongTimer.current = window.setTimeout(() => setIsWrong(false), 600);
@@ -218,6 +241,8 @@ export default function GlobeGame({ mode, limitMs }: Props) {
         countdown={round.countdown}
         modeLabel={mode.label}
         modeLevel={mode.level}
+        points={round.score.points}
+        streak={round.score.streak}
         onFinish={summary ? null : endRun}
       />
 
@@ -255,6 +280,8 @@ export default function GlobeGame({ mode, limitMs }: Props) {
           completed={summary.completed}
           outOfTime={round.countdown && !summary.completed}
           ms={summary.ms}
+          points={summary.points}
+          bestStreak={summary.bestStreak}
           found={summary.found}
           total={summary.total}
           accuracy={summary.accuracy}
@@ -268,6 +295,8 @@ export default function GlobeGame({ mode, limitMs }: Props) {
 
       <GuessModal
         open={selected !== null}
+        hints={hints}
+        onHint={handleHint}
         names={suggestionNames}
         value={guess}
         isWrong={isWrong}

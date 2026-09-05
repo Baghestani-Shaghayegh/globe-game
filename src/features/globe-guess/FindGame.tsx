@@ -9,7 +9,9 @@ import ExitConfirm from "./ExitConfirm";
 import { useRound } from "./useRound";
 import { getCountryMeta } from "../../data/countries";
 import { recordKey, type Mode } from "../../data/modes";
+import { HINT_COST } from "../../lib/scoring";
 import { theme } from "../../lib/globeTheme";
+import type { Continent } from "../../data/continents";
 import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
 
 type CountryFeature = {
@@ -58,9 +60,12 @@ export default function FindGame({ mode, limitMs }: Props) {
   const [wrongName, setWrongName] = useState<string | null>(null);
   /** The answer, revealed after a pass. */
   const [revealed, setRevealed] = useState<string | null>(null);
+  /** Narrowed to the target's continent, once that hint is bought. */
+  const [narrowedTo, setNarrowedTo] = useState<Continent | null>(null);
 
   const round = useRound(recordKey("find", mode.id, limitMs), limitMs);
-  const { begin, reset, tick, end, summary } = round;
+  const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
+    round;
 
   useEffect(() => {
     reset();
@@ -70,6 +75,7 @@ export default function FindGame({ mode, limitMs }: Props) {
     setGuesses(0);
     setWrongName(null);
     setRevealed(null);
+    setNarrowedTo(null);
 
     let cancelled = false;
     fetch("/data/world.geojson")
@@ -134,6 +140,14 @@ export default function FindGame({ mode, limitMs }: Props) {
   const advance = () => {
     setQueue((prev) => prev.slice(1));
     setWrongName(null);
+    setNarrowedTo(null);
+  };
+
+  /** Narrows the search to the target's continent, for a price. */
+  const handleNarrow = () => {
+    if (!target || narrowedTo || revealed) return;
+    spendHint("region");
+    setNarrowedTo(getCountryMeta(target).continents[0]);
   };
 
   const handleClick = (name: string) => {
@@ -142,11 +156,13 @@ export default function FindGame({ mode, limitMs }: Props) {
 
     if (name === target) {
       setFoundNames((prev) => new Set(prev).add(name));
+      correct();
       advance();
       return;
     }
 
     // Wrong country — flash it, and leave the same target in place to retry.
+    wrong();
     setWrongName(name);
     window.clearTimeout(wrongTimer.current);
     wrongTimer.current = window.setTimeout(() => setWrongName(null), 600);
@@ -172,6 +188,7 @@ export default function FindGame({ mode, limitMs }: Props) {
       );
     }
 
+    spendHint("answer");
     setPassedNames((prev) => new Set(prev).add(target));
     setRevealed(target);
     window.clearTimeout(wrongTimer.current);
@@ -198,6 +215,7 @@ export default function FindGame({ mode, limitMs }: Props) {
     setGuesses(0);
     setWrongName(null);
     setRevealed(null);
+    setNarrowedTo(null);
     setQueue(shuffled(features.map((f) => f.properties.name)));
   };
 
@@ -208,9 +226,11 @@ export default function FindGame({ mode, limitMs }: Props) {
       if (name === revealed) return theme.selected;
       if (foundNames.has(name)) return theme.found;
       if (summary) return passedNames.has(name) ? theme.missed : theme.unfound;
+      if (narrowedTo && !getCountryMeta(name).continents.includes(narrowedTo))
+        return theme.sphere;
       return theme.unfound;
     },
-    [wrongName, revealed, foundNames, passedNames, summary]
+    [wrongName, revealed, foundNames, passedNames, summary, narrowedTo]
   );
 
   if (loadError) {
@@ -261,6 +281,8 @@ export default function FindGame({ mode, limitMs }: Props) {
         countdown={round.countdown}
         modeLabel={mode.label}
         modeLevel={mode.level}
+        points={round.score.points}
+        streak={round.score.streak}
         onFinish={summary ? null : endRound}
       />
 
@@ -276,13 +298,25 @@ export default function FindGame({ mode, limitMs }: Props) {
           <p className="text-xl font-medium text-zinc-50 sm:text-2xl">
             {targetLabel}
           </p>
-          <button
-            onClick={handlePass}
-            disabled={revealed !== null}
-            className="text-xs text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300 disabled:no-underline disabled:opacity-40"
-          >
-            Show me
-          </button>
+          <div className="flex items-center gap-3 text-xs">
+            {!narrowedTo && (
+              <button
+                onClick={handleNarrow}
+                disabled={revealed !== null}
+                className="text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300 disabled:no-underline disabled:opacity-40"
+              >
+                Narrow it down{" "}
+                <span className="text-zinc-600">−{HINT_COST.region}</span>
+              </button>
+            )}
+            <button
+              onClick={handlePass}
+              disabled={revealed !== null}
+              className="text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300 disabled:no-underline disabled:opacity-40"
+            >
+              Show me <span className="text-zinc-600">−{HINT_COST.answer}</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -320,6 +354,8 @@ export default function FindGame({ mode, limitMs }: Props) {
           completed={summary.completed}
           outOfTime={round.countdown && !summary.completed}
           ms={summary.ms}
+          points={summary.points}
+          bestStreak={summary.bestStreak}
           found={summary.found}
           total={summary.total}
           accuracy={summary.accuracy}
