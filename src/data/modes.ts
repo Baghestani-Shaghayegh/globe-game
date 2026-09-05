@@ -15,7 +15,10 @@ export const GAME_TYPES: { id: GameType; label: string; blurb: string }[] = [
  * Extra rules a round can be played under. "sudden" ends the round on the
  * first wrong answer; "relaxed" is the ordinary game.
  */
-export type Ruleset = "relaxed" | "sudden";
+export type Ruleset = "relaxed" | "sudden" | "blitz";
+
+/** How long a single country may be left unanswered under blitz rules. */
+export const BLITZ_SECONDS = 15;
 
 export const RULESETS: { id: Ruleset; label: string; blurb: string }[] = [
   {
@@ -28,10 +31,15 @@ export const RULESETS: { id: Ruleset; label: string; blurb: string }[] = [
     label: "Sudden death",
     blurb: "One wrong answer ends the round.",
   },
+  {
+    id: "blitz",
+    label: "Blitz",
+    blurb: `${BLITZ_SECONDS} seconds per country, then it moves on.`,
+  },
 ];
 
 export function parseRuleset(raw: string | null): Ruleset {
-  return raw === "sudden" ? "sudden" : "relaxed";
+  return raw === "sudden" || raw === "blitz" ? raw : "relaxed";
 }
 
 /**
@@ -64,7 +72,7 @@ export function gamePath(
   const base = type === "find" ? `/find/${modeId}` : `/play/${modeId}`;
   const query = new URLSearchParams();
   if (limitSeconds !== null) query.set("limit", String(limitSeconds));
-  if (ruleset === "sudden") query.set("rules", "sudden");
+  if (ruleset !== "relaxed") query.set("rules", ruleset);
   const search = query.toString();
   return search ? `${base}?${search}` : base;
 }
@@ -79,7 +87,7 @@ export function recordKey(
   limitSeconds: number | null,
   ruleset: Ruleset = "relaxed"
 ): string {
-  const prefix = ruleset === "sudden" ? "sudden:" : "";
+  const prefix = ruleset === "relaxed" ? "" : `${ruleset}:`;
   const base = prefix + (type === "find" ? `find:${modeId}` : modeId);
   // A timed round and an open one aren't comparable — under a countdown the
   // clock always reads the same, so only the score means anything. Each limit

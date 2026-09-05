@@ -100,8 +100,12 @@ export function allBuckets(): Bucket[] {
       if (!valid.length) return null;
 
       const [head, limit] = key.split("@");
-      const ruleset: Ruleset = head.startsWith("sudden:") ? "sudden" : "relaxed";
-      const withoutRules = head.replace(/^sudden:/, "");
+      const ruleset: Ruleset = head.startsWith("sudden:")
+        ? "sudden"
+        : head.startsWith("blitz:")
+          ? "blitz"
+          : "relaxed";
+      const withoutRules = head.replace(/^(sudden|blitz):/, "");
       const type: GameType = withoutRules.startsWith("find:") ? "find" : "name";
       return {
         key,

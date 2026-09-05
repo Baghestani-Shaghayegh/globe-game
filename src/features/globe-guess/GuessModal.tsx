@@ -6,6 +6,8 @@ type Props = {
   open: boolean;
   /** Hints already bought for this country, so each is paid for once. */
   hints: { letter?: string; continent?: string };
+  /** Seconds left on this country under blitz rules, or null when untimed. */
+  secondsLeft: number | null;
   onHint: (kind: "letter" | "continent") => void;
   /** Country names offered as autocomplete suggestions */
   names: string[];
@@ -21,6 +23,7 @@ const MAX_SUGGESTIONS = 6;
 export default function GuessModal({
   open,
   hints,
+  secondsLeft,
   onHint,
   names,
   value,
@@ -94,12 +97,24 @@ export default function GuessModal({
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <label
-          htmlFor="guess-input"
-          className="block text-sm font-medium text-zinc-100"
-        >
-          Which country is this?
-        </label>
+        <div className="flex items-baseline justify-between gap-3">
+          <label
+            htmlFor="guess-input"
+            className="block text-sm font-medium text-zinc-100"
+          >
+            Which country is this?
+          </label>
+          {secondsLeft !== null && (
+            <span
+              className={`text-sm font-medium tabular-nums ${
+                secondsLeft <= 5 ? "text-rose-400" : "text-zinc-400"
+              }`}
+              aria-label="Seconds left on this country"
+            >
+              {secondsLeft}s
+            </span>
+          )}
+        </div>
 
         <input
           id="guess-input"

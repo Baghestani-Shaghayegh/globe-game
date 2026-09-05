@@ -9,7 +9,12 @@ import GameHud from "./GameHud";
 import ExitConfirm from "./ExitConfirm";
 import { useRound } from "./useRound";
 import { getCountryMeta } from "../../data/countries";
-import { recordKey, type Mode, type Ruleset } from "../../data/modes";
+import {
+  BLITZ_SECONDS,
+  recordKey,
+  type Mode,
+  type Ruleset,
+} from "../../data/modes";
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { theme } from "../../lib/globeTheme";
 import { type Geometry } from "../../lib/geo";
@@ -44,6 +49,10 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
   const [isWrong, setIsWrong] = useState(false);
   const [foundNames, setFoundNames] = useState<Set<string>>(new Set());
   const [guesses, setGuesses] = useState(0);
+  /** Countries whose blitz clock ran out — they can't be answered again. */
+  const [expired, setExpired] = useState<Set<string>>(new Set());
+  /** Seconds left on the country being guessed, under blitz rules. */
+  const [secondsLeft, setSecondsLeft] = useState(BLITZ_SECONDS);
   /** Hints bought for the country currently being guessed. */
   const [hints, setHints] = useState<{ letter?: string; continent?: string }>(
     {}
@@ -56,11 +65,14 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
   const resetRun = useCallback(() => {
     reset();
     setFoundNames(new Set());
+    setExpired(new Set());
     setGuesses(0);
     setSelected(null);
     setGuess("");
     setIsWrong(false);
     setHints({});
+    setExpired(new Set());
+    setSecondsLeft(BLITZ_SECONDS);
   }, [reset]);
 
   useEffect(() => {
@@ -120,7 +132,10 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
     [features]
   );
 
-  const allFound = features.length > 0 && foundNames.size === features.length;
+  // Under blitz a country can be lost as well as found, and the round is over
+  // once every country has gone one way or the other.
+  const allFound =
+    features.length > 0 && foundNames.size + expired.size === features.length;
 
   const endRun = useCallback(() => {
     end({ found: foundNames.size, total: features.length, guesses });
@@ -142,7 +157,25 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
     setGuess("");
     setIsWrong(false);
     setHints({});
+    setSecondsLeft(BLITZ_SECONDS);
   };
+
+  /** Blitz: the clock on the country currently open, which gives up on it. */
+  useEffect(() => {
+    if (ruleset !== "blitz" || !selected || summary) return;
+    setSecondsLeft(BLITZ_SECONDS);
+    const name = selected.properties.name;
+    const id = window.setInterval(() => {
+      setSecondsLeft((left) => {
+        if (left > 1) return left - 1;
+        window.clearInterval(id);
+        setExpired((prev) => new Set(prev).add(name));
+        closeModal();
+        return BLITZ_SECONDS;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [ruleset, selected, summary]);
 
   /** Buys a hint about the country on screen, once each. */
   const handleHint = (kind: "letter" | "continent") => {
@@ -222,6 +255,7 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
         polygonCapColor={(d) => {
           const { name } = (d as CountryFeature).properties;
           if (foundNames.has(name)) return theme.found;
+          if (expired.has(name)) return theme.missed;
           // Once the run is over, everything left is shown as missed.
           if (summary) return theme.missed;
           if (selected && selected.properties.name === name)
@@ -235,7 +269,8 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
         onPolygonClick={(polygon) => {
           if (summary) return;
           const feature = polygon as CountryFeature;
-          if (!foundNames.has(feature.properties.name)) {
+          const { name } = feature.properties;
+          if (!foundNames.has(name) && !expired.has(name)) {
             setSelected(feature);
           }
         }}
@@ -305,6 +340,7 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
       <GuessModal
         open={selected !== null}
         hints={hints}
+        secondsLeft={ruleset === "blitz" ? secondsLeft : null}
         onHint={handleHint}
         names={suggestionNames}
         value={guess}

@@ -8,7 +8,12 @@ import GameHud from "./GameHud";
 import ExitConfirm from "./ExitConfirm";
 import { useRound } from "./useRound";
 import { getCountryMeta } from "../../data/countries";
-import { recordKey, type Mode, type Ruleset } from "../../data/modes";
+import {
+  BLITZ_SECONDS,
+  recordKey,
+  type Mode,
+  type Ruleset,
+} from "../../data/modes";
 import { HINT_COST } from "../../lib/scoring";
 import { theme } from "../../lib/globeTheme";
 import type { Continent } from "../../data/continents";
@@ -60,6 +65,8 @@ export default function FindGame({ mode, limitMs, ruleset }: Props) {
   const [wrongName, setWrongName] = useState<string | null>(null);
   /** The answer, revealed after a pass. */
   const [revealed, setRevealed] = useState<string | null>(null);
+  /** Seconds left on this country under blitz rules. */
+  const [secondsLeft, setSecondsLeft] = useState(BLITZ_SECONDS);
   /** Narrowed to the target's continent, once that hint is bought. */
   const [narrowedTo, setNarrowedTo] = useState<Continent | null>(null);
 
@@ -141,7 +148,23 @@ export default function FindGame({ mode, limitMs, ruleset }: Props) {
     setQueue((prev) => prev.slice(1));
     setWrongName(null);
     setNarrowedTo(null);
+    setSecondsLeft(BLITZ_SECONDS);
   };
+
+  /** Blitz: the clock on a single country, which passes it when it runs out. */
+  useEffect(() => {
+    if (ruleset !== "blitz" || !target || summary || revealed) return;
+    const id = window.setInterval(() => {
+      setSecondsLeft((left) => {
+        if (left > 1) return left - 1;
+        window.clearInterval(id);
+        setPassedNames((prev) => new Set(prev).add(target));
+        advance();
+        return BLITZ_SECONDS;
+      });
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [ruleset, target, summary, revealed]);
 
   /** Narrows the search to the target's continent, for a price. */
   const handleNarrow = () => {
@@ -298,6 +321,16 @@ export default function FindGame({ mode, limitMs, ruleset }: Props) {
           <p className="text-xs uppercase tracking-wider text-zinc-500">
             {revealed ? "It was here" : "Find"}
           </p>
+          {ruleset === "blitz" && !revealed && (
+            <p
+              className={`text-xs font-medium tabular-nums ${
+                secondsLeft <= 5 ? "text-rose-400" : "text-zinc-400"
+              }`}
+              aria-label="Seconds left on this country"
+            >
+              {secondsLeft}s
+            </p>
+          )}
           <p className="text-xl font-medium text-zinc-50 sm:text-2xl">
             {targetLabel}
           </p>

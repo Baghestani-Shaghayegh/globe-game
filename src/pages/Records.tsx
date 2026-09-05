@@ -65,6 +65,7 @@ function BucketCard({ bucket }: { bucket: Bucket }) {
         <span className="text-xs text-zinc-500">
           {typeLabel(bucket.type)} · {limitLabel(bucket.limitSeconds)}
           {bucket.ruleset === "sudden" && " · Sudden death"}
+          {bucket.ruleset === "blitz" && " · Blitz"}
         </span>
         <span className="ml-auto flex items-center gap-2 text-sm tabular-nums text-zinc-300">
           {topScore !== null && (
