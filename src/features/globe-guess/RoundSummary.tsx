@@ -7,6 +7,8 @@ type Props = {
   completed: boolean;
   /** The round was stopped by the countdown rather than by the player. */
   outOfTime: boolean;
+  /** Sudden death: a wrong answer ended it. */
+  endedOnMistake: boolean;
   ms: number;
   points: number;
   bestStreak: number;
@@ -28,6 +30,7 @@ type Props = {
 export default function RoundSummary({
   completed,
   outOfTime,
+  endedOnMistake,
   ms,
   points,
   bestStreak,
@@ -47,9 +50,11 @@ export default function RoundSummary({
           <p className="text-sm text-zinc-400">
             {completed
               ? `You found all ${total}`
-              : outOfTime
-                ? "Time's up"
-                : "Run ended"}
+              : endedOnMistake
+                ? "Wrong answer — round over"
+                : outOfTime
+                  ? "Time's up"
+                  : "Run ended"}
           </p>
           <p className="mt-1 text-4xl font-semibold tabular-nums text-zinc-50">
             {points.toLocaleString()}

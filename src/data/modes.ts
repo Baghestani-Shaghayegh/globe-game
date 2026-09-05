@@ -12,6 +12,29 @@ export const GAME_TYPES: { id: GameType; label: string; blurb: string }[] = [
 ];
 
 /**
+ * Extra rules a round can be played under. "sudden" ends the round on the
+ * first wrong answer; "relaxed" is the ordinary game.
+ */
+export type Ruleset = "relaxed" | "sudden";
+
+export const RULESETS: { id: Ruleset; label: string; blurb: string }[] = [
+  {
+    id: "relaxed",
+    label: "Relaxed",
+    blurb: "Wrong answers cost nothing but your streak.",
+  },
+  {
+    id: "sudden",
+    label: "Sudden death",
+    blurb: "One wrong answer ends the round.",
+  },
+];
+
+export function parseRuleset(raw: string | null): Ruleset {
+  return raw === "sudden" ? "sudden" : "relaxed";
+}
+
+/**
  * How long a round may last. `null` is the open-ended clock that counts up;
  * every other option counts down and stops the game when it reaches zero.
  */
@@ -35,10 +58,15 @@ export function parseLimit(raw: string | null): number | null {
 export function gamePath(
   type: GameType,
   modeId: string,
-  limitSeconds: number | null
+  limitSeconds: number | null,
+  ruleset: Ruleset = "relaxed"
 ): string {
   const base = type === "find" ? `/find/${modeId}` : `/play/${modeId}`;
-  return limitSeconds === null ? base : `${base}?limit=${limitSeconds}`;
+  const query = new URLSearchParams();
+  if (limitSeconds !== null) query.set("limit", String(limitSeconds));
+  if (ruleset === "sudden") query.set("rules", "sudden");
+  const search = query.toString();
+  return search ? `${base}?${search}` : base;
 }
 
 /**
@@ -48,9 +76,11 @@ export function gamePath(
 export function recordKey(
   type: GameType,
   modeId: string,
-  limitSeconds: number | null
+  limitSeconds: number | null,
+  ruleset: Ruleset = "relaxed"
 ): string {
-  const base = type === "find" ? `find:${modeId}` : modeId;
+  const prefix = ruleset === "sudden" ? "sudden:" : "";
+  const base = prefix + (type === "find" ? `find:${modeId}` : modeId);
   // A timed round and an open one aren't comparable — under a countdown the
   // clock always reads the same, so only the score means anything. Each limit
   // keeps its own record.

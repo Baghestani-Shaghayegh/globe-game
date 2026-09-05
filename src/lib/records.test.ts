@@ -10,7 +10,12 @@ import {
   getRuns,
   isComplete,
 } from "./records";
-import { gamePath, parseLimit, recordKey } from "../data/modes";
+import {
+  gamePath,
+  parseLimit,
+  parseRuleset,
+  recordKey,
+} from "../data/modes";
 
 beforeEach(() => localStorage.clear());
 
@@ -157,5 +162,35 @@ describe("time limits from the URL", () => {
     for (const raw of ["9999", "0", "-60", "abc", "", null]) {
       expect(parseLimit(raw)).toBeNull();
     }
+  });
+});
+
+describe("sudden death keeps its own records", () => {
+  it("uses a separate bucket from the relaxed round", () => {
+    expect(recordKey("name", "europe", null, "relaxed")).toBe("europe");
+    expect(recordKey("name", "europe", null, "sudden")).toBe("sudden:europe");
+    expect(recordKey("find", "asia", 180, "sudden")).toBe("sudden:find:asia@180");
+  });
+
+  it("round-trips a sudden-death key back into a playable path", () => {
+    const key = recordKey("find", "asia", 180, "sudden");
+    addRun(key, { ms: 1000, found: 3, total: 47 });
+    const bucket = allBuckets().find((b) => b.key === key)!;
+    expect(bucket).toMatchObject({
+      type: "find",
+      modeId: "asia",
+      limitSeconds: 180,
+      ruleset: "sudden",
+    });
+    expect(
+      gamePath(bucket.type, bucket.modeId, bucket.limitSeconds, bucket.ruleset)
+    ).toBe("/find/asia?limit=180&rules=sudden");
+  });
+
+  it("reads the ruleset out of the URL, defaulting to relaxed", () => {
+    expect(parseRuleset("sudden")).toBe("sudden");
+    expect(parseRuleset("relaxed")).toBe("relaxed");
+    expect(parseRuleset("nonsense")).toBe("relaxed");
+    expect(parseRuleset(null)).toBe("relaxed");
   });
 });

@@ -9,7 +9,7 @@ import GameHud from "./GameHud";
 import ExitConfirm from "./ExitConfirm";
 import { useRound } from "./useRound";
 import { getCountryMeta } from "../../data/countries";
-import { recordKey, type Mode } from "../../data/modes";
+import { recordKey, type Mode, type Ruleset } from "../../data/modes";
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { theme } from "../../lib/globeTheme";
 import { type Geometry } from "../../lib/geo";
@@ -28,9 +28,10 @@ const globeMaterial = new THREE.MeshPhongMaterial({
 type Props = {
   mode: Mode;
   limitMs: number | null;
+  ruleset: Ruleset;
 };
 
-export default function GlobeGame({ mode, limitMs }: Props) {
+export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const wrongTimer = useRef<number | undefined>(undefined);
@@ -48,7 +49,7 @@ export default function GlobeGame({ mode, limitMs }: Props) {
     {}
   );
 
-  const round = useRound(recordKey("name", mode.id, limitMs), limitMs);
+  const round = useRound(recordKey("name", mode.id, limitMs, ruleset), limitMs);
   const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
     round;
 
@@ -168,6 +169,13 @@ export default function GlobeGame({ mode, limitMs }: Props) {
       closeModal();
     } else {
       wrong();
+      if (ruleset === "sudden") {
+        // The round is over; let the shake land before the summary appears.
+        setIsWrong(true);
+        window.clearTimeout(wrongTimer.current);
+        wrongTimer.current = window.setTimeout(endRun, 700);
+        return;
+      }
       setIsWrong(true);
       window.clearTimeout(wrongTimer.current);
       wrongTimer.current = window.setTimeout(() => setIsWrong(false), 600);
@@ -279,6 +287,7 @@ export default function GlobeGame({ mode, limitMs }: Props) {
         <RoundSummary
           completed={summary.completed}
           outOfTime={round.countdown && !summary.completed}
+          endedOnMistake={ruleset === "sudden" && !summary.completed}
           ms={summary.ms}
           points={summary.points}
           bestStreak={summary.bestStreak}

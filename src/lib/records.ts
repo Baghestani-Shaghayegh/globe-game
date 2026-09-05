@@ -1,6 +1,6 @@
 
 
-import type { GameType } from "../data/modes";
+import type { GameType, Ruleset } from "../data/modes";
 
 export type Run = {
   /** How long the run lasted, in milliseconds. */
@@ -83,13 +83,14 @@ export type Bucket = {
   type: GameType;
   modeId: string;
   limitSeconds: number | null;
+  ruleset: Ruleset;
   runs: Run[];
 };
 
 /**
  * Every bucket that holds runs, newest activity first. Keys look like
- * `europe`, `find:europe` or `find:europe@180`, so this is `recordKey` read
- * backwards.
+ * `europe`, `find:europe`, `find:europe@180` or `sudden:find:europe@180`, so
+ * this is `recordKey` read backwards.
  */
 export function allBuckets(): Bucket[] {
   const store = read();
@@ -99,11 +100,14 @@ export function allBuckets(): Bucket[] {
       if (!valid.length) return null;
 
       const [head, limit] = key.split("@");
-      const type: GameType = head.startsWith("find:") ? "find" : "name";
+      const ruleset: Ruleset = head.startsWith("sudden:") ? "sudden" : "relaxed";
+      const withoutRules = head.replace(/^sudden:/, "");
+      const type: GameType = withoutRules.startsWith("find:") ? "find" : "name";
       return {
         key,
         type,
-        modeId: head.replace(/^find:/, ""),
+        ruleset,
+        modeId: withoutRules.replace(/^find:/, ""),
         limitSeconds: limit ? Number(limit) : null,
         runs: valid,
       };

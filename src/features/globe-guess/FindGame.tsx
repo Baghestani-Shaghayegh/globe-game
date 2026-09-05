@@ -8,7 +8,7 @@ import GameHud from "./GameHud";
 import ExitConfirm from "./ExitConfirm";
 import { useRound } from "./useRound";
 import { getCountryMeta } from "../../data/countries";
-import { recordKey, type Mode } from "../../data/modes";
+import { recordKey, type Mode, type Ruleset } from "../../data/modes";
 import { HINT_COST } from "../../lib/scoring";
 import { theme } from "../../lib/globeTheme";
 import type { Continent } from "../../data/continents";
@@ -40,10 +40,10 @@ function shuffled<T>(items: T[]): T[] {
   return out;
 }
 
-type Props = { mode: Mode; limitMs: number | null };
+type Props = { mode: Mode; limitMs: number | null; ruleset: Ruleset };
 
 /** "Find it": the game names a country and the player clicks it on the globe. */
-export default function FindGame({ mode, limitMs }: Props) {
+export default function FindGame({ mode, limitMs, ruleset }: Props) {
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const wrongTimer = useRef<number | undefined>(undefined);
@@ -63,7 +63,7 @@ export default function FindGame({ mode, limitMs }: Props) {
   /** Narrowed to the target's continent, once that hint is bought. */
   const [narrowedTo, setNarrowedTo] = useState<Continent | null>(null);
 
-  const round = useRound(recordKey("find", mode.id, limitMs), limitMs);
+  const round = useRound(recordKey("find", mode.id, limitMs, ruleset), limitMs);
   const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
     round;
 
@@ -165,7 +165,10 @@ export default function FindGame({ mode, limitMs }: Props) {
     wrong();
     setWrongName(name);
     window.clearTimeout(wrongTimer.current);
-    wrongTimer.current = window.setTimeout(() => setWrongName(null), 600);
+    wrongTimer.current = window.setTimeout(
+      ruleset === "sudden" ? endRound : () => setWrongName(null),
+      ruleset === "sudden" ? 700 : 600
+    );
   };
 
   /**
@@ -353,6 +356,7 @@ export default function FindGame({ mode, limitMs }: Props) {
         <RoundSummary
           completed={summary.completed}
           outOfTime={round.countdown && !summary.completed}
+          endedOnMistake={ruleset === "sudden" && !summary.completed}
           ms={summary.ms}
           points={summary.points}
           bestStreak={summary.bestStreak}

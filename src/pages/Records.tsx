@@ -64,6 +64,7 @@ function BucketCard({ bucket }: { bucket: Bucket }) {
         </span>
         <span className="text-xs text-zinc-500">
           {typeLabel(bucket.type)} · {limitLabel(bucket.limitSeconds)}
+          {bucket.ruleset === "sudden" && " · Sudden death"}
         </span>
         <span className="ml-auto flex items-center gap-2 text-sm tabular-nums text-zinc-300">
           {topScore !== null && (
@@ -123,7 +124,12 @@ function BucketCard({ bucket }: { bucket: Bucket }) {
 
       <div className="border-t border-white/[0.07] px-4 py-2.5">
         <Link
-          to={gamePath(bucket.type, bucket.modeId, bucket.limitSeconds)}
+          to={gamePath(
+            bucket.type,
+            bucket.modeId,
+            bucket.limitSeconds,
+            bucket.ruleset
+          )}
           className="text-xs text-zinc-400 underline underline-offset-4 transition-colors hover:text-zinc-100"
         >
           Play this again

@@ -6,10 +6,12 @@ import { getCountryMeta } from "../data/countries";
 import {
   GAME_TYPES,
   MODES,
+  RULESETS,
   TIME_LIMITS,
   gamePath,
   recordKey,
   type GameType,
+  type Ruleset,
   type ModeId,
 } from "../data/modes";
 import { bestLabel } from "../lib/records";
@@ -59,7 +61,8 @@ function useModeCounts(): Counts {
 /** Records are per game type and clock, so the labels follow both controls. */
 function useBests(
   type: GameType,
-  limit: number | null
+  limit: number | null,
+  ruleset: Ruleset
 ): Partial<Record<ModeId, string | null>> {
   const [bests, setBests] = useState<Partial<Record<ModeId, string | null>>>({});
 
@@ -69,11 +72,11 @@ function useBests(
       Object.fromEntries(
         MODES.map((mode) => [
           mode.id,
-          bestLabel(recordKey(type, mode.id, limit)),
+          bestLabel(recordKey(type, mode.id, limit, ruleset)),
         ])
       )
     );
-  }, [type, limit]);
+  }, [type, limit, ruleset]);
 
   return bests;
 }
@@ -83,7 +86,8 @@ export default function Home() {
   const counts = useModeCounts();
   const [gameType, setGameType] = useState<GameType>("name");
   const [limit, setLimit] = useState<number | null>(null);
-  const bests = useBests(gameType, limit);
+  const [ruleset, setRuleset] = useState<Ruleset>("relaxed");
+  const bests = useBests(gameType, limit, ruleset);
   const blurb =
     GAME_TYPES.find((t) => t.id === gameType)?.blurb ?? GAME_TYPES[0].blurb;
 
@@ -176,6 +180,35 @@ export default function Home() {
             </span>
           </div>
 
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1 pb-3">
+            <span className="text-xs uppercase tracking-wider text-zinc-500">
+              Rules
+            </span>
+            <div
+              role="group"
+              aria-label="Rules"
+              className="flex flex-wrap gap-1 rounded-full border border-white/10 bg-white/5 p-1"
+            >
+              {RULESETS.map((option) => (
+                <button
+                  key={option.id}
+                  aria-pressed={ruleset === option.id}
+                  onClick={() => setRuleset(option.id)}
+                  className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+                    ruleset === option.id
+                      ? "bg-white/15 text-zinc-50"
+                      : "text-zinc-400 hover:text-zinc-100"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <span className="text-sm text-zinc-400">
+              {RULESETS.find((r) => r.id === ruleset)?.blurb}
+            </span>
+          </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           {headline.map((mode) => (
             <ModeCard
@@ -188,7 +221,7 @@ export default function Home() {
               noun={mode.noun}
               count={counts[mode.id] ?? null}
               best={bests[mode.id] ?? null}
-              onSelect={() => navigate(gamePath(gameType, mode.id, limit))}
+              onSelect={() => navigate(gamePath(gameType, mode.id, limit, ruleset))}
             />
           ))}
         </div>
@@ -211,7 +244,7 @@ export default function Home() {
                 noun={mode.noun}
                 count={counts[mode.id] ?? null}
                 best={bests[mode.id] ?? null}
-                onSelect={() => navigate(gamePath(gameType, mode.id, limit))}
+                onSelect={() => navigate(gamePath(gameType, mode.id, limit, ruleset))}
               />
             ))}
           </div>
