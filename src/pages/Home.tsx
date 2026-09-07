@@ -15,6 +15,7 @@ import {
   type ModeId,
 } from "../data/modes";
 import { bestLabel } from "../lib/records";
+import { hintsEnabled, setHintsEnabled } from "../lib/prefs";
 import { flagUrl } from "../data/flags";
 import { cluesFor } from "../data/clues";
 
@@ -91,6 +92,10 @@ export default function Home() {
   const counts = useModeCounts(gameType);
   const [limit, setLimit] = useState<number | null>(null);
   const [ruleset, setRuleset] = useState<Ruleset>("relaxed");
+  // Unlike the clock and rules, this is a standing preference, so it sticks.
+  const [hints, setHints] = useState(true);
+
+  useEffect(() => setHints(hintsEnabled()), []);
   const bests = useBests(gameType, limit, ruleset);
   const blurb =
     GAME_TYPES.find((t) => t.id === gameType)?.blurb ?? GAME_TYPES[0].blurb;
@@ -210,6 +215,40 @@ export default function Home() {
             </div>
             <span className="text-sm text-zinc-400">
               {RULESETS.find((r) => r.id === ruleset)?.blurb}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1 pb-3">
+            <span className="text-xs uppercase tracking-wider text-zinc-500">
+              Hints
+            </span>
+            <div
+              role="group"
+              aria-label="Hints"
+              className="flex gap-1 rounded-full border border-white/10 bg-white/5 p-1"
+            >
+              {[true, false].map((on) => (
+                <button
+                  key={String(on)}
+                  aria-pressed={hints === on}
+                  onClick={() => {
+                    setHints(on);
+                    setHintsEnabled(on);
+                  }}
+                  className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+                    hints === on
+                      ? "bg-white/15 text-zinc-50"
+                      : "text-zinc-400 hover:text-zinc-100"
+                  }`}
+                >
+                  {on ? "On" : "Off"}
+                </button>
+              ))}
+            </div>
+            <span className="text-sm text-zinc-400">
+              {hints
+                ? "Buy a nudge, and pay for it in points."
+                : "No nudges — you can still be shown an answer."}
             </span>
           </div>
 

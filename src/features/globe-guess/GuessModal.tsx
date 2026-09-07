@@ -4,11 +4,12 @@ import { HINT_COST } from "../../lib/scoring";
 
 type Props = {
   open: boolean;
-  /** Hints already bought for this country, so each is paid for once. */
-  hints: { letter?: string; continent?: string };
+  /** The first letter, once that hint has been bought for this country. */
+  hintLetter: string | null;
   /** Seconds left on this country under blitz rules, or null when untimed. */
   secondsLeft: number | null;
-  onHint: (kind: "letter" | "continent") => void;
+  /** Buys the first letter. Null when the player has hints turned off. */
+  onHint: (() => void) | null;
   /** Country names offered as autocomplete suggestions */
   names: string[];
   value: string;
@@ -22,7 +23,7 @@ const MAX_SUGGESTIONS = 6;
 
 export default function GuessModal({
   open,
-  hints,
+  hintLetter,
   secondsLeft,
   onHint,
   names,
@@ -153,34 +154,25 @@ export default function GuessModal({
           </ul>
         )}
 
-        {/* Hints cost points, so each is bought once and then just displayed. */}
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-          {hints.letter ? (
-            <span className="rounded-md bg-white/5 px-2 py-1 text-zinc-300">
-              Starts with <b className="font-medium">{hints.letter}</b>
-            </span>
-          ) : (
-            <button
-              onClick={() => onHint("letter")}
-              className="rounded-md border border-white/10 px-2 py-1 text-zinc-400 transition-colors hover:border-white/25 hover:text-zinc-100"
-            >
-              First letter <span className="text-zinc-600">−{HINT_COST.letter}</span>
-            </button>
-          )}
-
-          {hints.continent ? (
-            <span className="rounded-md bg-white/5 px-2 py-1 capitalize text-zinc-300">
-              {hints.continent}
-            </span>
-          ) : (
-            <button
-              onClick={() => onHint("continent")}
-              className="rounded-md border border-white/10 px-2 py-1 text-zinc-400 transition-colors hover:border-white/25 hover:text-zinc-100"
-            >
-              Continent <span className="text-zinc-600">−{HINT_COST.continent}</span>
-            </button>
-          )}
-        </div>
+        {/* A hint costs points, so it is bought once and then just displayed.
+            The continent is not offered here: the globe already shows it. */}
+        {(hintLetter || onHint) && (
+          <div className="mt-3 text-xs">
+            {hintLetter ? (
+              <span className="rounded-md bg-white/5 px-2 py-1 text-zinc-300">
+                Starts with <b className="font-medium">{hintLetter}</b>
+              </span>
+            ) : (
+              <button
+                onClick={onHint ?? undefined}
+                className="rounded-md border border-white/10 px-2 py-1 text-zinc-400 transition-colors hover:border-white/25 hover:text-zinc-100"
+              >
+                First letter{" "}
+                <span className="text-zinc-600">−{HINT_COST.letter}</span>
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="mt-4 flex items-center gap-2">
           <button

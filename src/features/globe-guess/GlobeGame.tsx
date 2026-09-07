@@ -17,6 +17,7 @@ import {
 } from "../../data/modes";
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { theme } from "../../lib/globeTheme";
+import { hintsEnabled } from "../../lib/prefs";
 import { type Geometry } from "../../lib/geo";
 
 
@@ -53,11 +54,11 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
   const [expired, setExpired] = useState<Set<string>>(new Set());
   /** Seconds left on the country being guessed, under blitz rules. */
   const [secondsLeft, setSecondsLeft] = useState(BLITZ_SECONDS);
-  /** Hints bought for the country currently being guessed. */
-  const [hints, setHints] = useState<{ letter?: string; continent?: string }>(
-    {}
-  );
+  /** The first letter, once bought for the country currently being guessed. */
+  const [hintLetter, setHintLetter] = useState<string | null>(null);
 
+  // Read once: a preference changed mid-round shouldn't move the goalposts.
+  const [hintsOn] = useState(hintsEnabled);
   const round = useRound(recordKey("name", mode.id, limitMs, ruleset), limitMs);
   const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
     round;
@@ -70,7 +71,7 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
     setSelected(null);
     setGuess("");
     setIsWrong(false);
-    setHints({});
+    setHintLetter(null);
     setExpired(new Set());
     setSecondsLeft(BLITZ_SECONDS);
   }, [reset]);
@@ -156,7 +157,7 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
     setSelected(null);
     setGuess("");
     setIsWrong(false);
-    setHints({});
+    setHintLetter(null);
     setSecondsLeft(BLITZ_SECONDS);
   };
 
@@ -177,18 +178,16 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
     return () => window.clearInterval(id);
   }, [ruleset, selected, summary]);
 
-  /** Buys a hint about the country on screen, once each. */
-  const handleHint = (kind: "letter" | "continent") => {
-    if (!selected || hints[kind]) return;
-    const country = getCountryMeta(selected.properties.name);
-    spendHint(kind);
-    setHints((prev) => ({
-      ...prev,
-      [kind]:
-        kind === "letter"
-          ? country.displayName.charAt(0).toUpperCase()
-          : country.continents[0],
-    }));
+  /**
+   * Buys the first letter of the country on screen. The continent is not on
+   * offer here — the player is looking straight at it on the globe.
+   */
+  const handleHint = () => {
+    if (!selected || hintLetter) return;
+    spendHint("letter");
+    setHintLetter(
+      getCountryMeta(selected.properties.name).displayName.charAt(0).toUpperCase()
+    );
   };
 
   const handleSubmit = (value: string) => {
@@ -339,9 +338,9 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
 
       <GuessModal
         open={selected !== null}
-        hints={hints}
+        hintLetter={hintLetter}
         secondsLeft={ruleset === "blitz" ? secondsLeft : null}
-        onHint={handleHint}
+        onHint={hintsOn ? handleHint : null}
         names={suggestionNames}
         value={guess}
         isWrong={isWrong}

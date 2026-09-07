@@ -18,6 +18,7 @@ import {
 import { flagUrl } from "../../data/flags";
 import { cluesFor } from "../../data/clues";
 import { HINT_COST } from "../../lib/scoring";
+import { hintsEnabled } from "../../lib/prefs";
 import { theme } from "../../lib/globeTheme";
 import type { Continent } from "../../data/continents";
 import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
@@ -85,6 +86,8 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
   /** How many of this country's clues have been shown, in a famous-for round. */
   const [cluesShown, setCluesShown] = useState(1);
 
+  // Read once: a preference changed mid-round shouldn't move the goalposts.
+  const [hintsOn] = useState(hintsEnabled);
   const round = useRound(recordKey(type, mode.id, limitMs, ruleset), limitMs);
   const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
     round;
@@ -403,17 +406,20 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
           )}
 
           <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
-            {type === "famous" && target && cluesShown < cluesFor(target).length && (
-              <button
-                onClick={handleAnotherClue}
-                disabled={revealed !== null}
-                className="text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300 disabled:no-underline disabled:opacity-40"
-              >
-                Another clue{" "}
-                <span className="text-zinc-600">−{HINT_COST.letter}</span>
-              </button>
-            )}
-            {!narrowedTo && (
+            {hintsOn &&
+              type === "famous" &&
+              target &&
+              cluesShown < cluesFor(target).length && (
+                <button
+                  onClick={handleAnotherClue}
+                  disabled={revealed !== null}
+                  className="text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300 disabled:no-underline disabled:opacity-40"
+                  >
+                  Another clue{" "}
+                  <span className="text-zinc-600">−{HINT_COST.letter}</span>
+                </button>
+              )}
+            {hintsOn && !narrowedTo && (
               <button
                 onClick={handleNarrow}
                 disabled={revealed !== null}
@@ -423,6 +429,8 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
                 <span className="text-zinc-600">−{HINT_COST.region}</span>
               </button>
             )}
+            {/* Always offered, even with hints off: it is the way past a
+                country you cannot find, not a tip. */}
             <button
               onClick={handlePass}
               disabled={revealed !== null}
