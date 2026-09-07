@@ -19,7 +19,7 @@ import {
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { theme } from "../../lib/globeTheme";
 import { hintsEnabled } from "../../lib/prefs";
-import { type Geometry } from "../../lib/geo";
+import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
 
 
 type CountryFeature = {
@@ -58,6 +58,8 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
   const [expired, setExpired] = useState<Set<string>>(new Set());
   /** Seconds left on the country being guessed, under blitz rules. */
   const [secondsLeft, setSecondsLeft] = useState(BLITZ_SECONDS);
+  /** Where the keyboard cursor sits, for players who can't click the globe. */
+  const [cursor, setCursor] = useState<number | null>(null);
   /** The first letter, once bought for the country currently being guessed. */
   const [hintLetter, setHintLetter] = useState<string | null>(null);
 
@@ -162,6 +164,67 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
   useEffect(() => {
     if (allFound) endRun();
   }, [allFound, endRun]);
+
+  /**
+   * Countries still to name, ordered west to east rather than alphabetically —
+   * an alphabetical walk would hand the player the answers in order.
+   */
+  const selectable = useMemo(
+    () =>
+      features
+        .filter(
+          (f) =>
+            !foundNames.has(f.properties.name) && !expired.has(f.properties.name)
+        )
+        .map((f) => ({ feature: f, centre: featureCentre(f.geometry) }))
+        .sort((a, b) => a.centre.lng - b.centre.lng || a.centre.lat - b.centre.lat),
+    [features, foundNames, expired]
+  );
+
+  /**
+   * Keyboard play. The globe answers to the mouse only, so without this a
+   * keyboard user could look at the map but never pick anything on it.
+   */
+  useEffect(() => {
+    if (cursor === null || summary || selected) return;
+
+    const onKey = (event: KeyboardEvent) => {
+      const step =
+        event.key === "ArrowRight" || event.key === "ArrowDown"
+          ? 1
+          : event.key === "ArrowLeft" || event.key === "ArrowUp"
+            ? -1
+            : 0;
+      if (step !== 0) {
+        event.preventDefault();
+        setCursor((at) => {
+          const count = selectable.length;
+          return count ? ((at ?? 0) + step + count) % count : null;
+        });
+      } else if (event.key === "Enter" && selectable[cursor]) {
+        event.preventDefault();
+        setSelected(selectable[cursor].feature);
+      } else if (event.key === "Escape") {
+        setCursor(null);
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [cursor, selectable, summary, selected]);
+
+  // Turn the globe to whatever the cursor is on, so it can actually be seen.
+  useEffect(() => {
+    const at = cursor === null ? null : selectable[cursor];
+    if (!at) return;
+    globeRef.current?.pointOfView(
+      { ...at.centre, altitude: altitudeFor(at.centre.span) },
+      500
+    );
+  }, [cursor, selectable]);
+
+  const cursorName =
+    cursor !== null ? selectable[cursor]?.feature.properties.name : null;
 
   const closeModal = () => {
     setSelected(null);
@@ -282,6 +345,7 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
           const { name } = (d as CountryFeature).properties;
           if (foundNames.has(name)) return theme.found;
           if (expired.has(name)) return theme.missed;
+          if (name === cursorName) return theme.selected;
           // Once the run is over, everything left is shown as missed.
           if (summary) return theme.missed;
           if (selected && selected.properties.name === name)
@@ -309,6 +373,29 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
         streak={round.score.streak}
         onFinish={summary ? null : endRun}
       />
+
+      {/* Hidden until focused: a mouse player never sees it, a keyboard player
+          meets it as a tab stop. */}
+      {!summary && features.length > 0 && (
+        <div className="absolute inset-x-0 top-20 z-10 mx-auto w-fit">
+          {cursor === null ? (
+            <button
+              onClick={() => setCursor(0)}
+              className="sr-only rounded-md border border-white/20 bg-[#141b23] px-3 py-1.5 text-sm text-zinc-100 focus:not-sr-only focus:relative"
+            >
+              Pick a country with the keyboard
+            </button>
+          ) : (
+            <p className="rounded-lg border border-white/10 bg-[#141b23]/90 px-4 py-2 text-center text-sm text-zinc-300 backdrop-blur">
+              <b className="font-medium text-zinc-100">
+                {cursorName ? getCountryMeta(cursorName).displayName : ""}
+              </b>
+              <span className="mx-2 text-zinc-600">·</span>
+              arrows to move, enter to name it, esc to stop
+            </p>
+          )}
+        </div>
+      )}
 
       {round.confirmingExit && (
         <ExitConfirm

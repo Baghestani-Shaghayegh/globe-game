@@ -18,6 +18,7 @@ import {
 } from "../../data/modes";
 import { flagUrl } from "../../data/flags";
 import { cluesFor } from "../../data/clues";
+import { isCorrectGuess } from "../../lib/answerMatch";
 import { HINT_COST } from "../../lib/scoring";
 import { hintsEnabled } from "../../lib/prefs";
 import { theme } from "../../lib/globeTheme";
@@ -89,6 +90,9 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
   const [narrowedTo, setNarrowedTo] = useState<Continent | null>(null);
   /** How many of this country's clues have been shown, in a famous-for round. */
   const [cluesShown, setCluesShown] = useState(1);
+  /** The keyboard route to an answer, for players who can't click the globe. */
+  const [typing, setTyping] = useState(false);
+  const [typed, setTyped] = useState("");
 
   // Read once: a preference changed mid-round shouldn't move the goalposts.
   const [hintsOn] = useState(hintsEnabled);
@@ -180,6 +184,7 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
   }, [features.length, queue.length, endRound]);
 
   const advance = () => {
+    setTyped("");
     setQueue((prev) => prev.slice(1));
     setWrongName(null);
     setNarrowedTo(null);
@@ -201,6 +206,21 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
     }, 1000);
     return () => window.clearInterval(id);
   }, [ruleset, target, summary, revealed]);
+
+  /**
+   * Answering by name instead of by clicking. The globe cannot be operated
+   * from a keyboard, so without this a keyboard user could never answer at all.
+   */
+  const submitTyped = () => {
+    if (!target || !typed.trim() || revealed || summary) return;
+    handleClick(
+      isCorrectGuess(typed, getCountryMeta(target))
+        ? target
+        : // Anything that isn't the answer is scored as a wrong pick.
+          "\u0000not-a-country",
+    );
+    setTyped("");
+  };
 
   /** Buys the next clue for this country, while there is one left. */
   const handleAnotherClue = () => {
@@ -424,6 +444,44 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
               </p>
             )
           )}
+
+          {/* Hidden until focused: mouse players never see it, keyboard
+              players find it as a tab stop. */}
+          <div className="pointer-events-auto">
+            {typing ? (
+              <div className="flex items-center gap-2 pt-1">
+                <label htmlFor="typed-answer" className="sr-only">
+                  Type the country
+                </label>
+                <input
+                  id="typed-answer"
+                  autoFocus
+                  value={typed}
+                  onChange={(e) => setTyped(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") submitTyped();
+                    if (e.key === "Escape") setTyping(false);
+                  }}
+                  placeholder="Country name"
+                  autoComplete="off"
+                  className="w-44 rounded-md border border-white/15 bg-white/5 px-2 py-1 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
+                />
+                <button
+                  onClick={submitTyped}
+                  className="rounded-md bg-white/10 px-2 py-1 text-xs font-medium text-zinc-100 hover:bg-white/15"
+                >
+                  Answer
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setTyping(true)}
+                className="sr-only rounded-md border border-white/20 px-2 py-1 text-xs text-zinc-200 focus:not-sr-only focus:relative"
+              >
+                Answer by typing instead
+              </button>
+            )}
+          </div>
 
           <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-3 text-xs">
             {hintsOn &&
