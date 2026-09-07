@@ -51,12 +51,29 @@ function shuffled<T>(items: T[]): T[] {
   return out;
 }
 
+export type RoundOutcome = {
+  points: number;
+  ms: number;
+  found: string[];
+  /** Got right, but only after a wrong answer. */
+  fumbled: string[];
+  /** Never got, whether shown, timed out, or the round ended first. */
+  missed: string[];
+};
+
 type Props = {
   mode: Mode;
   limitMs: number | null;
   ruleset: Ruleset;
   /** What the prompt shows: a name, a flag, or a clue. */
   type: GameType;
+  /** Told how the round went, for callers that report on it. */
+  onRoundEnd?: (outcome: RoundOutcome) => void;
+  /**
+   * Ask for the countries in this exact order instead of shuffling. The daily
+   * challenge needs everyone to meet them in the same sequence.
+   */
+  fixedOrder?: string[];
 };
 
 /**
@@ -64,7 +81,14 @@ type Props = {
  * something it is famous for — and the player clicks it on the globe. Only the
  * prompt differs between the three; everything else is one game.
  */
-export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
+export default function FindGame({
+  mode,
+  limitMs,
+  ruleset,
+  type,
+  onRoundEnd,
+  fixedOrder,
+}: Props) {
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const wrongTimer = useRef<number | undefined>(undefined);
@@ -130,7 +154,10 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
           return true;
         });
         setFeatures(playable);
-        setQueue(shuffled(playable.map((f) => f.properties.name)));
+        const names = playable.map((f) => f.properties.name);
+        setQueue(
+          fixedOrder ? fixedOrder.filter((n) => names.includes(n)) : shuffled(names)
+        );
       })
       .catch(() => {
         if (!cancelled) setLoadError(true);
@@ -138,7 +165,7 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [mode, reset, type]);
+  }, [mode, reset, type, fixedOrder]);
 
   useEffect(() => () => window.clearTimeout(wrongTimer.current), []);
 
@@ -313,8 +340,24 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
     setRevealed(null);
     setNarrowedTo(null);
     setCluesShown(1);
-    setQueue(shuffled(features.map((f) => f.properties.name)));
+    const names = features.map((f) => f.properties.name);
+    setQueue(fixedOrder ? fixedOrder.filter((n) => names.includes(n)) : shuffled(names));
   };
+
+  const reported = useRef(false);
+  useEffect(() => {
+    if (!summary || reported.current || !onRoundEnd) return;
+    reported.current = true;
+    onRoundEnd({
+      points: summary.points,
+      ms: summary.ms,
+      found: [...foundNames],
+      fumbled: [...fumbled].filter((name) => foundNames.has(name)),
+      missed: features
+        .map((f) => f.properties.name)
+        .filter((name) => !foundNames.has(name)),
+    });
+  }, [summary, onRoundEnd, foundNames, fumbled, features]);
 
   const capColor = useMemo(
     () => (d: object) => {

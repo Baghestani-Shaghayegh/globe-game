@@ -16,6 +16,7 @@ import {
 } from "../data/modes";
 import { bestLabel } from "../lib/records";
 import { hintsEnabled, setHintsEnabled } from "../lib/prefs";
+import { dayKey, resultFor, streak } from "../lib/daily";
 import { flagUrl } from "../data/flags";
 import { cluesFor } from "../data/clues";
 
@@ -115,6 +116,14 @@ export default function Home() {
   const [limit, setLimit] = useState<number | null>(null);
   const [ruleset, setRuleset] = useState<Ruleset>("relaxed");
   const backdropWanted = useBackdropWanted();
+  const [daily, setDaily] = useState<{ played: boolean; streak: number } | null>(
+    null
+  );
+
+  useEffect(() => {
+    const today = dayKey();
+    setDaily({ played: resultFor(today) !== null, streak: streak(today) });
+  }, []);
   // Unlike the clock and rules, this is a standing preference, so it sticks.
   const [hints, setHints] = useState(true);
 
@@ -153,7 +162,37 @@ export default function Home() {
           How much of the world map can you actually recall?
         </p>
 
-        <div className="mt-10 w-full max-w-2xl rounded-2xl border border-white/[0.07] bg-white/[0.02] p-3 backdrop-blur-sm sm:p-4">
+        <Link
+          to="/daily"
+          className="group mt-8 flex w-full max-w-2xl items-center gap-3 rounded-2xl border border-sky-400/25 bg-sky-400/[0.07] px-5 py-4 transition-colors hover:border-sky-400/50 hover:bg-sky-400/10"
+        >
+          <span aria-hidden="true" className="text-xl">
+            🗓️
+          </span>
+          <span className="min-w-0">
+            <span className="block font-medium text-zinc-100">
+              Daily challenge
+            </span>
+            <span className="block text-sm text-zinc-400">
+              {daily?.played
+                ? "Played today — see your result"
+                : "Ten countries, the same for everyone."}
+            </span>
+          </span>
+          {daily && daily.streak > 1 && (
+            <span className="ml-auto shrink-0 text-sm tabular-nums text-zinc-400">
+              🔥 {daily.streak}
+            </span>
+          )}
+          <span
+            aria-hidden="true"
+            className="ml-auto shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-zinc-300 only:ml-auto"
+          >
+            →
+          </span>
+        </Link>
+
+        <div className="mt-4 w-full max-w-2xl rounded-2xl border border-white/[0.07] bg-white/[0.02] p-3 backdrop-blur-sm sm:p-4">
           {/* Anchored to the cards because it changes what every one of them does. */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1 pb-3">
             <span className="text-xs uppercase tracking-wider text-zinc-500">

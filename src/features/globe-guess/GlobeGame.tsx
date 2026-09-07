@@ -9,6 +9,7 @@ import GameHud from "./GameHud";
 import ExitConfirm from "./ExitConfirm";
 import { useRound } from "./useRound";
 import { useGlobeClick } from "./useGlobeClick";
+import type { RoundOutcome } from "./FindGame";
 import { getCountryMeta } from "../../data/countries";
 import {
   BLITZ_SECONDS,
@@ -36,9 +37,16 @@ type Props = {
   mode: Mode;
   limitMs: number | null;
   ruleset: Ruleset;
+  /** Told how the round went, for callers that report on it. */
+  onRoundEnd?: (outcome: RoundOutcome) => void;
 };
 
-export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
+export default function GlobeGame({
+  mode,
+  limitMs,
+  ruleset,
+  onRoundEnd,
+}: Props) {
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const wrongTimer = useRef<number | undefined>(undefined);
@@ -225,6 +233,21 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
 
   const cursorName =
     cursor !== null ? selectable[cursor]?.feature.properties.name : null;
+
+  const reported = useRef(false);
+  useEffect(() => {
+    if (!summary || reported.current || !onRoundEnd) return;
+    reported.current = true;
+    onRoundEnd({
+      points: summary.points,
+      ms: summary.ms,
+      found: [...foundNames],
+      fumbled: [...fumbled].filter((name) => foundNames.has(name)),
+      missed: features
+        .map((f) => f.properties.name)
+        .filter((name) => !foundNames.has(name)),
+    });
+  }, [summary, onRoundEnd, foundNames, fumbled, features]);
 
   const closeModal = () => {
     setSelected(null);
