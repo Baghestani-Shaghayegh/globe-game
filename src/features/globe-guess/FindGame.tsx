@@ -7,6 +7,7 @@ import RoundSummary from "./RoundSummary";
 import GameHud from "./GameHud";
 import ExitConfirm from "./ExitConfirm";
 import { useRound } from "./useRound";
+import { useGlobeClick } from "./useGlobeClick";
 import { getCountryMeta } from "../../data/countries";
 import {
   BLITZ_SECONDS,
@@ -260,6 +261,10 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
     }, FLIGHT_MS + REVEAL_HOLD_MS);
   };
 
+  const globeClick = useGlobeClick<CountryFeature>((feature) =>
+    handleClick(feature.properties.name)
+  );
+
   const handleBack = () => {
     if (summary || foundNames.size === 0) {
       navigate("/");
@@ -309,7 +314,11 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
   }
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#07111c]">
+    <div
+      className="relative h-screen w-screen overflow-hidden bg-[#07111c]"
+      onPointerDown={globeClick.onPointerDown}
+      onPointerUp={globeClick.onPointerUp}
+    >
       <Globe
         ref={globeRef}
         rendererConfig={{
@@ -329,8 +338,8 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
           (d as CountryFeature).properties.name === revealed ? 0.06 : 0.012
         }
         polygonsTransitionDuration={200}
-        onPolygonClick={(polygon) =>
-          handleClick((polygon as CountryFeature).properties.name)
+        onPolygonHover={(polygon) =>
+          globeClick.setHovered(polygon as CountryFeature | null)
         }
       />
 
