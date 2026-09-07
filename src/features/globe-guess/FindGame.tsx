@@ -349,7 +349,7 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
 
       {!summary && target && (
         <div
-          className={`absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-[#141b23]/90 px-5 py-2.5 text-center backdrop-blur ${
+          className={`pointer-events-none absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-[#141b23]/90 px-5 py-2.5 text-center backdrop-blur ${
             wrongName ? "animate-shake" : ""
           }`}
         >
@@ -405,7 +405,7 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
             )
           )}
 
-          <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
+          <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-3 text-xs">
             {hintsOn &&
               type === "famous" &&
               target &&

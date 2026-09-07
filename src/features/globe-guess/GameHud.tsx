@@ -37,11 +37,13 @@ export default function GameHud({
   const progress = total ? Math.round((found / total) * 100) : 0;
 
   return (
-    <div className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-sm backdrop-blur sm:left-4 sm:top-4 sm:gap-3 sm:px-3">
+    // The bar sits over the map, so only its controls take clicks — everything
+    // else lets them through to the country underneath.
+    <div className="pointer-events-none absolute left-3 top-3 z-10 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-sm backdrop-blur sm:left-4 sm:top-4 sm:gap-3 sm:px-3">
       <button
         onClick={onBack}
         aria-label="Back to modes"
-        className="flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-100"
+        className="pointer-events-auto flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-100"
       >
         <svg
           viewBox="0 0 24 24"
@@ -126,7 +128,7 @@ export default function GameHud({
           <span className="h-4 w-px bg-white/10" aria-hidden="true" />
           <button
             onClick={onFinish}
-            className="rounded-md px-2 py-0.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-100"
+            className="pointer-events-auto rounded-md px-2 py-0.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-100"
           >
             Finish
           </button>
