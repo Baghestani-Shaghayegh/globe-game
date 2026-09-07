@@ -50,7 +50,10 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
   const [guess, setGuess] = useState("");
   const [isWrong, setIsWrong] = useState(false);
   const [foundNames, setFoundNames] = useState<Set<string>>(new Set());
-  const [guesses, setGuesses] = useState(0);
+  /** Countries the player has answered for at least once. */
+  const [attempted, setAttempted] = useState<Set<string>>(new Set());
+  /** Countries they got wrong before getting them right. */
+  const [fumbled, setFumbled] = useState<Set<string>>(new Set());
   /** Countries whose blitz clock ran out — they can't be answered again. */
   const [expired, setExpired] = useState<Set<string>>(new Set());
   /** Seconds left on the country being guessed, under blitz rules. */
@@ -68,7 +71,8 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
     reset();
     setFoundNames(new Set());
     setExpired(new Set());
-    setGuesses(0);
+    setAttempted(new Set());
+    setFumbled(new Set());
     setSelected(null);
     setGuess("");
     setIsWrong(false);
@@ -140,9 +144,14 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
     features.length > 0 && foundNames.size + expired.size === features.length;
 
   const endRun = useCallback(() => {
-    end({ found: foundNames.size, total: features.length, guesses });
+    end({
+      found: foundNames.size,
+      total: features.length,
+      attempted: attempted.size,
+      firstTry: [...attempted].filter((name) => !fumbled.has(name)).length,
+    });
     setSelected(null);
-  }, [end, foundNames.size, features.length, guesses]);
+  }, [end, foundNames.size, features.length, attempted, fumbled]);
 
   // The countdown reaching zero ends the round wherever the player is.
   useEffect(() => {
@@ -194,13 +203,16 @@ export default function GlobeGame({ mode, limitMs, ruleset }: Props) {
   const handleSubmit = (value: string) => {
     if (!selected || !value.trim()) return;
 
-    setGuesses((n) => n + 1);
-    const country = getCountryMeta(selected.properties.name);
+    const name = selected.properties.name;
+    setAttempted((prev) => new Set(prev).add(name));
+
+    const country = getCountryMeta(name);
     if (isCorrectGuess(value, country)) {
       setFoundNames((prev) => new Set(prev).add(country.geoName));
       correct();
       closeModal();
     } else {
+      setFumbled((prev) => new Set(prev).add(name));
       wrong();
       if (ruleset === "sudden") {
         // The round is over; let the shake land before the summary appears.

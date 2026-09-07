@@ -25,8 +25,10 @@ export type Summary = {
 type EndArgs = {
   found: number;
   total: number;
-  /** How many answers the player gave, for accuracy. */
-  guesses: number;
+  /** Countries the player gave at least one answer for. */
+  attempted: number;
+  /** Of those, the ones they got right without a wrong answer first. */
+  firstTry: number;
 };
 
 /**
@@ -68,7 +70,7 @@ export function useRound(recordKey: string, limitMs: number | null) {
    * files it, so a partial run still counts towards their records.
    */
   const end = useCallback(
-    ({ found, total, guesses }: EndArgs) => {
+    ({ found, total, attempted, firstTry }: EndArgs) => {
       if (recorded.current || startedAt.current === null) return;
       recorded.current = true;
 
@@ -99,7 +101,11 @@ export function useRound(recordKey: string, limitMs: number | null) {
         found,
         total,
         completed,
-        accuracy: guesses > 0 ? Math.round((found / guesses) * 100) : null,
+        // Share of the countries tried that were named right first time.
+        // Counting every guess instead made a single retry look like a
+        // collapse, and three tries at one country sank the whole round.
+        accuracy:
+          attempted > 0 ? Math.round((firstTry / attempted) * 100) : null,
         isBest: completed
           ? !previousTime || ms < previousTime.ms
           : found > 0 && (!previousScore || found > previousScore.found),

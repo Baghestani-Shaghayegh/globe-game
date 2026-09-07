@@ -75,7 +75,10 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
   const [queue, setQueue] = useState<string[]>([]);
   const [foundNames, setFoundNames] = useState<Set<string>>(new Set());
   const [passedNames, setPassedNames] = useState<Set<string>>(new Set());
-  const [guesses, setGuesses] = useState(0);
+  /** Countries the player has answered for at least once. */
+  const [attempted, setAttempted] = useState<Set<string>>(new Set());
+  /** Countries they got wrong before getting them right. */
+  const [fumbled, setFumbled] = useState<Set<string>>(new Set());
   /** The country just clicked in error, flashed red for a moment. */
   const [wrongName, setWrongName] = useState<string | null>(null);
   /** The answer, revealed after a pass. */
@@ -98,7 +101,8 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
     setFoundNames(new Set());
     setPassedNames(new Set());
     setQueue([]);
-    setGuesses(0);
+    setAttempted(new Set());
+    setFumbled(new Set());
     setWrongName(null);
     setRevealed(null);
     setNarrowedTo(null);
@@ -157,8 +161,13 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
   const targetLabel = target ? getCountryMeta(target).displayName : "";
 
   const endRound = useCallback(() => {
-    end({ found: foundNames.size, total: features.length, guesses });
-  }, [end, foundNames.size, features.length, guesses]);
+    end({
+      found: foundNames.size,
+      total: features.length,
+      attempted: attempted.size,
+      firstTry: [...attempted].filter((name) => !fumbled.has(name)).length,
+    });
+  }, [end, foundNames.size, features.length, attempted, fumbled]);
 
   // The countdown reaching zero ends the round wherever the player is.
   useEffect(() => {
@@ -210,7 +219,7 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
 
   const handleClick = (name: string) => {
     if (summary || !target || revealed) return;
-    setGuesses((n) => n + 1);
+    setAttempted((prev) => new Set(prev).add(target));
 
     if (name === target) {
       setFoundNames((prev) => new Set(prev).add(name));
@@ -220,6 +229,7 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
     }
 
     // Wrong country — flash it, and leave the same target in place to retry.
+    setFumbled((prev) => new Set(prev).add(target));
     wrong();
     setWrongName(name);
     window.clearTimeout(wrongTimer.current);
@@ -277,7 +287,8 @@ export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
     reset();
     setFoundNames(new Set());
     setPassedNames(new Set());
-    setGuesses(0);
+    setAttempted(new Set());
+    setFumbled(new Set());
     setWrongName(null);
     setRevealed(null);
     setNarrowedTo(null);
