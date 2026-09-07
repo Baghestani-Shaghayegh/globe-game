@@ -22,6 +22,28 @@ import { cluesFor } from "../data/clues";
 // Three.js is heavy — let the menu paint first, then fade the globe in behind it.
 const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
 
+/**
+ * Whether the decorative globe behind the menu is worth its download.
+ *
+ * It costs about half a megabyte of three.js, which is most of what the menu
+ * weighs — and on a phone it is mostly hidden behind the cards anyway. Small
+ * screens and metered connections get the gradient alone, and three.js then
+ * only arrives when a round actually starts.
+ */
+function useBackdropWanted(): boolean {
+  const [wanted, setWanted] = useState(false);
+
+  useEffect(() => {
+    const wideEnough = window.matchMedia("(min-width: 768px)").matches;
+    const saveData =
+      (navigator as Navigator & { connection?: { saveData?: boolean } })
+        .connection?.saveData === true;
+    setWanted(wideEnough && !saveData);
+  }, []);
+
+  return wanted;
+}
+
 type Counts = Partial<Record<ModeId, number>>;
 
 /**
@@ -92,6 +114,7 @@ export default function Home() {
   const counts = useModeCounts(gameType);
   const [limit, setLimit] = useState<number | null>(null);
   const [ruleset, setRuleset] = useState<Ruleset>("relaxed");
+  const backdropWanted = useBackdropWanted();
   // Unlike the clock and rules, this is a standing preference, so it sticks.
   const [hints, setHints] = useState(true);
 
@@ -105,11 +128,13 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#07111c]">
-      <div className="pointer-events-none absolute inset-0 animate-fade-in">
-        <Suspense fallback={null}>
-          <BackgroundGlobe />
-        </Suspense>
-      </div>
+      {backdropWanted && (
+        <div className="pointer-events-none absolute inset-0 animate-fade-in">
+          <Suspense fallback={null}>
+            <BackgroundGlobe />
+          </Suspense>
+        </div>
+      )}
 
       {/* Darkens the middle of the globe just enough to read type over it */}
       <div
