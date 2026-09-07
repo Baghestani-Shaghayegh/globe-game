@@ -1,10 +1,10 @@
 /**
  * Clues for the "Famous for" round: a hint about a country, and the player
- * names it. Each country carries several, so a second clue can be bought when
- * the first one isn't enough.
+ * finds it on the globe. Each country carries several, so a second clue can be
+ * bought when the first one isn't enough.
  *
- * Not every country has clues — this is a written set, not generated — so the
- * round asks only for those that do, and the menu counts follow.
+ * Every sovereign country on the map has clues. Territories do not — they are
+ * only in Full map, and a round there simply skips them.
  */
 export const CLUES: Record<string, string[]> = {
   Afghanistan: [
@@ -72,6 +72,11 @@ export const CLUES: Record<string, string[]> = {
     "The only English-speaking country in Central America",
     "Belmopan is its capital",
   ],
+  Benin: [
+    "The Kingdom of Dahomey and its women warriors ruled here",
+    "Voodoo was born on this stretch of the Gulf of Guinea",
+    "Porto-Novo is its capital",
+  ],
   Bhutan: [
     "Measures Gross National Happiness",
     "The Tiger's Nest monastery clings to its cliff",
@@ -97,10 +102,25 @@ export const CLUES: Record<string, string[]> = {
     "The Amazon rainforest covers much of it",
     "Five-time football world champions",
   ],
+  Brunei: [
+    "A tiny, oil-rich sultanate on Borneo",
+    "Ruled by one of the world's last absolute monarchs",
+    "Bandar Seri Begawan is its capital",
+  ],
   Bulgaria: [
     "Famous for rose oil and yoghurt",
     "The Black Sea forms its eastern coast",
     "Sofia is its capital",
+  ],
+  "Burkina Faso": [
+    "Its name means 'land of upright people'",
+    "Thomas Sankara led its revolution in the 1980s",
+    "Ouagadougou is its capital",
+  ],
+  Burundi: [
+    "A tiny landlocked country on Lake Tanganyika",
+    "Drummers of Gitega are its cultural emblem",
+    "Shares its ethnic history with Rwanda",
   ],
   Cambodia: [
     "Angkor Wat rises from its jungle",
@@ -116,6 +136,16 @@ export const CLUES: Record<string, string[]> = {
     "The maple leaf is on its flag",
     "The second largest country on Earth",
     "Niagara Falls lies on its border",
+  ],
+  "Central African Republic": [
+    "Landlocked at the very middle of the continent",
+    "Bangui sits on the Ubangi River here",
+    "Dzanga-Sangha's forest elephants gather in its clearings",
+  ],
+  Chad: [
+    "A vast lake on its border has shrunk to a fraction of its size",
+    "The Sahara covers its north, savannah its south",
+    "N'Djamena is its capital",
   ],
   Chile: [
     "A long ribbon between the Andes and the Pacific",
@@ -167,10 +197,20 @@ export const CLUES: Record<string, string[]> = {
     "Home of LEGO",
     "Hans Christian Andersen's country",
   ],
+  Djibouti: [
+    "Lake Assal is the lowest point in Africa",
+    "Guards the strait at the mouth of the Red Sea",
+    "Hosts foreign naval bases at the Horn of Africa",
+  ],
   "Dominican Republic": [
     "Shares Hispaniola with Haiti",
     "Merengue and bachata were born here",
     "Santo Domingo is its capital",
+  ],
+  "East Timor": [
+    "Gained independence in 2002 after Indonesian occupation",
+    "Shares an island with Indonesia's West Timor",
+    "Dili is its capital",
   ],
   Ecuador: [
     "The Galápagos Islands belong to it",
@@ -191,6 +231,16 @@ export const CLUES: Record<string, string[]> = {
     "Home of Big Ben and the Tower of London",
     "The Beatles came from Liverpool here",
     "Stonehenge stands on its plains",
+  ],
+  "Equatorial Guinea": [
+    "The only African country with Spanish as an official language",
+    "Its capital sits on an island, not the mainland",
+    "Oil transformed it from one of the continent's poorest",
+  ],
+  Eritrea: [
+    "Broke away from Ethiopia in 1993",
+    "Asmara's art deco architecture is a World Heritage site",
+    "Its independence left its neighbour landlocked",
   ],
   Estonia: [
     "Tallinn's medieval old town",
@@ -216,6 +266,16 @@ export const CLUES: Record<string, string[]> = {
     "Home of the Eiffel Tower",
     "Its capital is on the Seine",
     "Champagne, and the world's most famous cycling race",
+  ],
+  Gabon: [
+    "Rainforest covers nearly nine tenths of it",
+    "Libreville is its capital",
+    "Surfing hippos have been filmed on its Atlantic beaches",
+  ],
+  Gambia: [
+    "A thin country following a river, enclosed by Senegal",
+    "The smallest country on mainland Africa",
+    "Banjul is its capital",
   ],
   Georgia: [
     "Considered a birthplace of wine",
@@ -246,6 +306,16 @@ export const CLUES: Record<string, string[]> = {
     "Tikal's Mayan temples rise from its jungle",
     "Lake Atitlán sits among volcanoes",
     "The heart of the Mayan world",
+  ],
+  Guinea: [
+    "Holds much of the world's bauxite",
+    "Mount Nimba rises on its south-eastern border",
+    "Conakry is its capital",
+  ],
+  "Guinea Bissau": [
+    "The Bijagós archipelago lies off its coast",
+    "A former Portuguese colony in West Africa",
+    "Bissau is its capital",
   ],
   Guyana: [
     "The only South American country where English is official",
@@ -342,6 +412,11 @@ export const CLUES: Record<string, string[]> = {
     "A small Gulf state at the head of the Persian Gulf",
     "Its oil wells were set alight in 1991",
   ],
+  Kyrgyzstan: [
+    "Lake Issyk-Kul never freezes despite the mountains around it",
+    "The Tian Shan range covers most of it",
+    "Bishkek is its capital",
+  ],
   Laos: [
     "The only landlocked country in Southeast Asia",
     "The Mekong runs along its border",
@@ -356,6 +431,16 @@ export const CLUES: Record<string, string[]> = {
     "Its flag bears a cedar tree",
     "Beirut is its capital",
     "The ruins of Baalbek stand here",
+  ],
+  Lesotho: [
+    "Entirely surrounded by one other country",
+    "The only country lying wholly above 1,000 metres",
+    "Maseru is its capital",
+  ],
+  Liberia: [
+    "Founded by freed American slaves in the 1800s",
+    "Africa's oldest republic",
+    "Monrovia is named after an American president",
   ],
   Libya: [
     "The ruins of Leptis Magna stand on its coast",
@@ -382,6 +467,11 @@ export const CLUES: Record<string, string[]> = {
     "The world's fourth largest island",
     "Antananarivo is its capital",
   ],
+  Malawi: [
+    "A great lake full of colourful cichlids runs down its length",
+    "Called the warm heart of Africa",
+    "Lilongwe is its capital",
+  ],
   Malaysia: [
     "The Petronas Towers rise in its capital",
     "Split between a peninsula and Borneo",
@@ -391,6 +481,11 @@ export const CLUES: Record<string, string[]> = {
     "Timbuktu stands on the edge of its desert",
     "The Niger River bends through it",
     "Famous for its mud-brick mosques",
+  ],
+  Mauritania: [
+    "The Richat Structure stares out of its desert like an eye",
+    "Iron ore trains here are among the longest in the world",
+    "Nouakchott is its capital",
   ],
   Mexico: [
     "Home of tacos and mariachi",
@@ -451,6 +546,11 @@ export const CLUES: Record<string, string[]> = {
     "The largest country in Central America",
     "Its great lake holds volcanic islands",
     "Managua is its capital",
+  ],
+  Niger: [
+    "Named after the river that crosses its south-west",
+    "Agadez is the desert gateway to its Saharan north",
+    "Uranium mining drives its economy",
   ],
   Nigeria: [
     "Africa's most populous country",
@@ -522,6 +622,11 @@ export const CLUES: Record<string, string[]> = {
     "Nikola Tesla was born to a family from here",
     "Landlocked in the Balkans",
   ],
+  "Republic of the Congo": [
+    "Brazzaville faces Kinshasa across the river",
+    "The smaller of the two countries sharing a river's name",
+    "Odzala's forests shelter lowland gorillas",
+  ],
   Romania: [
     "Transylvania and the Dracula legend",
     "The Carpathian Mountains curve through it",
@@ -546,6 +651,11 @@ export const CLUES: Record<string, string[]> = {
     "The westernmost country in mainland Africa",
     "Gorée Island lies off its capital",
     "Dakar is its capital",
+  ],
+  "Sierra Leone": [
+    "Freetown was founded as a home for freed slaves",
+    "Its diamonds funded a brutal civil war",
+    "Its name means 'lion mountains'",
   ],
   Slovakia: [
     "The High Tatras rise along its north",
@@ -577,6 +687,11 @@ export const CLUES: Record<string, string[]> = {
     "Seoul is its capital",
     "Samsung and Hyundai come from here",
   ],
+  "South Sudan": [
+    "The world's newest country, independent in 2011",
+    "The Sudd is one of the largest wetlands on Earth",
+    "Juba is its capital",
+  ],
   Spain: [
     "Home of flamenco and paella",
     "The Sagrada Família is still unfinished here",
@@ -596,6 +711,11 @@ export const CLUES: Record<string, string[]> = {
     "The smallest country in South America",
     "A former Dutch colony",
     "Paramaribo is its capital",
+  ],
+  Swaziland: [
+    "A small kingdom between South Africa and Mozambique",
+    "Renamed itself in 2018 to stop being confused with Switzerland",
+    "One of the world's last absolute monarchies",
   ],
   Sweden: [
     "Home of ABBA and IKEA",
@@ -617,6 +737,11 @@ export const CLUES: Record<string, string[]> = {
     "An island off China's south-east coast",
     "Makes most of the world's advanced chips",
   ],
+  Tajikistan: [
+    "The Pamir Mountains cover most of it",
+    "Ismoil Somoni Peak was once the Soviet Union's highest",
+    "Dushanbe is its capital",
+  ],
   Thailand: [
     "Land of smiles and golden temples",
     "Bangkok is its capital",
@@ -626,6 +751,11 @@ export const CLUES: Record<string, string[]> = {
     "An archipelago off Florida",
     "Famous for swimming pigs",
     "Nassau is its capital",
+  ],
+  Togo: [
+    "A narrow strip running north from the Gulf of Guinea",
+    "Lomé is its capital, right on the border",
+    "Koutammakou's mud tower-houses are a World Heritage site",
   ],
   "Trinidad and Tobago": [
     "Steelpan music was born here",
@@ -641,6 +771,11 @@ export const CLUES: Record<string, string[]> = {
     "Istanbul spans two continents here",
     "Home of the Hagia Sophia",
     "Cappadocia's fairy chimneys and hot-air balloons",
+  ],
+  Turkmenistan: [
+    "The Darvaza gas crater has burned for decades",
+    "The Karakum Desert covers most of it",
+    "Ashgabat is built almost entirely of white marble",
   ],
   USA: [
     "The Statue of Liberty stands in its harbour",
@@ -691,6 +826,11 @@ export const CLUES: Record<string, string[]> = {
     "Halong Bay's limestone islands",
     "Famous for pho and conical hats",
     "Hanoi and Ho Chi Minh City",
+  ],
+  "West Bank": [
+    "Bethlehem and Jericho lie within it",
+    "Ramallah is its administrative centre",
+    "Occupied territory west of the river Jordan",
   ],
   Yemen: [
     "Socotra's dragon blood trees grow here",

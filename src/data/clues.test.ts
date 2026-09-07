@@ -58,6 +58,15 @@ describe("clue data", () => {
     expect(leaks).toEqual([]);
   });
 
+  it("covers every sovereign country on the map", () => {
+    const uncovered = names
+      .map(getCountryMeta)
+      .filter((meta) => meta.tier === "country")
+      .filter((meta) => cluesFor(meta.geoName).length === 0)
+      .map((meta) => meta.geoName);
+    expect(uncovered).toEqual([]);
+  });
+
   it("leaves every mode with something to ask for", () => {
     const withClues = names
       .map(getCountryMeta)
