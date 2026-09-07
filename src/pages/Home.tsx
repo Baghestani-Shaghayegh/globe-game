@@ -16,6 +16,7 @@ import {
 } from "../data/modes";
 import { bestLabel } from "../lib/records";
 import { flagUrl } from "../data/flags";
+import { cluesFor } from "../data/clues";
 
 // Three.js is heavy — let the menu paint first, then fade the globe in behind it.
 const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
@@ -39,7 +40,8 @@ function useModeCounts(type: GameType): Counts {
         // A flag round can only ask for countries that have a flag.
         const metas = data.features
           .map((f) => getCountryMeta(f.properties.name))
-          .filter((meta) => type !== "flag" || flagUrl(meta.geoName) !== null);
+          .filter((meta) => type !== "flag" || flagUrl(meta.geoName) !== null)
+          .filter((meta) => type !== "famous" || cluesFor(meta.geoName).length > 0);
         setCounts(
           Object.fromEntries(
             MODES.map((mode) => [

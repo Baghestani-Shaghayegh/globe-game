@@ -216,3 +216,20 @@ describe("flag rounds keep their own records", () => {
     ).toBe("/flags/asia?limit=180&rules=blitz");
   });
 });
+
+describe("famous-for rounds keep their own records", () => {
+  it("keys them apart from the other game types", () => {
+    expect(recordKey("famous", "europe", null, "relaxed")).toBe("famous:europe");
+    expect(recordKey("famous", "asia", 60, "sudden")).toBe("sudden:famous:asia@60");
+  });
+
+  it("round-trips a famous-for key back into a playable path", () => {
+    const key = recordKey("famous", "africa", 300, "relaxed");
+    addRun(key, { ms: 1000, found: 4, total: 27 });
+    const bucket = allBuckets().find((b) => b.key === key)!;
+    expect(bucket).toMatchObject({ type: "famous", modeId: "africa" });
+    expect(
+      gamePath(bucket.type, bucket.modeId, bucket.limitSeconds, bucket.ruleset)
+    ).toBe("/famous/africa?limit=300");
+  });
+});
