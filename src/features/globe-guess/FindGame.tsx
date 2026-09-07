@@ -11,9 +11,12 @@ import { getCountryMeta } from "../../data/countries";
 import {
   BLITZ_SECONDS,
   recordKey,
+  type GameType,
   type Mode,
   type Ruleset,
 } from "../../data/modes";
+import { flagUrl } from "../../data/flags";
+import { cluesFor } from "../../data/clues";
 import { HINT_COST } from "../../lib/scoring";
 import { theme } from "../../lib/globeTheme";
 import type { Continent } from "../../data/continents";
@@ -45,10 +48,20 @@ function shuffled<T>(items: T[]): T[] {
   return out;
 }
 
-type Props = { mode: Mode; limitMs: number | null; ruleset: Ruleset };
+type Props = {
+  mode: Mode;
+  limitMs: number | null;
+  ruleset: Ruleset;
+  /** What the prompt shows: a name, a flag, or a clue. */
+  type: GameType;
+};
 
-/** "Find it": the game names a country and the player clicks it on the globe. */
-export default function FindGame({ mode, limitMs, ruleset }: Props) {
+/**
+ * The globe round. The game poses a country — by name, by its flag, or by
+ * something it is famous for — and the player clicks it on the globe. Only the
+ * prompt differs between the three; everything else is one game.
+ */
+export default function FindGame({ mode, limitMs, ruleset, type }: Props) {
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const wrongTimer = useRef<number | undefined>(undefined);
@@ -69,8 +82,10 @@ export default function FindGame({ mode, limitMs, ruleset }: Props) {
   const [secondsLeft, setSecondsLeft] = useState(BLITZ_SECONDS);
   /** Narrowed to the target's continent, once that hint is bought. */
   const [narrowedTo, setNarrowedTo] = useState<Continent | null>(null);
+  /** How many of this country's clues have been shown, in a famous-for round. */
+  const [cluesShown, setCluesShown] = useState(1);
 
-  const round = useRound(recordKey("find", mode.id, limitMs, ruleset), limitMs);
+  const round = useRound(recordKey(type, mode.id, limitMs, ruleset), limitMs);
   const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
     round;
 
@@ -83,6 +98,7 @@ export default function FindGame({ mode, limitMs, ruleset }: Props) {
     setWrongName(null);
     setRevealed(null);
     setNarrowedTo(null);
+    setCluesShown(1);
 
     let cancelled = false;
     fetch("/data/world.geojson")
@@ -92,9 +108,15 @@ export default function FindGame({ mode, limitMs, ruleset }: Props) {
       })
       .then((data: { features: CountryFeature[] }) => {
         if (cancelled) return;
-        const playable = data.features.filter((f) =>
-          mode.includes(getCountryMeta(f.properties.name))
-        );
+        // A flag round can only ask for countries that have a flag, and a
+        // famous-for round only for those someone has written a clue about.
+        const playable = data.features.filter((f) => {
+          const meta = getCountryMeta(f.properties.name);
+          if (!mode.includes(meta)) return false;
+          if (type === "flag") return flagUrl(meta.geoName) !== null;
+          if (type === "famous") return cluesFor(meta.geoName).length > 0;
+          return true;
+        });
         setFeatures(playable);
         setQueue(shuffled(playable.map((f) => f.properties.name)));
       })
@@ -104,7 +126,7 @@ export default function FindGame({ mode, limitMs, ruleset }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [mode, reset]);
+  }, [mode, reset, type]);
 
   useEffect(() => () => window.clearTimeout(wrongTimer.current), []);
 
@@ -148,6 +170,7 @@ export default function FindGame({ mode, limitMs, ruleset }: Props) {
     setQueue((prev) => prev.slice(1));
     setWrongName(null);
     setNarrowedTo(null);
+    setCluesShown(1);
     setSecondsLeft(BLITZ_SECONDS);
   };
 
@@ -165,6 +188,14 @@ export default function FindGame({ mode, limitMs, ruleset }: Props) {
     }, 1000);
     return () => window.clearInterval(id);
   }, [ruleset, target, summary, revealed]);
+
+  /** Buys the next clue for this country, while there is one left. */
+  const handleAnotherClue = () => {
+    if (!target || revealed) return;
+    if (cluesShown >= cluesFor(target).length) return;
+    spendHint("letter");
+    setCluesShown((shown) => shown + 1);
+  };
 
   /** Narrows the search to the target's continent, for a price. */
   const handleNarrow = () => {
@@ -242,6 +273,7 @@ export default function FindGame({ mode, limitMs, ruleset }: Props) {
     setWrongName(null);
     setRevealed(null);
     setNarrowedTo(null);
+    setCluesShown(1);
     setQueue(shuffled(features.map((f) => f.properties.name)));
   };
 
@@ -314,12 +346,18 @@ export default function FindGame({ mode, limitMs, ruleset }: Props) {
 
       {!summary && target && (
         <div
-          className={`absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-2 rounded-xl border border-white/10 bg-[#141b23]/90 px-6 py-3 text-center backdrop-blur sm:top-24 ${
+          className={`absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-[#141b23]/90 px-5 py-2.5 text-center backdrop-blur ${
             wrongName ? "animate-shake" : ""
           }`}
         >
           <p className="text-xs uppercase tracking-wider text-zinc-500">
-            {revealed ? "It was here" : "Find"}
+            {revealed
+              ? "It was here"
+              : type === "flag"
+                ? "Whose flag?"
+                : type === "famous"
+                  ? "Famous for"
+                  : "Find"}
           </p>
           {ruleset === "blitz" && !revealed && (
             <p
@@ -331,10 +369,50 @@ export default function FindGame({ mode, limitMs, ruleset }: Props) {
               {secondsLeft}s
             </p>
           )}
-          <p className="text-xl font-medium text-zinc-50 sm:text-2xl">
-            {targetLabel}
-          </p>
-          <div className="flex items-center gap-3 text-xs">
+
+          {/* The prompt itself — the only part that differs between the three. */}
+          {type === "flag" && !revealed && target && (
+            <img
+              src={flagUrl(target) ?? ""}
+              alt="Flag of the country to find"
+              width={112}
+              height={84}
+              className="w-28 rounded border border-white/15 shadow-lg"
+            />
+          )}
+
+          {type === "famous" && !revealed && target ? (
+            <ul className="flex max-w-sm flex-col gap-1.5">
+              {cluesFor(target)
+                .slice(0, cluesShown)
+                .map((clue) => (
+                  <li
+                    key={clue}
+                    className="text-base font-medium text-zinc-50 sm:text-lg"
+                  >
+                    {clue}
+                  </li>
+                ))}
+            </ul>
+          ) : (
+            (type !== "flag" || revealed !== null) && (
+              <p className="text-xl font-medium text-zinc-50 sm:text-2xl">
+                {targetLabel}
+              </p>
+            )
+          )}
+
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
+            {type === "famous" && target && cluesShown < cluesFor(target).length && (
+              <button
+                onClick={handleAnotherClue}
+                disabled={revealed !== null}
+                className="text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300 disabled:no-underline disabled:opacity-40"
+              >
+                Another clue{" "}
+                <span className="text-zinc-600">−{HINT_COST.letter}</span>
+              </button>
+            )}
             {!narrowedTo && (
               <button
                 onClick={handleNarrow}

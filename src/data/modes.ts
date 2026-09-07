@@ -9,11 +9,11 @@ export type GameType = "name" | "find" | "flag" | "famous";
 export const GAME_TYPES: { id: GameType; label: string; blurb: string }[] = [
   { id: "name", label: "Name it", blurb: "Click a country, type its name." },
   { id: "find", label: "Find it", blurb: "We name a country, you find it." },
-  { id: "flag", label: "Flags", blurb: "We show a flag, you name the country." },
+  { id: "flag", label: "Flags", blurb: "We show a flag, you find the country." },
   {
     id: "famous",
     label: "Famous for",
-    blurb: "We give a clue, you name the country.",
+    blurb: "We give a clue, you find the country.",
   },
 ];
 
