@@ -4,11 +4,12 @@ import type { CountryMeta } from "./countries";
  * The two ways a round can be played: "name" shows a country and asks for its
  * name, "find" names a country and asks where it is.
  */
-export type GameType = "name" | "find";
+export type GameType = "name" | "find" | "flag";
 
 export const GAME_TYPES: { id: GameType; label: string; blurb: string }[] = [
   { id: "name", label: "Name it", blurb: "Click a country, type its name." },
   { id: "find", label: "Find it", blurb: "We name a country, you find it." },
+  { id: "flag", label: "Flags", blurb: "We show a flag, you name the country." },
 ];
 
 /**
@@ -69,7 +70,12 @@ export function gamePath(
   limitSeconds: number | null,
   ruleset: Ruleset = "relaxed"
 ): string {
-  const base = type === "find" ? `/find/${modeId}` : `/play/${modeId}`;
+  const base =
+    type === "find"
+      ? `/find/${modeId}`
+      : type === "flag"
+        ? `/flags/${modeId}`
+        : `/play/${modeId}`;
   const query = new URLSearchParams();
   if (limitSeconds !== null) query.set("limit", String(limitSeconds));
   if (ruleset !== "relaxed") query.set("rules", ruleset);
@@ -88,7 +94,8 @@ export function recordKey(
   ruleset: Ruleset = "relaxed"
 ): string {
   const prefix = ruleset === "relaxed" ? "" : `${ruleset}:`;
-  const base = prefix + (type === "find" ? `find:${modeId}` : modeId);
+  const base =
+    prefix + (type === "name" ? modeId : `${type}:${modeId}`);
   // A timed round and an open one aren't comparable — under a countdown the
   // clock always reads the same, so only the score means anything. Each limit
   // keeps its own record.

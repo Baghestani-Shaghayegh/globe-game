@@ -21,6 +21,7 @@ function App() {
           <Route path="/records" element={<Records />} />
           <Route path="/play/:mode" element={<Game type="name" />} />
           <Route path="/find/:mode" element={<Game type="find" />} />
+          <Route path="/flags/:mode" element={<Game type="flag" />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

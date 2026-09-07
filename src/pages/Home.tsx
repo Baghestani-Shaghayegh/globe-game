@@ -15,6 +15,7 @@ import {
   type ModeId,
 } from "../data/modes";
 import { bestLabel } from "../lib/records";
+import { flagUrl } from "../data/flags";
 
 // Three.js is heavy — let the menu paint first, then fade the globe in behind it.
 const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
@@ -26,7 +27,7 @@ type Counts = Partial<Record<ModeId, number>>;
  * the cards can't drift out of date. The globe behind the menu fetches this
  * file too, so it comes from the browser cache.
  */
-function useModeCounts(): Counts {
+function useModeCounts(type: GameType): Counts {
   const [counts, setCounts] = useState<Counts>({});
 
   useEffect(() => {
@@ -35,9 +36,10 @@ function useModeCounts(): Counts {
       .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
       .then((data: { features: { properties: { name: string } }[] }) => {
         if (cancelled) return;
-        const metas = data.features.map((f) =>
-          getCountryMeta(f.properties.name)
-        );
+        // A flag round can only ask for countries that have a flag.
+        const metas = data.features
+          .map((f) => getCountryMeta(f.properties.name))
+          .filter((meta) => type !== "flag" || flagUrl(meta.geoName) !== null);
         setCounts(
           Object.fromEntries(
             MODES.map((mode) => [
@@ -53,7 +55,7 @@ function useModeCounts(): Counts {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [type]);
 
   return counts;
 }
@@ -83,8 +85,8 @@ function useBests(
 
 export default function Home() {
   const navigate = useNavigate();
-  const counts = useModeCounts();
   const [gameType, setGameType] = useState<GameType>("name");
+  const counts = useModeCounts(gameType);
   const [limit, setLimit] = useState<number | null>(null);
   const [ruleset, setRuleset] = useState<Ruleset>("relaxed");
   const bests = useBests(gameType, limit, ruleset);

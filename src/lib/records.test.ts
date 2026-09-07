@@ -194,3 +194,25 @@ describe("sudden death keeps its own records", () => {
     expect(parseRuleset(null)).toBe("relaxed");
   });
 });
+
+describe("flag rounds keep their own records", () => {
+  it("keys them apart from the globe games", () => {
+    expect(recordKey("flag", "europe", null, "relaxed")).toBe("flag:europe");
+    expect(recordKey("flag", "asia", 180, "blitz")).toBe("blitz:flag:asia@180");
+  });
+
+  it("round-trips a flag key back into a playable path", () => {
+    const key = recordKey("flag", "asia", 180, "blitz");
+    addRun(key, { ms: 1000, found: 3, total: 47 });
+    const bucket = allBuckets().find((b) => b.key === key)!;
+    expect(bucket).toMatchObject({
+      type: "flag",
+      modeId: "asia",
+      limitSeconds: 180,
+      ruleset: "blitz",
+    });
+    expect(
+      gamePath(bucket.type, bucket.modeId, bucket.limitSeconds, bucket.ruleset)
+    ).toBe("/flags/asia?limit=180&rules=blitz");
+  });
+});

@@ -106,12 +106,16 @@ export function allBuckets(): Bucket[] {
           ? "blitz"
           : "relaxed";
       const withoutRules = head.replace(/^(sudden|blitz):/, "");
-      const type: GameType = withoutRules.startsWith("find:") ? "find" : "name";
+      const type: GameType = withoutRules.startsWith("find:")
+        ? "find"
+        : withoutRules.startsWith("flag:")
+          ? "flag"
+          : "name";
       return {
         key,
         type,
         ruleset,
-        modeId: withoutRules.replace(/^find:/, ""),
+        modeId: withoutRules.replace(/^(find|flag):/, ""),
         limitSeconds: limit ? Number(limit) : null,
         runs: valid,
       };
