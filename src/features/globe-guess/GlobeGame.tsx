@@ -8,6 +8,7 @@ import RoundSummary from "./RoundSummary";
 import GameHud from "./GameHud";
 import ExitConfirm from "./ExitConfirm";
 import { useRound } from "./useRound";
+import { recordRound } from "../../lib/countryStats";
 import { useGlobeClick } from "./useGlobeClick";
 import type { RoundOutcome } from "./FindGame";
 import { getCountryMeta } from "../../data/countries";
@@ -236,18 +237,26 @@ export default function GlobeGame({
 
   const reported = useRef(false);
   useEffect(() => {
-    if (!summary || reported.current || !onRoundEnd) return;
+    if (!summary || reported.current) return;
     reported.current = true;
-    onRoundEnd({
+    const got = [...fumbled].filter((name) => foundNames.has(name));
+    // Only countries actually put to the player count towards their stats —
+    // the rest of the map was never asked about.
+    recordRound({
+      seen: [...new Set([...attempted, ...expired])],
+      found: [...foundNames],
+      fumbled: got,
+    });
+    onRoundEnd?.({
       points: summary.points,
       ms: summary.ms,
       found: [...foundNames],
-      fumbled: [...fumbled].filter((name) => foundNames.has(name)),
+      fumbled: got,
       missed: features
         .map((f) => f.properties.name)
         .filter((name) => !foundNames.has(name)),
     });
-  }, [summary, onRoundEnd, foundNames, fumbled, features]);
+  }, [summary, onRoundEnd, foundNames, fumbled, attempted, expired, features]);
 
   const closeModal = () => {
     setSelected(null);

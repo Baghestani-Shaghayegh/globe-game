@@ -357,12 +357,23 @@ export default function Home() {
           </div>
         </div>
         </div>
-        <Link
-          to="/records"
-          className="mt-6 text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
-        >
-          Your records
-        </Link>
+        <div className="mt-6 flex items-center gap-4 text-sm text-zinc-500">
+          <Link
+            to="/records"
+            className="underline underline-offset-4 transition-colors hover:text-zinc-300"
+          >
+            Your records
+          </Link>
+          <span aria-hidden="true" className="text-zinc-700">
+            ·
+          </span>
+          <Link
+            to="/stats"
+            className="underline underline-offset-4 transition-colors hover:text-zinc-300"
+          >
+            Your stats
+          </Link>
+        </div>
       </main>
     </div>
   );

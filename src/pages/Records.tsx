@@ -9,6 +9,7 @@ import {
   type Bucket,
   type Run,
 } from "../lib/records";
+import { clearStats } from "../lib/countryStats";
 import { GAME_TYPES, MODES, TIME_LIMITS, gamePath } from "../data/modes";
 
 function modeName(modeId: string): string {
@@ -163,9 +164,17 @@ export default function Records() {
           ← Modes
         </Link>
 
-        <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
-          Records
-        </h1>
+        <div className="mt-5 flex flex-wrap items-baseline justify-between gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">
+            Records
+          </h1>
+          <Link
+            to="/stats"
+            className="text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+          >
+            Your stats
+          </Link>
+        </div>
 
         {buckets.length === 0 ? (
           <p className="mt-4 text-zinc-400">
@@ -189,11 +198,13 @@ export default function Records() {
               {confirmingClear ? (
                 <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
                   <span className="text-sm text-zinc-300">
-                    Delete every run? This can't be undone.
+                    Delete every run and every country stat? This can't be
+                    undone.
                   </span>
                   <button
                     onClick={() => {
                       clearAll();
+                      clearStats();
                       setBuckets([]);
                       setConfirmingClear(false);
                     }}
