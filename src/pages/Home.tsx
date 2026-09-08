@@ -16,6 +16,8 @@ import {
 } from "../data/modes";
 import { bestLabel } from "../lib/records";
 import { hintsEnabled, setHintsEnabled } from "../lib/prefs";
+import { useAuth } from "../features/account/AuthProvider";
+import { accountsEnabled } from "../lib/supabase";
 import { dayKey, resultFor, streak } from "../lib/daily";
 import { flagUrl } from "../data/flags";
 import { cluesFor } from "../data/clues";
@@ -111,6 +113,7 @@ function useBests(
 
 export default function Home() {
   const navigate = useNavigate();
+  const { session, profile } = useAuth();
   const [gameType, setGameType] = useState<GameType>("name");
   const counts = useModeCounts(gameType);
   const [limit, setLimit] = useState<number | null>(null);
@@ -155,6 +158,24 @@ export default function Home() {
       />
 
       <main className="relative flex min-h-screen flex-col items-center justify-center px-6 py-16">
+        {accountsEnabled && (
+          <Link
+            to="/account"
+            className="absolute right-5 top-5 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-white/25 hover:text-zinc-100"
+          >
+            {profile?.country && (
+              <img
+                src={`/flags/${profile.country}.svg`}
+                alt=""
+                width={20}
+                height={15}
+                className="w-5 rounded-[2px]"
+              />
+            )}
+            {profile ? profile.username : session ? "Finish setup" : "Sign in"}
+          </Link>
+        )}
+
         <h1 className="text-center text-5xl font-semibold tracking-tight text-zinc-50 sm:text-6xl">
           WorldGuess
         </h1>

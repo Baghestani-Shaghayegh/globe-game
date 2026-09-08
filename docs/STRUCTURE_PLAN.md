@@ -201,3 +201,43 @@ Run Supabase's built-in security advisor regularly — it flags tables with RLS 
 5. Build flag mode on the engine (proves the architecture works)
 6. Add Supabase project + auth + `profiles`, `game_results` with RLS from day one
 7. Everything after that follows the feature plan phases
+
+---
+
+## Accounts (Supabase) — as built
+
+Project `worldguess`, org `Baghestani-Shaghayegh's Org`, region ap-northeast-1,
+free tier ($0/month). Credentials live in `.env`, committed on purpose: the
+publishable key only ever grants what row-level security allows.
+
+### Schema
+
+`public.profiles` — one row per signed-in player.
+
+| Column | Notes |
+|---|---|
+| `id` | PK, FK to `auth.users`, cascades on delete |
+| `username` | 3–16 of `[A-Za-z0-9_]`, unique on `lower(username)` |
+| `country` | ISO 3166-1 alpha-2, matching `public/flags/<code>.svg`, nullable |
+| `created_at` / `updated_at` | `updated_at` maintained by a trigger |
+
+Rows are created by the app once the player picks a name, not by a signup
+trigger — the name is theirs to choose.
+
+RLS: anyone may read (a leaderboard has to name who is on it); only the owner
+may insert or update their own row; nobody may delete (deleting the auth user
+cascades).
+
+### Two things still to do in the Supabase dashboard
+
+Neither can be done from code, and both need your login:
+
+1. **Auth → URL Configuration.** Set Site URL to the deployed site and add
+   `http://localhost:5173` to the redirect allow-list. Until then a magic link
+   bounces to `http://localhost:3000`.
+2. **Auth → Emails / SMTP.** The built-in sender is rate-limited and meant for
+   testing. Point it at Resend/Postmark/SES before real players sign up.
+
+Google sign-in is a later addition: create OAuth credentials in Google Cloud,
+paste them into Auth → Providers → Google, then add a button that calls
+`supabase.auth.signInWithOAuth({ provider: "google" })`.
