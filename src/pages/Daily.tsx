@@ -13,7 +13,6 @@ import {
   formatDay,
   resultFor,
   saveResult,
-  shareText,
   streak,
   type Challenge,
   type DailyResult,
@@ -51,7 +50,6 @@ export default function Daily() {
   const day = dayKey();
   const [names, setNames] = useState<string[] | null>(null);
   const [result, setResult] = useState<DailyResult | null>(() => resultFor(day));
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -153,17 +151,6 @@ export default function Daily() {
               🔥 {days}-day streak
             </p>
           )}
-
-          <button
-            onClick={() => {
-              navigator.clipboard?.writeText(shareText(result));
-              setCopied(true);
-              window.setTimeout(() => setCopied(false), 2000);
-            }}
-            className="mt-6 w-full rounded-lg bg-white/10 py-2.5 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/15"
-          >
-            {copied ? "Copied" : "Copy result"}
-          </button>
 
           <p className="mt-6 text-center text-sm text-zinc-500">
             One round a day. The next one lands at midnight UTC.
