@@ -24,6 +24,25 @@ export function usernameProblem(name: string): string | null {
   return null;
 }
 
+/**
+ * Whether the form holds anything worth sending.
+ *
+ * The save button reads this: with nothing changed it says "Saved" and stays
+ * disabled, rather than reverting to "Save changes" and inviting a second
+ * click that would do nothing. An empty flag and no flag are the same thing,
+ * which is the only comparison here that isn't literal.
+ */
+export function hasUnsavedChanges(
+  username: string,
+  country: string,
+  profile: Profile | null
+): boolean {
+  return (
+    username.trim() !== (profile?.username ?? "") ||
+    (country || null) !== (profile?.country ?? null)
+  );
+}
+
 function client() {
   if (!supabase) throw new Error("Accounts aren't configured.");
   return supabase;

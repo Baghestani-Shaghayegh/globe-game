@@ -4,6 +4,7 @@ import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled, supabase, urlAuthError } from "../lib/supabase";
 import {
   describeSaveError,
+  hasUnsavedChanges,
   saveProfile,
   usernameFree,
   usernameProblem,
@@ -214,12 +215,13 @@ function ProfileForm({ userId, email }: { userId: string; email?: string }) {
   const [country, setCountry] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     setUsername(profile?.username ?? "");
     setCountry(profile?.country ?? "");
   }, [profile]);
+
+  const dirty = hasUnsavedChanges(username, country, profile);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -243,8 +245,6 @@ function ProfileForm({ userId, email }: { userId: string; email?: string }) {
         country: country || null,
       });
       await refresh();
-      setSaved(true);
-      window.setTimeout(() => setSaved(false), 2000);
     } catch (caught) {
       setError(describeSaveError(caught));
     } finally {
@@ -312,16 +312,16 @@ function ProfileForm({ userId, email }: { userId: string; email?: string }) {
 
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || !dirty}
           className="mt-6 w-full rounded-lg bg-sky-500/20 py-2.5 text-sm font-medium text-sky-200 transition-colors hover:bg-sky-500/30 disabled:opacity-50"
         >
           {saving
             ? "Saving…"
-            : saved
-              ? "Saved"
-              : profile
+            : !profile
+              ? "Claim this name"
+              : dirty
                 ? "Save changes"
-                : "Claim this name"}
+                : "Saved"}
         </button>
       </form>
 
