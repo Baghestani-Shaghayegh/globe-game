@@ -238,9 +238,29 @@ Neither can be done from code, and both need your login:
 2. **Auth → Emails / SMTP.** The built-in sender is rate-limited and meant for
    testing. Point it at Resend/Postmark/SES before real players sign up.
 
-Google sign-in is a later addition: create OAuth credentials in Google Cloud,
-paste them into Auth → Providers → Google, then add a button that calls
-`supabase.auth.signInWithOAuth({ provider: "google" })`.
+### Google sign-in
+
+Built. The button is on `/account` above the email form. The remaining step is
+in the dashboard, and needs your login:
+
+1. [Google Cloud console](https://console.cloud.google.com) → new project
+2. **APIs & Services → OAuth consent screen** → External
+3. **Credentials → Create Credentials → OAuth client ID** → Web application
+4. Authorized redirect URI, exactly:
+   `https://mqtijcesydoxntubwfdh.supabase.co/auth/v1/callback`
+5. Paste the client ID and secret into Supabase → Auth → Providers → Google
+
+Until that is done the button still works — it bounces back with
+`?error=…provider is not enabled`, and the page says so in those words rather
+than showing a raw error.
+
+One thing worth knowing if this is ever touched again: an OAuth failure comes
+back **on the URL**, not as a return value, because the button navigates away.
+And supabase-js clears an `#error=` hash the moment the client starts, so the
+URL has to be read *above* `createClient` — which is why `urlAuthError` lives
+at the top of `lib/supabase.ts` and not in the page. Error URLs are cleaned off
+the address bar afterwards; token URLs deliberately are not, since a magic link
+carries its session in the same place.
 
 ### Leaderboards
 
