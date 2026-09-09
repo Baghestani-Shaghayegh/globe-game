@@ -36,7 +36,16 @@ type EndArgs = {
  * The parts of a round that don't depend on how it is played: the clock, the
  * record it files, and the screens that wrap it. Both game types share this.
  */
-export function useRound(recordKey: string, limitMs: number | null) {
+export function useRound(
+  recordKey: string,
+  limitMs: number | null,
+  /**
+   * Whether the run counts. Practice sets this false: it is study, and a
+   * drill over the eight countries you keep missing is not a score anyone
+   * should be ranked on.
+   */
+  { record = true }: { record?: boolean } = {}
+) {
   const startedAt = useRef<number | null>(null);
   const recorded = useRef(false);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -85,7 +94,7 @@ export function useRound(recordKey: string, limitMs: number | null) {
       const previousTime = bestTime(recordKey);
       const previousScore = bestScore(recordKey);
       // A run with nothing found isn't a result worth keeping.
-      if (found > 0) {
+      if (record && found > 0) {
         addRun(recordKey, {
           ms,
           found,
@@ -129,7 +138,7 @@ export function useRound(recordKey: string, limitMs: number | null) {
       });
       setConfirmingExit(false);
     },
-    [recordKey, limitMs, score]
+    [recordKey, limitMs, score, record]
   );
 
   const remainingMs =

@@ -19,6 +19,7 @@ import { hintsEnabled, setHintsEnabled } from "../lib/prefs";
 import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled } from "../lib/supabase";
 import { dayKey, resultFor, streak } from "../lib/daily";
+import { dueCount } from "../lib/practice";
 import { flagUrl } from "../data/flags";
 import { cluesFor } from "../data/clues";
 
@@ -123,9 +124,12 @@ export default function Home() {
     null
   );
 
+  const [duePractice, setDuePractice] = useState(0);
+
   useEffect(() => {
     const today = dayKey();
     setDaily({ played: resultFor(today) !== null, streak: streak(today) });
+    setDuePractice(dueCount());
   }, []);
   // Unlike the clock and rules, this is a standing preference, so it sticks.
   const [hints, setHints] = useState(true);
@@ -212,6 +216,32 @@ export default function Home() {
             →
           </span>
         </Link>
+
+        {duePractice > 0 && (
+          <Link
+            to="/practice"
+            className="group mt-3 flex w-full max-w-2xl items-center gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/[0.06] px-5 py-4 transition-colors hover:border-amber-400/50 hover:bg-amber-400/10"
+          >
+            <span aria-hidden="true" className="text-xl">
+              🎯
+            </span>
+            <span className="min-w-0">
+              <span className="block font-medium text-zinc-100">
+                Practice your weak spots
+              </span>
+              <span className="block text-sm text-zinc-400">
+                {duePractice} {duePractice === 1 ? "country keeps" : "countries keep"}{" "}
+                getting away.
+              </span>
+            </span>
+            <span
+              aria-hidden="true"
+              className="ml-auto shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-zinc-300"
+            >
+              →
+            </span>
+          </Link>
+        )}
 
         {accountsEnabled && (
           <Link

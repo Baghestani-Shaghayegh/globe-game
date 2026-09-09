@@ -65,6 +65,8 @@ type Props = {
   type: GameType;
   /** Told how the round went, for callers that report on it. */
   onRoundEnd?: (outcome: RoundOutcome) => void;
+  /** False for practice: a drill shouldn't land in records or on a board. */
+  record?: boolean;
   /**
    * Ask for the countries in this exact order instead of shuffling. The daily
    * challenge needs everyone to meet them in the same sequence.
@@ -83,6 +85,7 @@ export default function FindGame({
   ruleset,
   type,
   onRoundEnd,
+  record = true,
   fixedOrder,
 }: Props) {
   // Repaint when the player changes the globe palette.
@@ -119,7 +122,7 @@ export default function FindGame({
 
   // Read once: a preference changed mid-round shouldn't move the goalposts.
   const [hintsOn] = useState(hintsEnabled);
-  const round = useRound(recordKey(type, mode.id, limitMs, ruleset), limitMs);
+  const round = useRound(recordKey(type, mode.id, limitMs, ruleset), limitMs, { record });
   const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
     round;
 

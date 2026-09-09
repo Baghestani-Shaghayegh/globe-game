@@ -14,6 +14,8 @@ import Daily from "./pages/Daily";
 // The game page pulls in three.js (~2 MB) — load it only when a game starts.
 const Game = lazy(() => import("./pages/Game"));
 const Room = lazy(() => import("./pages/Room"));
+// Practice runs a real globe round, so it carries the same weight as the game.
+const Practice = lazy(() => import("./pages/Practice"));
 
 function App() {
   return (
@@ -35,6 +37,7 @@ function App() {
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/achievements" element={<Achievements />} />
             <Route path="/levels" element={<Levels />} />
+            <Route path="/practice" element={<Practice />} />
             <Route path="/play-together" element={<PlayTogether />} />
             <Route path="/room/:code" element={<Room />} />
             <Route path="/play/:mode" element={<Game type="name" />} />

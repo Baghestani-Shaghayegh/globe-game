@@ -35,6 +35,8 @@ type Props = {
   ruleset: Ruleset;
   /** Told how the round went, for callers that report on it. */
   onRoundEnd?: (outcome: RoundOutcome) => void;
+  /** False for practice: a drill shouldn't land in records or on a board. */
+  record?: boolean;
 };
 
 export default function GlobeGame({
@@ -42,6 +44,7 @@ export default function GlobeGame({
   limitMs,
   ruleset,
   onRoundEnd,
+  record = true,
 }: Props) {
   // Repaint when the player changes the globe palette.
   useGlobeTheme();
@@ -72,7 +75,7 @@ export default function GlobeGame({
 
   // Read once: a preference changed mid-round shouldn't move the goalposts.
   const [hintsOn] = useState(hintsEnabled);
-  const round = useRound(recordKey("name", mode.id, limitMs, ruleset), limitMs);
+  const round = useRound(recordKey("name", mode.id, limitMs, ruleset), limitMs, { record });
   const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
     round;
 

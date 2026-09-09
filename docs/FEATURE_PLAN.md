@@ -75,7 +75,7 @@ Goal: play with friends. Start small: 2 players, one mode.
 
 - **Achievements/badges**: "All of Europe", "50 flags in a row", "Speed demon"
 - **XP & levels**: every game gives XP; levels unlock cosmetic globe themes (night mode globe, satellite texture, colors)
-- **Practice weak spots**: "You keep missing Central Asia — practice these 8 countries" (spaced repetition — this turns the game into a study tool, which is a huge audience: students, quiz-bowl kids, geography teachers)
+- **Practice weak spots** *(built)*: a Leitner ladder over the countries you keep missing. Six boxes, 0/1/3/7/16/35 days; a clean answer promotes, a retry holds, a miss drops to the bottom. Seeded from the country stats already on file, so there is something to practise before anyone has practised anything. Drills are excluded from records and leaderboards — study, not competition.
 - Push/email notification for daily challenge (opt-in only)
 - **Share the daily result to Instagram** — render the 🟩🟨⬜ card as an image and hand it to the share sheet (Stories on mobile, download on desktop). Deliberately the **last thing before monetization**: sharing is only worth building once there is a game worth sharing and a leaderboard to land on. `shareText()` already produces the payload, so this is the render and the share sheet, nothing more.
 

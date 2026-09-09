@@ -111,6 +111,7 @@ export function recordKey(
 
 export type ModeId =
   | "daily"
+  | "practice"
   | "easy"
   | "hard"
   | "europe"
