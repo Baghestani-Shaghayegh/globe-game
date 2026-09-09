@@ -10,6 +10,7 @@ import {
   type Run,
 } from "../lib/records";
 import { clearStats } from "../lib/countryStats";
+import { clearAchievements } from "../lib/achievements";
 import { GAME_TYPES, MODES, TIME_LIMITS, gamePath } from "../data/modes";
 
 function modeName(modeId: string): string {
@@ -198,13 +199,14 @@ export default function Records() {
               {confirmingClear ? (
                 <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
                   <span className="text-sm text-zinc-300">
-                    Delete every run and every country stat? This can't be
+                    Delete every run, country stat and badge? This can't be
                     undone.
                   </span>
                   <button
                     onClick={() => {
                       clearAll();
                       clearStats();
+                      clearAchievements();
                       setBuckets([]);
                       setConfirmingClear(false);
                     }}

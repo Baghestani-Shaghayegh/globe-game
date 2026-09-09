@@ -419,6 +419,15 @@ export default function Home() {
           >
             Your stats
           </Link>
+          <span aria-hidden="true" className="text-zinc-700">
+            ·
+          </span>
+          <Link
+            to="/achievements"
+            className="underline underline-offset-4 transition-colors hover:text-zinc-300"
+          >
+            Badges
+          </Link>
           {accountsEnabled && (
             <>
               <span aria-hidden="true" className="text-zinc-700">
