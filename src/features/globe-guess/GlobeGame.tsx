@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
-import * as THREE from "three";
 import { Link, useNavigate } from "react-router-dom";
 import GuessModal from "./GuessModal";
 import RoundSummary from "./RoundSummary";
@@ -19,7 +18,8 @@ import {
   type Ruleset,
 } from "../../data/modes";
 import { isCorrectGuess } from "../../lib/answerMatch";
-import { theme } from "../../lib/globeTheme";
+import { globeMaterial, theme } from "../../lib/globeTheme";
+import { useGlobeTheme } from "./useGlobeTheme";
 import { hintsEnabled } from "../../lib/prefs";
 import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
 
@@ -28,11 +28,6 @@ type CountryFeature = {
   properties: { name: string };
   geometry: Geometry;
 };
-
-const globeMaterial = new THREE.MeshPhongMaterial({
-  color: theme.sphere,
-  shininess: 0,
-});
 
 type Props = {
   mode: Mode;
@@ -48,6 +43,9 @@ export default function GlobeGame({
   ruleset,
   onRoundEnd,
 }: Props) {
+  // Repaint when the player changes the globe palette.
+  useGlobeTheme();
+
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const wrongTimer = useRef<number | undefined>(undefined);

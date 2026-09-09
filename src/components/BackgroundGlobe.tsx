@@ -1,21 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
-import * as THREE from "three";
-import { theme } from "../lib/globeTheme";
+import { globeMaterial, theme } from "../lib/globeTheme";
+import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
 
 type Feature = { properties: { name: string } };
-
-const globeMaterial = new THREE.MeshPhongMaterial({
-  color: theme.sphere,
-  shininess: 0,
-});
 
 /**
  * Decorative globe behind the menu. Slowly self-rotates and ignores the
  * pointer entirely — the cards on top stay clickable.
  */
 export default function BackgroundGlobe() {
+  // Repaint when the player changes the globe palette.
+  useGlobeTheme();
+
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const [features, setFeatures] = useState<Feature[]>([]);
   const [size, setSize] = useState({

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
-import * as THREE from "three";
 import { Link, useNavigate } from "react-router-dom";
 import RoundSummary from "./RoundSummary";
 import GameHud from "./GameHud";
@@ -22,7 +21,8 @@ import { cluesFor } from "../../data/clues";
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { HINT_COST } from "../../lib/scoring";
 import { hintsEnabled } from "../../lib/prefs";
-import { theme } from "../../lib/globeTheme";
+import { globeMaterial, theme } from "../../lib/globeTheme";
+import { useGlobeTheme } from "./useGlobeTheme";
 import type { Continent } from "../../data/continents";
 import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
 
@@ -30,11 +30,6 @@ type CountryFeature = {
   properties: { name: string };
   geometry: Geometry;
 };
-
-const globeMaterial = new THREE.MeshPhongMaterial({
-  color: theme.sphere,
-  shininess: 0,
-});
 
 /** Long enough to fly the camera to the answer and let it register. */
 const FLIGHT_MS = 800;
@@ -90,6 +85,9 @@ export default function FindGame({
   onRoundEnd,
   fixedOrder,
 }: Props) {
+  // Repaint when the player changes the globe palette.
+  useGlobeTheme();
+
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const wrongTimer = useRef<number | undefined>(undefined);

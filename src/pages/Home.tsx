@@ -428,6 +428,15 @@ export default function Home() {
           >
             Badges
           </Link>
+          <span aria-hidden="true" className="text-zinc-700">
+            ·
+          </span>
+          <Link
+            to="/levels"
+            className="underline underline-offset-4 transition-colors hover:text-zinc-300"
+          >
+            Level &amp; themes
+          </Link>
           {accountsEnabled && (
             <>
               <span aria-hidden="true" className="text-zinc-700">

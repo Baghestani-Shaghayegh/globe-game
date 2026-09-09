@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
-import * as THREE from "three";
 import { useGlobeClick } from "../globe-guess/useGlobeClick";
 import { getCountryMeta } from "../../data/countries";
 import { flagUrl } from "../../data/flags";
 import { cluesFor } from "../../data/clues";
-import { theme } from "../../lib/globeTheme";
+import { globeMaterial, theme } from "../../lib/globeTheme";
+import { useGlobeTheme } from "../globe-guess/useGlobeTheme";
 import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
 import type { GameType } from "../../data/modes";
 
@@ -14,11 +14,6 @@ type CountryFeature = {
   properties: { name: string };
   geometry: Geometry;
 };
-
-const globeMaterial = new THREE.MeshPhongMaterial({
-  color: theme.sphere,
-  shininess: 0,
-});
 
 /** Long enough to read the result before the next question opens. */
 const FLASH_MS = 900;
@@ -49,6 +44,9 @@ export default function MatchGlobe({
   locked,
   onAnswer,
 }: Props) {
+  // Repaint when the player changes the globe palette.
+  useGlobeTheme();
+
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const flashTimer = useRef<number | undefined>(undefined);
   const [wrongName, setWrongName] = useState<string | null>(null);

@@ -7,6 +7,7 @@ import Account from "./pages/Account";
 import Leaderboard from "./pages/Leaderboard";
 import PlayTogether from "./pages/PlayTogether";
 import Achievements from "./pages/Achievements";
+import Levels from "./pages/Levels";
 import { AuthProvider } from "./features/account/AuthProvider";
 import Daily from "./pages/Daily";
 
@@ -33,6 +34,7 @@ function App() {
             <Route path="/account" element={<Account />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/achievements" element={<Achievements />} />
+            <Route path="/levels" element={<Levels />} />
             <Route path="/play-together" element={<PlayTogether />} />
             <Route path="/room/:code" element={<Room />} />
             <Route path="/play/:mode" element={<Game type="name" />} />
