@@ -272,3 +272,38 @@ Two things worth knowing:
   them, so a determined player can post a score they did not earn. Closing
   that means replaying the round server-side — worth doing if the boards ever
   matter enough to cheat on, not before.
+
+### Multiplayer rooms
+
+Three tables — `rooms`, `room_players`, `room_answers` — and the database is
+the match. It holds the questions, which one is on screen, when it opened and
+what everyone has scored; both browsers are readers of it. That is what keeps
+two players in step without either being in charge.
+
+Every write goes through a `security definer` function: `create_room`,
+`join_room`, `start_match`, `submit_answer`, `time_up`, `rematch`,
+`leave_room`. There are no insert/update/delete policies at all, so the rules
+of a match live in one place instead of six. Select policies grant sight of a
+room to its members only.
+
+**Scoring** is decided server-side: 100 for knowing it, up to 100 more for
+speed, 50 for beating the room to it. The clock is read from
+`question_started_at` in the database, so being quick is worth points and
+*claiming* to be quick is not — one of the few things here a client genuinely
+cannot fake.
+
+Three things worth knowing:
+
+- **RLS recursed.** The `room_players` select policy asked `room_players` who
+  was in the room, which ran its own policy, which asked again. Postgres
+  refused every read on all three tables with "infinite recursion detected",
+  and the RPCs hid it because `security definer` bypasses RLS. Membership now
+  goes through `is_room_member()`, outside RLS.
+- **Comparing to NULL is not a test.** In `start_match`, `host_id <> me` with
+  a signed-out caller evaluates to NULL, which `IF` treats as false — so an
+  anonymous caller fell straight past the host check. Every room function now
+  asks whether there is a caller at all, first, and `anon` has no EXECUTE.
+- **Correctness is still client-reported.** The browser decides whether a
+  click was right; the server decides what that is worth. Same trade as the
+  leaderboard, and the fix is the same one: replay the round server-side, if
+  it ever matters enough.

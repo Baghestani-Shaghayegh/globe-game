@@ -213,6 +213,31 @@ export default function Home() {
           </span>
         </Link>
 
+        {accountsEnabled && (
+          <Link
+            to="/play-together"
+            className="group mt-3 flex w-full max-w-2xl items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 transition-colors hover:border-white/25 hover:bg-white/[0.06]"
+          >
+            <span aria-hidden="true" className="text-xl">
+              ⚔️
+            </span>
+            <span className="min-w-0">
+              <span className="block font-medium text-zinc-100">
+                Play together
+              </span>
+              <span className="block text-sm text-zinc-400">
+                Share a code and race a friend to each country.
+              </span>
+            </span>
+            <span
+              aria-hidden="true"
+              className="ml-auto shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-zinc-300"
+            >
+              →
+            </span>
+          </Link>
+        )}
+
         <div className="mt-4 w-full max-w-2xl rounded-2xl border border-white/[0.07] bg-white/[0.02] p-3 backdrop-blur-sm sm:p-4">
           {/* Anchored to the cards because it changes what every one of them does. */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1 pb-3">

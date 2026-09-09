@@ -5,11 +5,13 @@ import Records from "./pages/Records";
 import Stats from "./pages/Stats";
 import Account from "./pages/Account";
 import Leaderboard from "./pages/Leaderboard";
+import PlayTogether from "./pages/PlayTogether";
 import { AuthProvider } from "./features/account/AuthProvider";
 import Daily from "./pages/Daily";
 
 // The game page pulls in three.js (~2 MB) — load it only when a game starts.
 const Game = lazy(() => import("./pages/Game"));
+const Room = lazy(() => import("./pages/Room"));
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
             <Route path="/stats" element={<Stats />} />
             <Route path="/account" element={<Account />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/play-together" element={<PlayTogether />} />
+            <Route path="/room/:code" element={<Room />} />
             <Route path="/play/:mode" element={<Game type="name" />} />
             <Route path="/find/:mode" element={<Game type="find" />} />
             <Route path="/flags/:mode" element={<Game type="flag" />} />
