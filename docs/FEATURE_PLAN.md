@@ -52,7 +52,7 @@ Goal: give players a reason to come back every day.
 
 ### 2.3 Daily Challenge ⭐ (the single biggest retention feature)
 - One shared challenge per day for everyone (same 10 countries/flags, same order — generated from the date as a seed)
-- Everyone can compare results → shareable result card ("WorldGuess #142 — 9/10 🟩🟩🟩🟥…") like Wordle. This is free viral marketing.
+- Everyone can compare results → result card ("WorldGuess #142 — 9/10 🟩🟩🟩🟥…") like Wordle. *Built; the squares and `shareText()` are in place.* **Sharing it moved to Phase 4** — see below.
 - Daily streak counter ("🔥 12-day streak") — the #1 habit mechanic
 
 ---
@@ -77,6 +77,7 @@ Goal: play with friends. Start small: 2 players, one mode.
 - **XP & levels**: every game gives XP; levels unlock cosmetic globe themes (night mode globe, satellite texture, colors)
 - **Practice weak spots**: "You keep missing Central Asia — practice these 8 countries" (spaced repetition — this turns the game into a study tool, which is a huge audience: students, quiz-bowl kids, geography teachers)
 - Push/email notification for daily challenge (opt-in only)
+- **Share the daily result to Instagram** — render the 🟩🟨⬜ card as an image and hand it to the share sheet (Stories on mobile, download on desktop). Deliberately the **last thing before monetization**: sharing is only worth building once there is a game worth sharing and a leaderboard to land on. `shareText()` already produces the payload, so this is the render and the share sheet, nothing more.
 
 ---
 
@@ -148,4 +149,5 @@ Not scheduled into phases; pull from here whenever the game needs freshness. Rou
 4. Famous For mode (needs a curated clue dataset — start with ~100 countries × 3 clues)
 5. Multiplayer rooms
 6. Achievements, XP, practice mode
-7. PWA polish → ads → Capacitor mobile apps → premium
+7. Instagram share of the daily card — the last feature before money
+8. PWA polish → ads → Capacitor mobile apps → premium
