@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import Records from "./pages/Records";
 import Stats from "./pages/Stats";
 import Account from "./pages/Account";
+import Leaderboard from "./pages/Leaderboard";
 import { AuthProvider } from "./features/account/AuthProvider";
 import Daily from "./pages/Daily";
 
@@ -27,6 +28,7 @@ function App() {
             <Route path="/records" element={<Records />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/play/:mode" element={<Game type="name" />} />
             <Route path="/find/:mode" element={<Game type="find" />} />
             <Route path="/flags/:mode" element={<Game type="flag" />} />

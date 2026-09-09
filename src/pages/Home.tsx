@@ -394,6 +394,19 @@ export default function Home() {
           >
             Your stats
           </Link>
+          {accountsEnabled && (
+            <>
+              <span aria-hidden="true" className="text-zinc-700">
+                ·
+              </span>
+              <Link
+                to="/leaderboard"
+                className="underline underline-offset-4 transition-colors hover:text-zinc-300"
+              >
+                Leaderboard
+              </Link>
+            </>
+          )}
         </div>
       </main>
     </div>

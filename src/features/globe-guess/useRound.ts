@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { addRun, bestScore, bestTime, formatDuration } from "../../lib/records";
+import { postScore } from "../../lib/leaderboard";
 import {
   emptyScore,
   scoreCorrect,
@@ -91,6 +92,15 @@ export function useRound(recordKey: string, limitMs: number | null) {
           total,
           points: score.points,
           bestStreak: score.bestStreak,
+        });
+        // Onto the weekly board too, if there's an account behind this run.
+        // Deliberately not awaited: the summary shouldn't wait on the network,
+        // and the run is already saved locally whether or not this lands.
+        void postScore(recordKey, {
+          points: score.points,
+          found,
+          total,
+          ms,
         });
       }
 

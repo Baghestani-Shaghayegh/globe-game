@@ -19,6 +19,9 @@ import {
   type Outcome,
 } from "../lib/daily";
 import { formatDuration } from "../lib/records";
+import { dayStart, topScores, type BoardRow } from "../lib/leaderboard";
+import { accountsEnabled } from "../lib/supabase";
+import { recordKey } from "../data/modes";
 
 /** A mode built for one day: the ten countries the challenge asks for. */
 function dailyMode(challenge: Challenge): Mode {
@@ -44,6 +47,72 @@ function poolFor(type: Challenge["type"], names: string[]): string[] {
     .filter((meta) => type !== "flag" || flagUrl(meta.geoName) !== null)
     .filter((meta) => type !== "famous" || cluesFor(meta.geoName).length > 0)
     .map((meta) => meta.geoName);
+}
+
+/**
+ * Today's board. The daily challenge is the one round everybody plays the
+ * same, so it's the only place a leaderboard compares like with like without
+ * anyone choosing settings — which makes it the place worth showing one.
+ */
+function TodaysBoard({ type }: { type: Challenge["type"] }) {
+  const [rows, setRows] = useState<BoardRow[] | null>(null);
+
+  useEffect(() => {
+    if (!accountsEnabled) return;
+    let cancelled = false;
+    topScores(recordKey(type, "daily", null), dayStart(), 10)
+      .then((data) => {
+        if (!cancelled) setRows(data);
+      })
+      .catch(() => {
+        // A board that won't load shouldn't bury the player's own result.
+        if (!cancelled) setRows([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [type]);
+
+  if (!accountsEnabled || !rows?.length) return null;
+
+  return (
+    <section className="mt-8">
+      <h2 className="px-1 text-sm uppercase tracking-wider text-zinc-500">
+        Today's board
+      </h2>
+      <ol className="mt-2 divide-y divide-white/[0.05] overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]">
+        {rows.map((row) => (
+          <li
+            key={row.user_id}
+            className="flex items-center gap-3 px-4 py-2 text-sm"
+          >
+            <span className="w-5 shrink-0 text-right tabular-nums text-zinc-600">
+              {row.rank}
+            </span>
+            {row.country && (
+              <img
+                src={`/flags/${row.country}.svg`}
+                alt=""
+                width={18}
+                height={14}
+                className="w-[18px] shrink-0 rounded-[2px]"
+              />
+            )}
+            <span className="truncate text-zinc-100">{row.username}</span>
+            <span className="ml-auto shrink-0 tabular-nums text-zinc-300">
+              {row.points.toLocaleString()}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <Link
+        to="/leaderboard"
+        className="mt-3 inline-block px-1 text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+      >
+        All leaderboards
+      </Link>
+    </section>
+  );
 }
 
 export default function Daily() {
@@ -151,6 +220,8 @@ export default function Daily() {
               🔥 {days}-day streak
             </p>
           )}
+
+          <TodaysBoard type={result.type} />
 
           <p className="mt-6 text-center text-sm text-zinc-500">
             One round a day. The next one lands at midnight UTC.

@@ -241,3 +241,34 @@ Neither can be done from code, and both need your login:
 Google sign-in is a later addition: create OAuth credentials in Google Cloud,
 paste them into Auth → Providers → Google, then add a button that calls
 `supabase.auth.signInWithOAuth({ provider: "google" })`.
+
+### Leaderboards
+
+`public.scores` — one immutable row per posted run.
+
+| Column | Notes |
+|---|---|
+| `user_id` | FK to `auth.users`, cascades on delete |
+| `bucket` | the game's own record key: `europe`, `flag:easy@180`, `sudden:find:asia` |
+| `points` / `found` / `total` / `ms` | the run, with sanity checks |
+| `played_at` | server-set; clients cannot write this column |
+
+A board is one bucket, so it compares like with like — same game type, map,
+clock and rules. `public.leaderboard(board, since, limit_to)` returns each
+player's *best* run, ranked by points, ties broken by the quicker run then by
+whoever got there first. `since` is what makes a board weekly.
+
+RLS: anyone reads; a signed-in player with a profile may insert their own runs
+and nothing else. No update or delete policy — a posted run is history.
+
+Two things worth knowing:
+
+- **Backdating** was possible at first. `revoke insert (played_at)` looked
+  right but does nothing: a column-level revoke cannot subtract from a
+  table-level INSERT grant. The fix is to revoke the table grant and re-grant
+  the allowed columns, which is what the schema now does, with a policy check
+  on `played_at` behind it.
+- **Scores are client-reported.** The browser computes the points and posts
+  them, so a determined player can post a score they did not earn. Closing
+  that means replaying the round server-side — worth doing if the boards ever
+  matter enough to cheat on, not before.
