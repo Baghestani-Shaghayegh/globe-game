@@ -1,26 +1,66 @@
 import { useState } from "react";
-import {
-  RULESETS,
-  TIME_LIMITS,
-  type Ruleset,
-} from "../data/modes";
+import { RULESETS, TIME_LIMITS, type Ruleset } from "../data/modes";
 
-const pillRow =
-  "flex flex-wrap gap-1 rounded-full border border-white/10 bg-white/5 p-1";
-
-function pill(active: boolean): string {
-  return `rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-    active ? "bg-white/15 text-zinc-50" : "text-zinc-400 hover:text-zinc-100"
-  }`;
+/** One row of mutually exclusive choices, styled as a real segmented control. */
+function Segmented<T>({
+  label,
+  hint,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  options: { key: string; label: string; value: T }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="px-4 py-3.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+          {label}
+        </span>
+        {hint && (
+          <span className="truncate text-xs text-zinc-600">{hint}</span>
+        )}
+      </div>
+      <div
+        role="group"
+        aria-label={label}
+        className="mt-2 flex flex-wrap gap-1.5"
+      >
+        {options.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.key}
+              aria-pressed={active}
+              onClick={() => onChange(option.value)}
+              className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-all ${
+                active
+                  ? "border-sky-400/40 bg-sky-400/15 text-sky-100 shadow-[0_0_0_1px_rgba(56,189,248,0.15)]"
+                  : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/25 hover:text-zinc-100"
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 /**
- * The clock, the rules and the hint setting, folded away.
+ * The clock, the rules and the hint setting, folded away behind a control that
+ * looks like one.
  *
- * They used to occupy three rows of the menu permanently, which put the least
- * used controls in the most valuable space — most people play the default and
- * never touch them. Closed, the summary line still says what they are set to,
- * so nothing is hidden, only tidied.
+ * The first version of this was a line of text with a chevron, which nobody
+ * would guess was a button. It now carries the same border, background and
+ * hover as the cards around it, shows the current settings as chips rather
+ * than a sentence, and marks itself when anything is off the default — so a
+ * player who has set a three-minute blitz can see that from the closed state.
  */
 export default function Options({
   limit,
@@ -39,88 +79,128 @@ export default function Options({
 }) {
   const [open, setOpen] = useState(false);
 
-  const summary = [
+  const chips = [
     TIME_LIMITS.find((t) => t.seconds === limit)?.label ?? "Count up",
     RULESETS.find((r) => r.id === ruleset)?.label ?? "Relaxed",
     hints ? "Hints on" : "Hints off",
-  ].join(" · ");
+  ];
+  const customised = limit !== null || ruleset !== "relaxed" || !hints;
 
   return (
     <div className="mt-3">
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 rounded-lg px-1 py-1.5 text-left text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+        className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors ${
+          open
+            ? "rounded-b-none border-white/15 bg-white/[0.05]"
+            : customised
+              ? "border-sky-400/30 bg-sky-400/[0.05] hover:border-sky-400/50"
+              : "border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.05]"
+        }`}
       >
-        <span className="text-xs uppercase tracking-wider">Options</span>
-        <span className="truncate text-zinc-400">{summary}</span>
-        <span
+        <svg
           aria-hidden="true"
-          className={`ml-auto shrink-0 transition-transform ${open ? "rotate-90" : ""}`}
+          viewBox="0 0 24 24"
+          className="h-4 w-4 shrink-0 text-zinc-400"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
         >
-          ›
+          <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+          <circle cx="16" cy="7" r="2.2" />
+          <circle cx="10" cy="17" r="2.2" />
+        </svg>
+
+        <span className="text-sm font-medium text-zinc-200">Options</span>
+
+        <span className="ml-auto flex min-w-0 items-center gap-1.5">
+          {chips.map((chip) => (
+            <span
+              key={chip}
+              className="hidden shrink-0 rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5 text-xs text-zinc-400 sm:inline"
+            >
+              {chip}
+            </span>
+          ))}
+          <span className="truncate text-xs text-zinc-500 sm:hidden">
+            {chips.join(" · ")}
+          </span>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${
+              open ? "rotate-180" : ""
+            }`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
         </span>
       </button>
 
       {open && (
-        <div className="mt-2 flex flex-col gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="w-12 shrink-0 text-xs uppercase tracking-wider text-zinc-500">
-              Clock
-            </span>
-            <div className={pillRow}>
-              {TIME_LIMITS.map((option) => (
-                <button
-                  key={option.label}
-                  aria-pressed={limit === option.seconds}
-                  onClick={() => onLimit(option.seconds)}
-                  className={pill(limit === option.seconds)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="divide-y divide-white/[0.06] rounded-b-xl border border-t-0 border-white/15 bg-white/[0.02]">
+          <Segmented
+            label="Clock"
+            hint={
+              limit === null
+                ? "Play until you're done"
+                : "The round stops when it runs out"
+            }
+            options={TIME_LIMITS.map((option) => ({
+              key: option.label,
+              label: option.label,
+              value: option.seconds,
+            }))}
+            value={limit}
+            onChange={onLimit}
+          />
+          <Segmented
+            label="Rules"
+            hint={RULESETS.find((r) => r.id === ruleset)?.blurb}
+            options={RULESETS.map((option) => ({
+              key: option.id,
+              label: option.label,
+              value: option.id,
+            }))}
+            value={ruleset}
+            onChange={onRuleset}
+          />
+          <Segmented
+            label="Hints"
+            hint={
+              hints
+                ? "Buy a nudge, and pay for it in points"
+                : "No nudges — you can still be shown an answer"
+            }
+            options={[
+              { key: "on", label: "On", value: true },
+              { key: "off", label: "Off", value: false },
+            ]}
+            value={hints}
+            onChange={onHints}
+          />
 
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="w-12 shrink-0 text-xs uppercase tracking-wider text-zinc-500">
-              Rules
-            </span>
-            <div className={pillRow}>
-              {RULESETS.map((option) => (
-                <button
-                  key={option.id}
-                  aria-pressed={ruleset === option.id}
-                  onClick={() => onRuleset(option.id)}
-                  className={pill(ruleset === option.id)}
-                >
-                  {option.label}
-                </button>
-              ))}
+          {customised && (
+            <div className="px-4 py-2.5">
+              <button
+                onClick={() => {
+                  onLimit(null);
+                  onRuleset("relaxed");
+                  onHints(true);
+                }}
+                className="text-xs text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+              >
+                Back to defaults
+              </button>
             </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="w-12 shrink-0 text-xs uppercase tracking-wider text-zinc-500">
-              Hints
-            </span>
-            <div className={pillRow}>
-              {[true, false].map((on) => (
-                <button
-                  key={String(on)}
-                  aria-pressed={hints === on}
-                  onClick={() => onHints(on)}
-                  className={pill(hints === on)}
-                >
-                  {on ? "On" : "Off"}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <p className="px-1 text-xs text-zinc-600">
-            {RULESETS.find((r) => r.id === ruleset)?.blurb}
-          </p>
+          )}
         </div>
       )}
     </div>
