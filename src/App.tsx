@@ -16,6 +16,8 @@ const Game = lazy(() => import("./pages/Game"));
 const Room = lazy(() => import("./pages/Room"));
 // Practice runs a real globe round, so it carries the same weight as the game.
 const Practice = lazy(() => import("./pages/Practice"));
+// Also a globe round, so it carries three.js too.
+const Mystery = lazy(() => import("./pages/Mystery"));
 
 function App() {
   return (
@@ -38,6 +40,7 @@ function App() {
             <Route path="/achievements" element={<Achievements />} />
             <Route path="/levels" element={<Levels />} />
             <Route path="/practice" element={<Practice />} />
+            <Route path="/mystery" element={<Mystery />} />
             <Route path="/play-together" element={<PlayTogether />} />
             <Route path="/room/:code" element={<Room />} />
             <Route path="/play/:mode" element={<Game type="name" />} />

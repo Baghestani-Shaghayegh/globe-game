@@ -35,7 +35,7 @@ export function formatDay(key: string): string {
 }
 
 /** A small, fast, well-behaved PRNG — enough to shuffle a list reproducibly. */
-function mulberry32(seed: number): () => number {
+export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -45,7 +45,7 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-function hash(text: string): number {
+export function hash(text: string): number {
   let h = 2166136261;
   for (let i = 0; i < text.length; i++) {
     h ^= text.charCodeAt(i);
