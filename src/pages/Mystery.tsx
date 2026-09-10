@@ -8,6 +8,7 @@ import { getCountryMeta } from "../data/countries";
 import { globeMaterial, theme } from "../lib/globeTheme";
 import { featureCentre, type Geometry } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
+import ShareButton from "../components/ShareButton";
 import {
   arrowFor,
   closeness,
@@ -19,6 +20,7 @@ import {
   mysteryNumber,
   saveMystery,
   scoreFor,
+  shareText,
   type MysteryResult,
   type Point,
 } from "../lib/mystery";
@@ -222,6 +224,23 @@ export default function Mystery() {
                 .map((g) => heatSquare(g.km))
                 .join("")}
             </p>
+            <div className="pointer-events-auto w-full pt-1">
+              <ShareButton
+                card={() => ({
+                  eyebrow: `Mystery #${result.number}`,
+                  // Deliberately not the country: the whole point of a shared
+                  // card is that it says nothing the reader hasn't earned.
+                  title: `Found in ${guesses.length}`,
+                  subtitle: guesses.length === 1 ? "first guess" : "guesses",
+                  // Oldest first, so the card reads as the hunt did.
+                  tiles: [...guesses].reverse().map((g) => heatColor(g.km)),
+                  note: `${scoreFor(result).toLocaleString()} points`,
+                })}
+                text={shareText(result)}
+                filename={`worldguess-mystery-${result.number}.png`}
+                className="w-full rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/15 disabled:opacity-60"
+              />
+            </div>
           </>
         ) : (
           <>

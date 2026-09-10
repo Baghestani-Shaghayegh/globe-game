@@ -259,21 +259,34 @@ describe("the saved round", () => {
 });
 
 describe("shareText", () => {
-  it("shows a square per guess and the count", () => {
+  it("shows a square per guess, oldest first, however they are stored", () => {
     const text = shareText({
       day: "2026-09-10",
       number: 252,
       answer: "Chad",
+      // Stored the way the game stores them: newest guess at the front.
       guesses: [
-        { name: "Peru", km: 9000 },
-        { name: "Mali", km: 1800 },
         { name: "Chad", km: 0 },
+        { name: "Mali", km: 1800 },
+        { name: "Peru", km: 9000 },
       ],
       solved: true,
     });
     expect(text).toContain("Mystery #252");
     expect(text).toContain("3 guesses");
+    // Cold to hot, finishing on the one that got it.
     expect(text).toContain("⬛🟧🟩");
+  });
+
+  it("never names the country, so a shared card spoils nothing", () => {
+    const text = shareText({
+      day: "2026-09-10",
+      number: 252,
+      answer: "Chad",
+      guesses: [{ name: "Chad", km: 0 }],
+      solved: true,
+    });
+    expect(text).not.toContain("Chad");
   });
 
   it("marks an unsolved round with an X rather than a number", () => {

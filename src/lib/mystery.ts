@@ -177,7 +177,13 @@ export function scoreFor(result: MysteryResult): number {
 }
 
 export function shareText(result: MysteryResult): string {
-  const squares = result.guesses.map((guess) => heatSquare(guess.km)).join("");
+  // Guesses are stored newest-first, so the card has to run them back the
+  // other way — otherwise the winning square opens the row instead of closing
+  // it, and the trail reads as a hunt run backwards.
+  const squares = [...result.guesses]
+    .reverse()
+    .map((guess) => heatSquare(guess.km))
+    .join("");
   const tally = result.solved ? `${result.guesses.length}` : "X";
   return `WorldGuess Mystery #${result.number} — ${tally} guesses\n${squares}`;
 }

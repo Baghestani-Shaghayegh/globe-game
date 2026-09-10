@@ -7,6 +7,7 @@ import { getCountryMeta } from "../data/countries";
 import { globeMaterial, theme } from "../lib/globeTheme";
 import { featureCentre, type Geometry } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
+import ShareButton from "../components/ShareButton";
 import {
   isConnected,
   loadConnect,
@@ -14,6 +15,7 @@ import {
   resolveName,
   saveConnect,
   scoreFor,
+  shareText,
   shortestPath,
   touchesChain,
   type ConnectResult,
@@ -227,6 +229,22 @@ export default function Connect() {
             <p className="text-sm text-zinc-400">
               {[puzzle.from, ...result.chain, puzzle.to].map(display).join(" → ")}
             </p>
+            <div className="pointer-events-auto w-full pt-1">
+              <ShareButton
+                card={() => ({
+                  eyebrow: `Connect #${result.number}`,
+                  title: `${display(result.from)} → ${display(result.to)}`,
+                  subtitle: `${result.chain.length} steps · par ${result.par}`,
+                  tiles: result.chain.map((_, i) =>
+                    i < result.par ? "#5bb98c" : "#f2a93b"
+                  ),
+                  note: `${scoreFor(result).toLocaleString()} points`,
+                })}
+                text={shareText(result)}
+                filename={`worldguess-connect-${result.number}.png`}
+                className="w-full rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/15 disabled:opacity-60"
+              />
+            </div>
           </>
         ) : (
           <>

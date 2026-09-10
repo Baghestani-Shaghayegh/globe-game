@@ -9,6 +9,7 @@ import { flagUrl } from "../data/flags";
 import { GAME_TYPES, type Mode } from "../data/modes";
 import {
   challengeFor,
+  shareText,
   dayKey,
   formatDay,
   resultFor,
@@ -19,6 +20,7 @@ import {
   type Outcome,
 } from "../lib/daily";
 import { formatDuration } from "../lib/records";
+import ShareButton from "../components/ShareButton";
 import { dayStart, topScores, type BoardRow } from "../lib/leaderboard";
 import { accountsEnabled } from "../lib/supabase";
 import { recordKey } from "../data/modes";
@@ -220,6 +222,21 @@ export default function Daily() {
               🔥 {days}-day streak
             </p>
           )}
+
+          <ShareButton
+            card={() => ({
+              eyebrow: `Daily #${result.number}`,
+              title: `${result.found} of ${result.total}`,
+              subtitle: `${result.points.toLocaleString()} points`,
+              tiles: result.outcomes.map((o) =>
+                o === "first" ? "#5bb98c" : o === "retried" ? "#f2a93b" : "#3f4550"
+              ),
+              note: label,
+            })}
+            text={shareText(result)}
+            filename={`worldguess-daily-${result.number}.png`}
+            className="mt-6 w-full rounded-lg bg-white/10 py-2.5 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/15 disabled:opacity-60"
+          />
 
           <TodaysBoard type={result.type} />
 
