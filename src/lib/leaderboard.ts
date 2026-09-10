@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { MODES, TIME_LIMITS } from "../data/modes";
 
 /** A player's best run in one bucket, as a board shows it. */
 export type BoardRow = {
@@ -81,6 +82,56 @@ export async function postScore(
   return !error;
 }
 
+/** A player's standing on the overall board. */
+export type OverallRow = {
+  rank: number;
+  user_id: string;
+  username: string;
+  country: string | null;
+  points: number;
+  runs: number;
+  best_run: number;
+  last_played: string;
+};
+
+/** A per-bucket board that actually has someone on it. */
+export type ActiveBoard = {
+  bucket: string;
+  players: number;
+  runs: number;
+  top_points: number;
+};
+
+/**
+ * The board everyone lands on: total points across everything played.
+ *
+ * The per-bucket boards can only be empty or nearly so until the game has a
+ * crowd, and an empty leaderboard reads as a dead game. This one has someone on
+ * it as soon as anyone has played at all.
+ */
+export async function overallTop(
+  since: Date | null,
+  limit = 20
+): Promise<OverallRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("overall_leaderboard", {
+    since: since ? since.toISOString() : null,
+    limit_to: limit,
+  });
+  if (error) throw error;
+  return (data ?? []) as OverallRow[];
+}
+
+/** Which per-bucket boards are worth listing, busiest first. */
+export async function activeBoards(since: Date | null): Promise<ActiveBoard[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("active_boards", {
+    since: since ? since.toISOString() : null,
+  });
+  if (error) throw error;
+  return (data ?? []) as ActiveBoard[];
+}
+
 /** One board, best-first. `since` null is all time. */
 export async function topScores(
   bucket: string,
@@ -95,4 +146,44 @@ export async function topScores(
   });
   if (error) throw error;
   return (data ?? []) as BoardRow[];
+}
+
+/**
+ * Reads a stored bucket key back into words — "Flags · Europe · 3 min ·
+ * Sudden death". The key is the game's own `recordKey`, so this is that
+ * function run backwards, and it has to cope with keys written by older
+ * versions of the game.
+ */
+export function describeBucket(bucket: string): string {
+  const [head, limit] = bucket.split("@");
+  const ruleset = head.startsWith("sudden:")
+    ? "Sudden death"
+    : head.startsWith("blitz:")
+      ? "Blitz"
+      : null;
+  const withoutRules = head.replace(/^(sudden|blitz):/, "");
+  const typeLabel = withoutRules.startsWith("find:")
+    ? "Find it"
+    : withoutRules.startsWith("flag:")
+      ? "Flags"
+      : withoutRules.startsWith("famous:")
+        ? "Famous for"
+        : "Name it";
+  const modeId = withoutRules.replace(/^(find|flag|famous):/, "");
+  const modeName =
+    modeId === "daily"
+      ? "Daily"
+      : (MODES.find((mode) => mode.id === modeId)?.name ?? modeId);
+
+  const clock = limit
+    ? (TIME_LIMITS.find((option) => option.seconds === Number(limit))?.label ??
+      `${limit}s`)
+    : null;
+
+  return [typeLabel, modeName, clock, ruleset].filter(Boolean).join(" · ");
+}
+
+/** Whether a bucket is one of the daily challenge's. */
+export function isDailyBucket(bucket: string): boolean {
+  return bucket.split("@")[0].replace(/^(sudden|blitz):/, "").endsWith("daily");
 }

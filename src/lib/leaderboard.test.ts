@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { dayStart, untilWeekEnd, weekStart } from "./leaderboard";
+import {
+  dayStart,
+  describeBucket,
+  isDailyBucket,
+  untilWeekEnd,
+  weekStart,
+} from "./leaderboard";
 
 const iso = (date: Date) => date.toISOString();
 
@@ -70,4 +76,43 @@ describe("untilWeekEnd", () => {
   ])("reads %s as %s left", (at, expected) => {
     expect(untilWeekEnd(new Date(at))).toBe(expected);
   });
+});
+
+describe("describeBucket", () => {
+  it.each([
+    ["easy", "Name it · Countries only"],
+    ["europe", "Name it · Europe"],
+    ["find:europe", "Find it · Europe"],
+    ["flag:easy@180", "Flags · Countries only · 3 min"],
+    ["famous:asia", "Famous for · Asia"],
+    ["sudden:find:europe@180", "Find it · Europe · 3 min · Sudden death"],
+    ["blitz:hard", "Name it · Full map · Blitz"],
+    ["flag:daily", "Flags · Daily"],
+  ])("reads %s as %s", (bucket, expected) => {
+    expect(describeBucket(bucket)).toBe(expected);
+  });
+
+  it("passes an unknown mode through rather than dropping it", () => {
+    expect(describeBucket("find:atlantis")).toBe("Find it · atlantis");
+  });
+
+  it("survives a clock the game no longer offers", () => {
+    expect(describeBucket("europe@42")).toBe("Name it · Europe · 42s");
+  });
+});
+
+describe("isDailyBucket", () => {
+  it.each(["daily", "flag:daily", "famous:daily", "find:daily"])(
+    "recognises %s",
+    (bucket) => {
+      expect(isDailyBucket(bucket)).toBe(true);
+    }
+  );
+
+  it.each(["easy", "europe", "flag:easy", "sudden:find:asia"])(
+    "leaves %s alone",
+    (bucket) => {
+      expect(isDailyBucket(bucket)).toBe(false);
+    }
+  );
 });
