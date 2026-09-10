@@ -116,7 +116,7 @@ Not scheduled into phases; pull from here whenever the game needs freshness. Rou
 
 ### New quiz content (cheap to add once the game engine exists)
 - **Mystery country** *(built)* — one hidden country a day; every guess is painted warm-to-cold by great-circle distance, with a bearing arrow and a closeness percentage. The only mode where a wrong answer tells you something.
-- **Connect the countries** — two countries, name the ones between them to link them up (see "border pathfinding" below). Needs an adjacency dataset the game doesn't have yet: derivable from `world.geojson` by finding shared boundary segments, but islands, enclaves and maritime borders all need checking by hand.
+- **Connect the countries** *(built)* — two ends, name the countries that link them by land. The adjacency graph in `src/data/borders.ts` is generated from `world.geojson` by finding shared outline vertices and checked against the map: thirty-one neighbour counts, a dozen borders that must exist, ten sea crossings that must not. 315 land borders; the largest connected landmass is 150 countries.
 - **Outline/shape quiz** — show a country's silhouette, guess the country (one of the most popular geography quiz formats anywhere)
 - **Capitals mode** — capital → country and country → capital
 - **Border pathfinding** (like the game *Travle*) — "get from Spain to India" by naming a chain of bordering countries; extremely replayable

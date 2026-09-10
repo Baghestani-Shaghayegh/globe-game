@@ -240,6 +240,29 @@ export default function Home() {
           </span>
         </Link>
 
+        <Link
+          to="/connect"
+          className="group mt-3 flex w-full max-w-2xl items-center gap-3 rounded-2xl border border-violet-400/25 bg-violet-400/[0.06] px-5 py-4 transition-colors hover:border-violet-400/50 hover:bg-violet-400/10"
+        >
+          <span aria-hidden="true" className="text-xl">
+            🔗
+          </span>
+          <span className="min-w-0">
+            <span className="block font-medium text-zinc-100">
+              Connect the countries
+            </span>
+            <span className="block text-sm text-zinc-400">
+              Two ends, and the countries that link them by land.
+            </span>
+          </span>
+          <span
+            aria-hidden="true"
+            className="ml-auto shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-zinc-300"
+          >
+            →
+          </span>
+        </Link>
+
         {duePractice > 0 && (
           <Link
             to="/practice"

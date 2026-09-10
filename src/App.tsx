@@ -18,6 +18,7 @@ const Room = lazy(() => import("./pages/Room"));
 const Practice = lazy(() => import("./pages/Practice"));
 // Also a globe round, so it carries three.js too.
 const Mystery = lazy(() => import("./pages/Mystery"));
+const Connect = lazy(() => import("./pages/Connect"));
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
             <Route path="/levels" element={<Levels />} />
             <Route path="/practice" element={<Practice />} />
             <Route path="/mystery" element={<Mystery />} />
+            <Route path="/connect" element={<Connect />} />
             <Route path="/play-together" element={<PlayTogether />} />
             <Route path="/room/:code" element={<Room />} />
             <Route path="/play/:mode" element={<Game type="name" />} />
