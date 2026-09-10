@@ -25,6 +25,7 @@ import { globeMaterial, theme } from "../../lib/globeTheme";
 import { useGlobeTheme } from "./useGlobeTheme";
 import type { Continent } from "../../data/continents";
 import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
+import { VIEW, outlinePath } from "../../lib/outline";
 
 type CountryFeature = {
   properties: { name: string };
@@ -192,6 +193,16 @@ export default function FindGame({
 
   const target = queue[0] ?? null;
   const targetLabel = target ? getCountryMeta(target).displayName : "";
+
+  /**
+   * The outline of the country being asked for. Built here rather than in the
+   * render so a re-render for the clock doesn't retrace a few thousand points.
+   */
+  const targetShape = useMemo(() => {
+    if (type !== "outline" || !target) return "";
+    const feature = features.find((f) => f.properties.name === target);
+    return feature ? outlinePath(feature.geometry) : "";
+  }, [type, target, features]);
 
   const endRound = useCallback(() => {
     end({
@@ -466,7 +477,20 @@ export default function FindGame({
             </p>
           )}
 
-          {/* The prompt itself — the only part that differs between the three. */}
+          {/* The prompt itself — the only part that differs between the modes. */}
+          {type === "outline" && !revealed && targetShape && (
+            <svg
+              viewBox={`0 0 ${VIEW} ${VIEW}`}
+              width={132}
+              height={132}
+              role="img"
+              aria-label="Outline of the country to find"
+              className="w-32"
+            >
+              <path d={targetShape} fill={theme.found} />
+            </svg>
+          )}
+
           {type === "flag" && !revealed && target && (
             <img
               src={flagUrl(target) ?? ""}
@@ -491,7 +515,7 @@ export default function FindGame({
                 ))}
             </ul>
           ) : (
-            (type !== "flag" || revealed !== null) && (
+            ((type !== "flag" && type !== "outline") || revealed !== null) && (
               <p className="text-xl font-medium text-zinc-50 sm:text-2xl">
                 {targetLabel}
               </p>

@@ -233,3 +233,34 @@ describe("famous-for rounds keep their own records", () => {
     ).toBe("/famous/africa?limit=300");
   });
 });
+
+describe("outline rounds", () => {
+  it("files under their own bucket", () => {
+    expect(recordKey("outline", "europe", null)).toBe("outline:europe");
+    expect(recordKey("outline", "easy", 180, "blitz")).toBe("blitz:outline:easy@180");
+  });
+
+  it("reads that bucket back as an outline round", () => {
+    addRun("blitz:outline:easy@180", { ms: 60_000, found: 5, total: 10 });
+    const [bucket] = allBuckets();
+    expect(bucket).toMatchObject({
+      type: "outline",
+      modeId: "easy",
+      limitSeconds: 180,
+      ruleset: "blitz",
+    });
+  });
+
+  it("matches the shape the database will accept", () => {
+    // scores.bucket is constrained to this in Postgres; a key that fails it
+    // would be silently dropped from every leaderboard.
+    const shape = /^[a-z]+(:[a-z]+){0,2}(@[0-9]{1,4})?$/;
+    for (const key of [
+      recordKey("outline", "europe", null),
+      recordKey("outline", "easy", 180, "blitz"),
+      recordKey("outline", "asia", 600, "sudden"),
+    ]) {
+      expect(key).toMatch(shape);
+    }
+  });
+});

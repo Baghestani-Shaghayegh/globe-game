@@ -112,12 +112,14 @@ export function allBuckets(): Bucket[] {
           ? "flag"
           : withoutRules.startsWith("famous:")
             ? "famous"
-            : "name";
+            : withoutRules.startsWith("outline:")
+              ? "outline"
+              : "name";
       return {
         key,
         type,
         ruleset,
-        modeId: withoutRules.replace(/^(find|flag|famous):/, ""),
+        modeId: withoutRules.replace(/^(find|flag|famous|outline):/, ""),
         limitSeconds: limit ? Number(limit) : null,
         runs: valid,
       };

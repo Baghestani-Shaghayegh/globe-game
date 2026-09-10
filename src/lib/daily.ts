@@ -62,8 +62,8 @@ export type Challenge = {
   countries: string[];
 };
 
-/** The four ways to play, rotated by the date rather than picked at random. */
-const TYPES: GameType[] = ["name", "find", "flag", "famous"];
+/** The ways to play, rotated by the date rather than picked at random. */
+const TYPES: GameType[] = ["name", "find", "flag", "famous", "outline"];
 
 /**
  * Builds the round for a given day from a pool of eligible countries.
@@ -175,6 +175,7 @@ export function shareText(result: DailyResult): string {
     find: "Find it",
     flag: "Flags",
     famous: "Famous for",
+    outline: "Outlines",
   }[result.type];
   const squares = result.outcomes.map((o) => SQUARES[o]).join("");
   return [

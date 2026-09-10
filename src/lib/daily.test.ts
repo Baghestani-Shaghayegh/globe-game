@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { GAME_TYPES } from "../data/modes";
 import {
   DAILY_COUNTRIES,
   challengeFor,
@@ -58,12 +59,27 @@ describe("the day's round", () => {
     expect(countries).toHaveLength(2);
   });
 
-  it("rotates the game type through the four", () => {
-    const types = ["2026-01-01", "2026-01-02", "2026-01-03", "2026-01-04"].map(
-      (d) => challengeFor(d, POOL).type
+  it("rotates through every game type, then starts again", () => {
+    // Derived from the list rather than hard-coded, so adding a fifth way to
+    // play doesn't quietly leave this asserting the old count.
+    const count = GAME_TYPES.length;
+    const days = Array.from({ length: count }, (_, i) =>
+      `2026-01-${String(i + 1).padStart(2, "0")}`
     );
-    expect(new Set(types).size).toBe(4);
-    expect(challengeFor("2026-01-05", POOL).type).toBe(types[0]);
+    const types = days.map((d) => challengeFor(d, POOL).type);
+    expect(new Set(types).size).toBe(count);
+
+    const next = `2026-01-${String(count + 1).padStart(2, "0")}`;
+    expect(challengeFor(next, POOL).type).toBe(types[0]);
+  });
+
+  it("offers every game type over a long enough stretch", () => {
+    const seen = new Set(
+      Array.from({ length: 30 }, (_, i) =>
+        challengeFor(`2026-03-${String(i + 1).padStart(2, "0")}`, POOL).type
+      )
+    );
+    expect(seen.size).toBe(GAME_TYPES.length);
   });
 });
 

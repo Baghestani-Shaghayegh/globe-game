@@ -4,7 +4,7 @@ import type { CountryMeta } from "./countries";
  * The two ways a round can be played: "name" shows a country and asks for its
  * name, "find" names a country and asks where it is.
  */
-export type GameType = "name" | "find" | "flag" | "famous";
+export type GameType = "name" | "find" | "flag" | "famous" | "outline";
 
 export const GAME_TYPES: { id: GameType; label: string; blurb: string }[] = [
   { id: "name", label: "Name it", blurb: "Click a country, type its name." },
@@ -14,6 +14,11 @@ export const GAME_TYPES: { id: GameType; label: string; blurb: string }[] = [
     id: "famous",
     label: "Famous for",
     blurb: "We give a clue, you find the country.",
+  },
+  {
+    id: "outline",
+    label: "Outlines",
+    blurb: "We show a shape, you find the country.",
   },
 ];
 
@@ -82,7 +87,9 @@ export function gamePath(
         ? `/flags/${modeId}`
         : type === "famous"
           ? `/famous/${modeId}`
-          : `/play/${modeId}`;
+          : type === "outline"
+            ? `/outlines/${modeId}`
+            : `/play/${modeId}`;
   const query = new URLSearchParams();
   if (limitSeconds !== null) query.set("limit", String(limitSeconds));
   if (ruleset !== "relaxed") query.set("rules", ruleset);

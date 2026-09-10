@@ -168,8 +168,10 @@ export function describeBucket(bucket: string): string {
       ? "Flags"
       : withoutRules.startsWith("famous:")
         ? "Famous for"
-        : "Name it";
-  const modeId = withoutRules.replace(/^(find|flag|famous):/, "");
+        : withoutRules.startsWith("outline:")
+          ? "Outlines"
+          : "Name it";
+  const modeId = withoutRules.replace(/^(find|flag|famous|outline):/, "");
   const modeName =
     modeId === "daily"
       ? "Daily"
