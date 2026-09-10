@@ -18,6 +18,7 @@ import {
 } from "../../data/modes";
 import { flagUrl } from "../../data/flags";
 import { cluesFor } from "../../data/clues";
+import { capitalOf } from "../../data/capitals";
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { HINT_COST } from "../../lib/scoring";
 import { hintsEnabled } from "../../lib/prefs";
@@ -491,6 +492,12 @@ export default function FindGame({
             </svg>
           )}
 
+          {type === "capital" && !revealed && target && (
+            <p className="text-xl font-medium text-zinc-50 sm:text-2xl">
+              {capitalOf(target)}
+            </p>
+          )}
+
           {type === "flag" && !revealed && target && (
             <img
               src={flagUrl(target) ?? ""}
@@ -515,7 +522,8 @@ export default function FindGame({
                 ))}
             </ul>
           ) : (
-            ((type !== "flag" && type !== "outline") || revealed !== null) && (
+            ((type !== "flag" && type !== "outline" && type !== "capital") ||
+              revealed !== null) && (
               <p className="text-xl font-medium text-zinc-50 sm:text-2xl">
                 {targetLabel}
               </p>

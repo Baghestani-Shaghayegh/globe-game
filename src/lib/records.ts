@@ -1,6 +1,11 @@
 
 
-import type { GameType, Ruleset } from "../data/modes";
+import {
+  modeIdFromBucket,
+  typeFromBucket,
+  type GameType,
+  type Ruleset,
+} from "../data/modes";
 
 export type Run = {
   /** How long the run lasted, in milliseconds. */
@@ -106,23 +111,15 @@ export function allBuckets(): Bucket[] {
           ? "blitz"
           : "relaxed";
       const withoutRules = head.replace(/^(sudden|blitz):/, "");
-      const type: GameType = withoutRules.startsWith("find:")
-        ? "find"
-        : withoutRules.startsWith("flag:")
-          ? "flag"
-          : withoutRules.startsWith("famous:")
-            ? "famous"
-            : withoutRules.startsWith("outline:")
-              ? "outline"
-              : "name";
+
       return {
         key,
-        type,
+        type: typeFromBucket(withoutRules),
         ruleset,
-        modeId: withoutRules.replace(/^(find|flag|famous|outline):/, ""),
+        modeId: modeIdFromBucket(withoutRules),
         limitSeconds: limit ? Number(limit) : null,
         runs: valid,
-      };
+      } satisfies Bucket;
     })
     .filter((bucket): bucket is Bucket => bucket !== null)
     .sort((a, b) => (a.runs[0].at < b.runs[0].at ? 1 : -1));

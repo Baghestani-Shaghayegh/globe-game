@@ -50,6 +50,7 @@ function App() {
             <Route path="/flags/:mode" element={<Game type="flag" />} />
             <Route path="/famous/:mode" element={<Game type="famous" />} />
             <Route path="/outlines/:mode" element={<Game type="outline" />} />
+            <Route path="/capitals/:mode" element={<Game type="capital" />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

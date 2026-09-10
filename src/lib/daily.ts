@@ -1,4 +1,4 @@
-import type { GameType } from "../data/modes";
+import { GAME_TYPES, type GameType } from "../data/modes";
 
 /**
  * The daily challenge: one round, the same for everyone, changing at midnight
@@ -62,8 +62,14 @@ export type Challenge = {
   countries: string[];
 };
 
-/** The ways to play, rotated by the date rather than picked at random. */
-const TYPES: GameType[] = ["name", "find", "flag", "famous", "outline"];
+/**
+ * The ways to play, rotated by the date rather than picked at random.
+ *
+ * Taken from the list itself: a hand-written copy fell behind twice while game
+ * types were being added, and a daily that silently never offers one of them
+ * is the kind of bug nobody reports.
+ */
+const TYPES: GameType[] = GAME_TYPES.map((t) => t.id);
 
 /**
  * Builds the round for a given day from a pool of eligible countries.
@@ -170,13 +176,8 @@ const SQUARES: Record<Outcome, string> = {
 
 /** The text people paste elsewhere. Deliberately spoiler-free. */
 export function shareText(result: DailyResult): string {
-  const label = {
-    name: "Name it",
-    find: "Find it",
-    flag: "Flags",
-    famous: "Famous for",
-    outline: "Outlines",
-  }[result.type];
+  const label =
+    GAME_TYPES.find((t) => t.id === result.type)?.label ?? result.type;
   const squares = result.outcomes.map((o) => SQUARES[o]).join("");
   return [
     `WorldGuess #${result.number} — ${label}`,

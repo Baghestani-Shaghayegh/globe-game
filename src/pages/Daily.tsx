@@ -5,6 +5,7 @@ import FindGame from "../features/globe-guess/FindGame";
 import type { RoundOutcome } from "../features/globe-guess/FindGame";
 import { getCountryMeta } from "../data/countries";
 import { cluesFor } from "../data/clues";
+import { capitalOf } from "../data/capitals";
 import { flagUrl } from "../data/flags";
 import { GAME_TYPES, type Mode } from "../data/modes";
 import {
@@ -48,6 +49,7 @@ function poolFor(type: Challenge["type"], names: string[]): string[] {
     .filter((meta) => meta.tier === "country")
     .filter((meta) => type !== "flag" || flagUrl(meta.geoName) !== null)
     .filter((meta) => type !== "famous" || cluesFor(meta.geoName).length > 0)
+          .filter((meta) => type !== "capital" || capitalOf(meta.geoName) !== null)
     .map((meta) => meta.geoName);
 }
 

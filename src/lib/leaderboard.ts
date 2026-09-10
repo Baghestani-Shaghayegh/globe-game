@@ -1,5 +1,11 @@
 import { supabase } from "./supabase";
-import { MODES, TIME_LIMITS } from "../data/modes";
+import {
+  GAME_TYPES,
+  MODES,
+  TIME_LIMITS,
+  modeIdFromBucket,
+  typeFromBucket,
+} from "../data/modes";
 
 /** A player's best run in one bucket, as a board shows it. */
 export type BoardRow = {
@@ -162,16 +168,10 @@ export function describeBucket(bucket: string): string {
       ? "Blitz"
       : null;
   const withoutRules = head.replace(/^(sudden|blitz):/, "");
-  const typeLabel = withoutRules.startsWith("find:")
-    ? "Find it"
-    : withoutRules.startsWith("flag:")
-      ? "Flags"
-      : withoutRules.startsWith("famous:")
-        ? "Famous for"
-        : withoutRules.startsWith("outline:")
-          ? "Outlines"
-          : "Name it";
-  const modeId = withoutRules.replace(/^(find|flag|famous|outline):/, "");
+  const type = typeFromBucket(withoutRules);
+  const typeLabel = GAME_TYPES.find((t) => t.id === type)?.label ?? type;
+  const modeId = modeIdFromBucket(withoutRules);
+
   const modeName =
     modeId === "daily"
       ? "Daily"

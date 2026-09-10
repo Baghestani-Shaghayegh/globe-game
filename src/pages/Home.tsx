@@ -22,6 +22,7 @@ import { dayKey, resultFor, streak } from "../lib/daily";
 import { dueCount } from "../lib/practice";
 import { flagUrl } from "../data/flags";
 import { cluesFor } from "../data/clues";
+import { capitalOf } from "../data/capitals";
 
 // Three.js is heavy — let the menu paint first, then fade the globe in behind it.
 const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
@@ -68,7 +69,8 @@ function useModeCounts(type: GameType): Counts {
         const metas = data.features
           .map((f) => getCountryMeta(f.properties.name))
           .filter((meta) => type !== "flag" || flagUrl(meta.geoName) !== null)
-          .filter((meta) => type !== "famous" || cluesFor(meta.geoName).length > 0);
+          .filter((meta) => type !== "famous" || cluesFor(meta.geoName).length > 0)
+          .filter((meta) => type !== "capital" || capitalOf(meta.geoName) !== null);
         setCounts(
           Object.fromEntries(
             MODES.map((mode) => [

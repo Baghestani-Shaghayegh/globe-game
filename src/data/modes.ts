@@ -4,7 +4,13 @@ import type { CountryMeta } from "./countries";
  * The two ways a round can be played: "name" shows a country and asks for its
  * name, "find" names a country and asks where it is.
  */
-export type GameType = "name" | "find" | "flag" | "famous" | "outline";
+export type GameType =
+  | "name"
+  | "find"
+  | "flag"
+  | "famous"
+  | "outline"
+  | "capital";
 
 export const GAME_TYPES: { id: GameType; label: string; blurb: string }[] = [
   { id: "name", label: "Name it", blurb: "Click a country, type its name." },
@@ -19,6 +25,11 @@ export const GAME_TYPES: { id: GameType; label: string; blurb: string }[] = [
     id: "outline",
     label: "Outlines",
     blurb: "We show a shape, you find the country.",
+  },
+  {
+    id: "capital",
+    label: "Capitals",
+    blurb: "We name a capital, you find its country.",
   },
 ];
 
@@ -73,6 +84,46 @@ export function parseLimit(raw: string | null): number | null {
     : null;
 }
 
+/**
+ * The URL each game type lives at, and the prefix its records are filed under.
+ *
+ * A map rather than a chain of ternaries: this grew from two game types to six,
+ * and every addition used to mean editing three separate conditionals in three
+ * files. "name" keeps the bare paths it had before there was a second type.
+ */
+const ROUTES: Record<GameType, string> = {
+  name: "play",
+  find: "find",
+  flag: "flags",
+  famous: "famous",
+  outline: "outlines",
+  capital: "capitals",
+};
+
+/** The prefix a bucket key carries, or "" for the original game type. */
+export const BUCKET_PREFIX: Record<GameType, string> = {
+  name: "",
+  find: "find:",
+  flag: "flag:",
+  famous: "famous:",
+  outline: "outline:",
+  capital: "capital:",
+};
+
+/** Reads a bucket prefix back to the game type that wrote it. */
+export function typeFromBucket(withoutRules: string): GameType {
+  for (const [type, prefix] of Object.entries(BUCKET_PREFIX)) {
+    if (prefix && withoutRules.startsWith(prefix)) return type as GameType;
+  }
+  return "name";
+}
+
+/** Strips whichever game-type prefix a bucket key carries. */
+export function modeIdFromBucket(withoutRules: string): string {
+  const prefix = BUCKET_PREFIX[typeFromBucket(withoutRules)];
+  return prefix ? withoutRules.slice(prefix.length) : withoutRules;
+}
+
 /** Where a game type sends the player. */
 export function gamePath(
   type: GameType,
@@ -80,16 +131,7 @@ export function gamePath(
   limitSeconds: number | null,
   ruleset: Ruleset = "relaxed"
 ): string {
-  const base =
-    type === "find"
-      ? `/find/${modeId}`
-      : type === "flag"
-        ? `/flags/${modeId}`
-        : type === "famous"
-          ? `/famous/${modeId}`
-          : type === "outline"
-            ? `/outlines/${modeId}`
-            : `/play/${modeId}`;
+  const base = `/${ROUTES[type]}/${modeId}`;
   const query = new URLSearchParams();
   if (limitSeconds !== null) query.set("limit", String(limitSeconds));
   if (ruleset !== "relaxed") query.set("rules", ruleset);
@@ -108,8 +150,7 @@ export function recordKey(
   ruleset: Ruleset = "relaxed"
 ): string {
   const prefix = ruleset === "relaxed" ? "" : `${ruleset}:`;
-  const base =
-    prefix + (type === "name" ? modeId : `${type}:${modeId}`);
+  const base = prefix + BUCKET_PREFIX[type] + modeId;
   // A timed round and an open one aren't comparable — under a countdown the
   // clock always reads the same, so only the score means anything. Each limit
   // keeps its own record.
