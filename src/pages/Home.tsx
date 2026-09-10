@@ -2,12 +2,12 @@ import { Suspense, lazy, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ModeCard from "../components/ModeCard";
 import ContinentCard from "../components/ContinentCard";
+import DailyCard from "../components/DailyCard";
+import Options from "../components/Options";
 import { getCountryMeta } from "../data/countries";
 import {
   GAME_TYPES,
   MODES,
-  RULESETS,
-  TIME_LIMITS,
   gamePath,
   recordKey,
   type GameType,
@@ -125,18 +125,17 @@ export default function Home() {
   const [daily, setDaily] = useState<{ played: boolean; streak: number } | null>(
     null
   );
-
   const [duePractice, setDuePractice] = useState(0);
+  // Unlike the clock and rules, this is a standing preference, so it sticks.
+  const [hints, setHints] = useState(true);
 
   useEffect(() => {
     const today = dayKey();
     setDaily({ played: resultFor(today) !== null, streak: streak(today) });
     setDuePractice(dueCount());
+    setHints(hintsEnabled());
   }, []);
-  // Unlike the clock and rules, this is a standing preference, so it sticks.
-  const [hints, setHints] = useState(true);
 
-  useEffect(() => setHints(hintsEnabled()), []);
   const bests = useBests(gameType, limit, ruleset);
   const blurb =
     GAME_TYPES.find((t) => t.id === gameType)?.blurb ?? GAME_TYPES[0].blurb;
@@ -154,342 +153,138 @@ export default function Home() {
         </div>
       )}
 
-      {/* Darkens the middle of the globe just enough to read type over it */}
+      {/*
+        Pushes the globe back behind the cards. The old scrim was tuned for a
+        centred hero with space around it; this layout is a dense column, and
+        anything less than this reads as noise through the cards rather than
+        depth behind them.
+      */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 70% 60% at 50% 45%, rgba(7,17,28,0.88) 0%, rgba(7,17,28,0.6) 45%, rgba(7,17,28,0) 78%)",
+            "linear-gradient(180deg, rgba(7,17,28,0.55) 0%, rgba(7,17,28,0.86) 30%, rgba(7,17,28,0.94) 100%)",
         }}
       />
 
-      <main className="relative flex min-h-screen flex-col items-center justify-center px-6 py-16">
-        {accountsEnabled && (
-          <Link
-            to="/account"
-            className="absolute right-5 top-5 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-white/25 hover:text-zinc-100"
-          >
-            {profile?.country && (
-              <img
-                src={`/flags/${profile.country}.svg`}
-                alt=""
-                width={20}
-                height={15}
-                className="w-5 rounded-[2px]"
-              />
-            )}
-            {profile ? profile.username : session ? "Finish setup" : "Sign in"}
-          </Link>
-        )}
-
-        <h1 className="text-center text-5xl font-semibold tracking-tight text-zinc-50 sm:text-6xl">
-          WorldGuess
-        </h1>
-        <p className="mt-4 max-w-md text-center text-zinc-300">
-          How much of the world map can you actually recall?
-        </p>
-
-        <Link
-          to="/daily"
-          className="group mt-8 flex w-full max-w-2xl items-center gap-3 rounded-2xl border border-sky-400/25 bg-sky-400/[0.07] px-5 py-4 transition-colors hover:border-sky-400/50 hover:bg-sky-400/10"
-        >
-          <span aria-hidden="true" className="text-xl">
-            🗓️
-          </span>
-          <span className="min-w-0">
-            <span className="block font-medium text-zinc-100">
-              Daily challenge
-            </span>
-            <span className="block text-sm text-zinc-400">
-              {daily?.played
-                ? "Played today — see your result"
-                : "Ten countries, the same for everyone."}
-            </span>
-          </span>
-          {daily && daily.streak > 1 && (
-            <span className="ml-auto shrink-0 text-sm tabular-nums text-zinc-400">
-              🔥 {daily.streak}
-            </span>
+      <main className="relative mx-auto flex min-h-screen w-full max-w-2xl flex-col px-5 py-10 sm:py-14">
+        <header className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-4xl font-semibold tracking-tight text-zinc-50 sm:text-5xl">
+              WorldGuess
+            </h1>
+            <p className="mt-2 text-zinc-400">
+              How much of the world map can you actually recall?
+            </p>
+          </div>
+          {accountsEnabled && (
+            <Link
+              to="/account"
+              className="flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-white/25 hover:text-zinc-100"
+            >
+              {profile?.country && (
+                <img
+                  src={`/flags/${profile.country}.svg`}
+                  alt=""
+                  width={20}
+                  height={15}
+                  className="w-5 rounded-[2px]"
+                />
+              )}
+              {profile ? profile.username : session ? "Finish setup" : "Sign in"}
+            </Link>
           )}
-          <span
-            aria-hidden="true"
-            className="ml-auto shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-zinc-300 only:ml-auto"
-          >
-            →
-          </span>
-        </Link>
+        </header>
 
-        <Link
-          to="/mystery"
-          className="group mt-3 flex w-full max-w-2xl items-center gap-3 rounded-2xl border border-rose-400/25 bg-rose-400/[0.06] px-5 py-4 transition-colors hover:border-rose-400/50 hover:bg-rose-400/10"
-        >
-          <span aria-hidden="true" className="text-xl">
-            🔥
-          </span>
-          <span className="min-w-0">
-            <span className="block font-medium text-zinc-100">
-              Mystery country
-            </span>
-            <span className="block text-sm text-zinc-400">
-              One hidden country a day. Guess, and the map tells you how close.
-            </span>
-          </span>
-          <span
-            aria-hidden="true"
-            className="ml-auto shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-zinc-300"
-          >
-            →
-          </span>
-        </Link>
-
-        <Link
-          to="/connect"
-          className="group mt-3 flex w-full max-w-2xl items-center gap-3 rounded-2xl border border-violet-400/25 bg-violet-400/[0.06] px-5 py-4 transition-colors hover:border-violet-400/50 hover:bg-violet-400/10"
-        >
-          <span aria-hidden="true" className="text-xl">
-            🔗
-          </span>
-          <span className="min-w-0">
-            <span className="block font-medium text-zinc-100">
-              Connect the countries
-            </span>
-            <span className="block text-sm text-zinc-400">
-              Two ends, and the countries that link them by land.
-            </span>
-          </span>
-          <span
-            aria-hidden="true"
-            className="ml-auto shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-zinc-300"
-          >
-            →
-          </span>
-        </Link>
-
-        <Link
-          to="/bigger"
-          className="group mt-3 flex w-full max-w-2xl items-center gap-3 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.06] px-5 py-4 transition-colors hover:border-emerald-400/50 hover:bg-emerald-400/10"
-        >
-          <span aria-hidden="true" className="text-xl">
-            ⚖️
-          </span>
-          <span className="min-w-0">
-            <span className="block font-medium text-zinc-100">
-              Which is bigger?
-            </span>
-            <span className="block text-sm text-zinc-400">
-              Two countries, one guess. How long a run can you get?
-            </span>
-          </span>
-          <span
-            aria-hidden="true"
-            className="ml-auto shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-zinc-300"
-          >
-            →
-          </span>
-        </Link>
-
-        {duePractice > 0 && (
-          <Link
-            to="/practice"
-            className="group mt-3 flex w-full max-w-2xl items-center gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/[0.06] px-5 py-4 transition-colors hover:border-amber-400/50 hover:bg-amber-400/10"
-          >
-            <span aria-hidden="true" className="text-xl">
-              🎯
-            </span>
-            <span className="min-w-0">
-              <span className="block font-medium text-zinc-100">
-                Practice your weak spots
-              </span>
-              <span className="block text-sm text-zinc-400">
-                {duePractice} {duePractice === 1 ? "country keeps" : "countries keep"}{" "}
-                getting away.
-              </span>
-            </span>
-            <span
-              aria-hidden="true"
-              className="ml-auto shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-zinc-300"
-            >
-              →
-            </span>
-          </Link>
-        )}
-
-        {accountsEnabled && (
-          <Link
-            to="/play-together"
-            className="group mt-3 flex w-full max-w-2xl items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 transition-colors hover:border-white/25 hover:bg-white/[0.06]"
-          >
-            <span aria-hidden="true" className="text-xl">
-              ⚔️
-            </span>
-            <span className="min-w-0">
-              <span className="block font-medium text-zinc-100">
-                Play together
-              </span>
-              <span className="block text-sm text-zinc-400">
-                Share a code and race a friend to each country.
-              </span>
-            </span>
-            <span
-              aria-hidden="true"
-              className="ml-auto shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-zinc-300"
-            >
-              →
-            </span>
-          </Link>
-        )}
-
-        <div className="mt-4 w-full max-w-2xl rounded-2xl border border-white/[0.07] bg-white/[0.02] p-3 backdrop-blur-sm sm:p-4">
-          {/* Anchored to the cards because it changes what every one of them does. */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1 pb-3">
-            <span className="text-xs uppercase tracking-wider text-zinc-500">
-              How to play
-            </span>
-            <div
-              role="tablist"
-              aria-label="Game type"
-              className="flex gap-1 rounded-full border border-white/10 bg-white/5 p-1"
-            >
-              {GAME_TYPES.map((t) => (
-                <button
-                  key={t.id}
-                  role="tab"
-                  aria-selected={gameType === t.id}
-                  onClick={() => setGameType(t.id)}
-                  className={`rounded-full px-3.5 py-1 text-sm font-medium transition-colors ${
-                    gameType === t.id
-                      ? "bg-white/15 text-zinc-50"
-                      : "text-zinc-400 hover:text-zinc-100"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-            <span className="text-sm text-zinc-400">{blurb}</span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1 pb-3">
-            <span className="text-xs uppercase tracking-wider text-zinc-500">
-              Clock
-            </span>
-            <div
-              role="group"
-              aria-label="Time limit"
-              className="flex flex-wrap gap-1 rounded-full border border-white/10 bg-white/5 p-1"
-            >
-              {TIME_LIMITS.map((option) => (
-                <button
-                  key={option.label}
-                  aria-pressed={limit === option.seconds}
-                  onClick={() => setLimit(option.seconds)}
-                  className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                    limit === option.seconds
-                      ? "bg-white/15 text-zinc-50"
-                      : "text-zinc-400 hover:text-zinc-100"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            <span className="text-sm text-zinc-400">
-              {limit === null
-                ? "Play until you're done."
-                : "The round stops when the clock runs out."}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1 pb-3">
-            <span className="text-xs uppercase tracking-wider text-zinc-500">
-              Rules
-            </span>
-            <div
-              role="group"
-              aria-label="Rules"
-              className="flex flex-wrap gap-1 rounded-full border border-white/10 bg-white/5 p-1"
-            >
-              {RULESETS.map((option) => (
-                <button
-                  key={option.id}
-                  aria-pressed={ruleset === option.id}
-                  onClick={() => setRuleset(option.id)}
-                  className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                    ruleset === option.id
-                      ? "bg-white/15 text-zinc-50"
-                      : "text-zinc-400 hover:text-zinc-100"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            <span className="text-sm text-zinc-400">
-              {RULESETS.find((r) => r.id === ruleset)?.blurb}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-1 pb-3">
-            <span className="text-xs uppercase tracking-wider text-zinc-500">
-              Hints
-            </span>
-            <div
-              role="group"
-              aria-label="Hints"
-              className="flex gap-1 rounded-full border border-white/10 bg-white/5 p-1"
-            >
-              {[true, false].map((on) => (
-                <button
-                  key={String(on)}
-                  aria-pressed={hints === on}
-                  onClick={() => {
-                    setHints(on);
-                    setHintsEnabled(on);
-                  }}
-                  className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                    hints === on
-                      ? "bg-white/15 text-zinc-50"
-                      : "text-zinc-400 hover:text-zinc-100"
-                  }`}
-                >
-                  {on ? "On" : "Off"}
-                </button>
-              ))}
-            </div>
-            <span className="text-sm text-zinc-400">
-              {hints
-                ? "Buy a nudge, and pay for it in points."
-                : "No nudges — you can still be shown an answer."}
-            </span>
-          </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {headline.map((mode) => (
-            <ModeCard
-              key={mode.id}
-              name={mode.name}
-              desc={mode.desc}
-              label={mode.label}
-              level={mode.level}
-              accent={mode.accent}
-              noun={mode.noun}
-              count={counts[mode.id] ?? null}
-              best={bests[mode.id] ?? null}
-              onSelect={() => navigate(gamePath(gameType, mode.id, limit, ruleset))}
+        {/* Today — one click each, the same for everyone, gone tomorrow. */}
+        <Section title="Today" hint="new at midnight UTC">
+          <div className="flex flex-col gap-2.5 sm:flex-row">
+            <DailyCard
+              to="/daily"
+              icon="🗓️"
+              title="Daily challenge"
+              note={
+                daily?.played
+                  ? "Played — see your result"
+                  : "Ten countries, the same for everyone."
+              }
+              accent="sky"
+              badge={daily && daily.streak > 1 ? `🔥 ${daily.streak}` : undefined}
             />
-          ))}
-        </div>
+            <DailyCard
+              to="/mystery"
+              icon="🔥"
+              title="Mystery country"
+              note="One hidden country. Warmer or colder with every guess."
+              accent="rose"
+            />
+            <DailyCard
+              to="/connect"
+              icon="🔗"
+              title="Connect"
+              note="Two ends. Name the countries that link them."
+              accent="violet"
+            />
+          </div>
+        </Section>
 
-        <div className="mt-6 px-1">
-          <div className="flex items-center gap-3">
-            <span className="text-xs uppercase tracking-wider text-zinc-500">
-              By continent
-            </span>
-            <span className="h-px flex-1 bg-white/[0.07]" aria-hidden="true" />
-            <span className="text-xs text-zinc-600">shorter rounds</span>
+        {/* Play — the configurable round. */}
+        <Section title="Play">
+          <div
+            role="tablist"
+            aria-label="Game type"
+            className="flex flex-wrap gap-1 rounded-full border border-white/10 bg-white/5 p-1"
+          >
+            {GAME_TYPES.map((t) => (
+              <button
+                key={t.id}
+                role="tab"
+                aria-selected={gameType === t.id}
+                onClick={() => setGameType(t.id)}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                  gameType === t.id
+                    ? "bg-white/15 text-zinc-50"
+                    : "text-zinc-400 hover:text-zinc-100"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-2.5 px-1 text-sm text-zinc-400">{blurb}</p>
+
+          <Options
+            limit={limit}
+            onLimit={setLimit}
+            ruleset={ruleset}
+            onRuleset={setRuleset}
+            hints={hints}
+            onHints={(on) => {
+              setHints(on);
+              setHintsEnabled(on);
+            }}
+          />
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {headline.map((mode) => (
+              <ModeCard
+                key={mode.id}
+                name={mode.name}
+                desc={mode.desc}
+                label={mode.label}
+                level={mode.level}
+                accent={mode.accent}
+                noun={mode.noun}
+                count={counts[mode.id] ?? null}
+                best={bests[mode.id] ?? null}
+                onSelect={() =>
+                  navigate(gamePath(gameType, mode.id, limit, ruleset))
+                }
+              />
+            ))}
           </div>
 
-          <div className="mt-3 grid gap-2.5 sm:grid-cols-3">
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
             {regional.map((mode) => (
               <ContinentCard
                 key={mode.id}
@@ -498,61 +293,134 @@ export default function Home() {
                 noun={mode.noun}
                 count={counts[mode.id] ?? null}
                 best={bests[mode.id] ?? null}
-                onSelect={() => navigate(gamePath(gameType, mode.id, limit, ruleset))}
+                onSelect={() =>
+                  navigate(gamePath(gameType, mode.id, limit, ruleset))
+                }
               />
             ))}
           </div>
-        </div>
-        </div>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-zinc-500">
-          <Link
-            to="/records"
-            className="underline underline-offset-4 transition-colors hover:text-zinc-300"
-          >
-            Your records
-          </Link>
-          <span aria-hidden="true" className="text-zinc-700">
-            ·
-          </span>
-          <Link
-            to="/stats"
-            className="underline underline-offset-4 transition-colors hover:text-zinc-300"
-          >
-            Your stats
-          </Link>
-          <span aria-hidden="true" className="text-zinc-700">
-            ·
-          </span>
-          <Link
-            to="/achievements"
-            className="underline underline-offset-4 transition-colors hover:text-zinc-300"
-          >
-            Badges
-          </Link>
-          <span aria-hidden="true" className="text-zinc-700">
-            ·
-          </span>
-          <Link
-            to="/levels"
-            className="underline underline-offset-4 transition-colors hover:text-zinc-300"
-          >
-            Level &amp; themes
-          </Link>
-          {accountsEnabled && (
-            <>
-              <span aria-hidden="true" className="text-zinc-700">
-                ·
-              </span>
-              <Link
-                to="/leaderboard"
-                className="underline underline-offset-4 transition-colors hover:text-zinc-300"
-              >
-                Leaderboard
-              </Link>
-            </>
-          )}
-        </div>
+        </Section>
+
+        {/* Everything that isn't a round of the main game. */}
+        <Section title="More">
+          <div className="grid gap-2.5 sm:grid-cols-3">
+            <SmallLink
+              to="/play-together"
+              icon="⚔️"
+              title="Play together"
+              note="Race a friend"
+              hidden={!accountsEnabled}
+            />
+            <SmallLink
+              to="/bigger"
+              icon="⚖️"
+              title="Which is bigger?"
+              note="Pick the larger one"
+            />
+            <SmallLink
+              to="/practice"
+              icon="🎯"
+              title="Practice"
+              note={
+                duePractice > 0
+                  ? `${duePractice} waiting`
+                  : "Drill your weak spots"
+              }
+              highlight={duePractice > 0}
+            />
+          </div>
+        </Section>
+
+        <nav className="mt-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-zinc-500">
+          {[
+            ["/records", "Records"],
+            ["/stats", "Stats"],
+            ["/achievements", "Badges"],
+            ["/levels", "Level & themes"],
+            ...(accountsEnabled ? [["/leaderboard", "Leaderboard"]] : []),
+          ].flatMap(([to, label], i) => [
+            // The separator is its own item, so one gap sits between every
+            // pair rather than a gap plus a nested gap.
+            ...(i > 0
+              ? [
+                  <span key={`${to}-sep`} aria-hidden="true" className="text-zinc-700">
+                    ·
+                  </span>,
+                ]
+              : []),
+            <Link
+              key={to}
+              to={to}
+              className="underline underline-offset-4 transition-colors hover:text-zinc-300"
+            >
+              {label}
+            </Link>,
+          ])}
+        </nav>
       </main>
     </div>
+  );
+}
+
+/** A titled band of the menu, so the page reads as three decisions not thirty. */
+function Section({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mt-8">
+      <div className="mb-2.5 flex items-baseline gap-3 px-1">
+        <h2 className="text-xs uppercase tracking-wider text-zinc-500">
+          {title}
+        </h2>
+        <span className="h-px flex-1 bg-white/[0.07]" aria-hidden="true" />
+        {hint && <span className="text-xs text-zinc-600">{hint}</span>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** A secondary destination: present, but not competing with the main game. */
+function SmallLink({
+  to,
+  icon,
+  title,
+  note,
+  hidden,
+  highlight,
+}: {
+  to: string;
+  icon: string;
+  title: string;
+  note: string;
+  hidden?: boolean;
+  highlight?: boolean;
+}) {
+  if (hidden) return null;
+  return (
+    <Link
+      to={to}
+      className={`group flex items-center gap-2.5 rounded-xl border px-3.5 py-3 transition-colors ${
+        highlight
+          ? "border-amber-400/30 bg-amber-400/[0.06] hover:border-amber-400/50"
+          : "border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06]"
+      }`}
+    >
+      <span aria-hidden="true" className="text-base leading-none">
+        {icon}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-medium text-zinc-100">
+          {title}
+        </span>
+        <span className="block truncate text-xs text-zinc-500">{note}</span>
+      </span>
+    </Link>
   );
 }
