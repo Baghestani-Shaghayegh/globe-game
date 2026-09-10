@@ -19,6 +19,8 @@ const Practice = lazy(() => import("./pages/Practice"));
 // Also a globe round, so it carries three.js too.
 const Mystery = lazy(() => import("./pages/Mystery"));
 const Connect = lazy(() => import("./pages/Connect"));
+// No globe here, but it draws every outline, so it loads on demand too.
+const HigherLower = lazy(() => import("./pages/HigherLower"));
 
 function App() {
   return (
@@ -43,6 +45,7 @@ function App() {
             <Route path="/practice" element={<Practice />} />
             <Route path="/mystery" element={<Mystery />} />
             <Route path="/connect" element={<Connect />} />
+            <Route path="/bigger" element={<HigherLower />} />
             <Route path="/play-together" element={<PlayTogether />} />
             <Route path="/room/:code" element={<Room />} />
             <Route path="/play/:mode" element={<Game type="name" />} />

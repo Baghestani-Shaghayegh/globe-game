@@ -121,7 +121,7 @@ Not scheduled into phases; pull from here whenever the game needs freshness. Rou
 - **Capitals mode** *(built, one direction)* — a capital is named, you find its country. All 167 sovereign countries have one, cross-checked against the map by a test. Countries with more than one capital keep them all: South Africa has three, Bolivia separates its constitutional capital from its seat of government, and recently-renamed ones accept the old name. The reverse direction — country → type the capital — is still open.
 - **Border pathfinding** (like the game *Travle*) — "get from Spain to India" by naming a chain of bordering countries; extremely replayable
 - **Name-them-all sprint** — "name as many countries as you can in 10 minutes", globe fills in as you type (Sporcle's most-played quiz of all time is exactly this)
-- **Higher/lower** — "Which has more people: Vietnam or Germany?" — works for population, area, GDP; fast and addictive
+- **Higher/lower** *(built, by area)* — two silhouettes, pick the larger. Areas are computed from the map itself with spherical geometry, and a pair is only offered when one is half again bigger than the other, so simplified coastlines can never make a right answer read as wrong. Population and GDP would each need a real data source and a plan for keeping it current.
 - **Landmark photo mode** — photo of Machu Picchu → guess Peru (needs curated images)
 - **Audio modes** — guess by national anthem or by spoken language sample (very shareable clips)
 - **Themed packs** — currencies, US states, world rivers, "flags that look alike" (Chad vs Romania…)

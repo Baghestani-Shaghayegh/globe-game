@@ -265,6 +265,29 @@ export default function Home() {
           </span>
         </Link>
 
+        <Link
+          to="/bigger"
+          className="group mt-3 flex w-full max-w-2xl items-center gap-3 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.06] px-5 py-4 transition-colors hover:border-emerald-400/50 hover:bg-emerald-400/10"
+        >
+          <span aria-hidden="true" className="text-xl">
+            ⚖️
+          </span>
+          <span className="min-w-0">
+            <span className="block font-medium text-zinc-100">
+              Which is bigger?
+            </span>
+            <span className="block text-sm text-zinc-400">
+              Two countries, one guess. How long a run can you get?
+            </span>
+          </span>
+          <span
+            aria-hidden="true"
+            className="ml-auto shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-zinc-300"
+          >
+            →
+          </span>
+        </Link>
+
         {duePractice > 0 && (
           <Link
             to="/practice"
