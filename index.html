@@ -2,11 +2,44 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="color-scheme" content="dark" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="WorldGuess — guess every country on an interactive 3D globe." />
-    <title>WorldGuess</title>
+    <meta name="theme-color" content="#07111c" />
+
+    <title>WorldGuess — how much of the world map can you recall?</title>
+    <meta
+      name="description"
+      content="Find every country on a 3D globe. A daily challenge, a mystery country, flags, clues, and races against a friend."
+    />
+
+    <!-- Installable: home-screen icon, standalone window, no address bar. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="WorldGuess" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- What a shared link looks like. The game lives or dies on people
+         passing it around, so this is not decoration. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="WorldGuess" />
+    <meta property="og:title" content="WorldGuess" />
+    <meta
+      property="og:description"
+      content="How much of the world map can you actually recall?"
+    />
+    <meta property="og:image" content="/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="WorldGuess" />
+    <meta
+      name="twitter:description"
+      content="How much of the world map can you actually recall?"
+    />
+    <meta name="twitter:image" content="/og.png" />
   </head>
   <body>
     <div id="root"></div>

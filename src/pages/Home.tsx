@@ -479,7 +479,7 @@ export default function Home() {
           </div>
         </div>
         </div>
-        <div className="mt-6 flex items-center gap-4 text-sm text-zinc-500">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-zinc-500">
           <Link
             to="/records"
             className="underline underline-offset-4 transition-colors hover:text-zinc-300"

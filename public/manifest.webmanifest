@@ -1,0 +1,22 @@
+{
+  "name": "WorldGuess",
+  "short_name": "WorldGuess",
+  "description": "How much of the world map can you actually recall? Daily challenges, flags, clues and a mystery country.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#07111c",
+  "theme_color": "#07111c",
+  "categories": ["games", "education"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Daily challenge", "url": "/daily" },
+    { "name": "Mystery country", "url": "/mystery" },
+    { "name": "Connect the countries", "url": "/connect" }
+  ]
+}

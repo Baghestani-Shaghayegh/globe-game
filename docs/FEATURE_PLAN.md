@@ -102,7 +102,7 @@ Order matters: retention first, money second. Ads on a game with 50 users earns 
 
 Recommendation: **stay web-first**, and get both later almost for free:
 
-1. **Now**: make the site fully responsive + a **PWA** (installable from the browser, home-screen icon, works offline for practice modes). Zero app-store fees, instant updates, shareable links — and shareable links are what make the daily challenge spread.
+1. **Now** *(built, minus offline)*: responsive down to 375px, installable with a home-screen icon and standalone window, and Open Graph cards so a shared link previews properly. **No service worker** — Sara ruled out offline play deliberately, so the game always needs a connection.
 2. **Later** (when you have players): wrap the *same* React codebase with **Capacitor** to publish to the App Store / Play Store. One codebase, three platforms.
 3. Building a separate native mobile app now would double your work for the same game. Not worth it before you have an audience.
 
