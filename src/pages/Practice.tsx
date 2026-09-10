@@ -15,6 +15,7 @@ import {
   recallsFrom,
   saveReview,
 } from "../lib/practice";
+import { choiceClass } from "../components/choice";
 
 /** A mode built for one drill: the countries this session is about. */
 function practiceMode(names: string[]): Mode {
@@ -144,17 +145,13 @@ export default function Practice() {
               <span className="text-xs uppercase tracking-wider text-zinc-500">
                 Ask me
               </span>
-              <div className="flex flex-wrap gap-1 rounded-full border border-white/10 bg-white/5 p-1">
+              <div className="flex flex-wrap gap-1.5">
                 {GAME_TYPES.map((option) => (
                   <button
                     key={option.id}
                     onClick={() => setType(option.id)}
                     aria-pressed={type === option.id}
-                    className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                      type === option.id
-                        ? "bg-white/15 text-zinc-50"
-                        : "text-zinc-400 hover:text-zinc-100"
-                    }`}
+                    className={choiceClass(type === option.id)}
                   >
                     {option.label}
                   </button>

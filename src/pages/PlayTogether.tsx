@@ -11,14 +11,30 @@ import {
   normalizeCode,
 } from "../lib/rooms";
 import { GAME_TYPES, MODES, type GameType, type ModeId } from "../data/modes";
+import Segmented from "../components/Segmented";
 
-const pillRow =
-  "flex flex-wrap gap-1 rounded-full border border-white/10 bg-white/5 p-1";
+/**
+ * A room can be any game type but "name it" — that one asks a player to type,
+ * and typing races badly — and any map but Full map, whose territories make a
+ * ten-country round too long for two people waiting on each other.
+ */
+const TYPE_OPTIONS = GAME_TYPES.filter((t) => t.id !== "name").map((t) => ({
+  key: t.id,
+  label: t.label,
+  value: t.id,
+}));
 
-function pill(active: boolean): string {
-  return `rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-    active ? "bg-white/15 text-zinc-50" : "text-zinc-400 hover:text-zinc-100"
-  }`;
+const MAP_OPTIONS = MODES.filter((m) => m.id !== "hard").map((mode) => ({
+  key: mode.id,
+  label: mode.regional ? mode.name : mode.label,
+  value: mode.id,
+}));
+
+/** Continent modes ship no description, so say the obvious thing instead. */
+function mapHint(id: ModeId): string {
+  const mode = MODES.find((m) => m.id === id);
+  if (!mode) return "";
+  return mode.desc || `Countries of ${mode.name}`;
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -114,41 +130,21 @@ export default function PlayTogether() {
       <section className="mt-7 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <h2 className="font-medium text-zinc-100">Open a room</h2>
 
-        <div className="mt-4 flex flex-col gap-2.5">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="w-10 shrink-0 text-xs uppercase tracking-wider text-zinc-500">
-              Game
-            </span>
-            <div className={pillRow}>
-              {GAME_TYPES.filter((t) => t.id !== "name").map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setType(t.id)}
-                  aria-pressed={type === t.id}
-                  className={pill(type === t.id)}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="w-10 shrink-0 text-xs uppercase tracking-wider text-zinc-500">
-              Map
-            </span>
-            <div className={pillRow}>
-              {MODES.filter((m) => m.id !== "hard").map((mode) => (
-                <button
-                  key={mode.id}
-                  onClick={() => setModeId(mode.id)}
-                  aria-pressed={modeId === mode.id}
-                  className={pill(modeId === mode.id)}
-                >
-                  {mode.regional ? mode.name : mode.label}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="mt-4 divide-y divide-white/[0.06] rounded-xl border border-white/10 bg-white/[0.02]">
+          <Segmented
+            label="Game"
+            hint={GAME_TYPES.find((t) => t.id === type)?.blurb}
+            options={TYPE_OPTIONS}
+            value={type}
+            onChange={setType}
+          />
+          <Segmented
+            label="Map"
+            hint={mapHint(modeId)}
+            options={MAP_OPTIONS}
+            value={modeId}
+            onChange={setModeId}
+          />
         </div>
 
         <button

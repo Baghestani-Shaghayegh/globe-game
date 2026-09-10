@@ -1,56 +1,6 @@
 import { useState } from "react";
 import { RULESETS, TIME_LIMITS, type Ruleset } from "../data/modes";
-
-/** One row of mutually exclusive choices, styled as a real segmented control. */
-function Segmented<T>({
-  label,
-  hint,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  hint?: string;
-  options: { key: string; label: string; value: T }[];
-  value: T;
-  onChange: (value: T) => void;
-}) {
-  return (
-    <div className="px-4 py-3.5">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
-          {label}
-        </span>
-        {hint && (
-          <span className="truncate text-xs text-zinc-600">{hint}</span>
-        )}
-      </div>
-      <div
-        role="group"
-        aria-label={label}
-        className="mt-2 flex flex-wrap gap-1.5"
-      >
-        {options.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.key}
-              aria-pressed={active}
-              onClick={() => onChange(option.value)}
-              className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-all ${
-                active
-                  ? "border-sky-400/40 bg-sky-400/15 text-sky-100 shadow-[0_0_0_1px_rgba(56,189,248,0.15)]"
-                  : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/25 hover:text-zinc-100"
-              }`}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+import Segmented from "./Segmented";
 
 /**
  * The clock, the rules and the hint setting, folded away behind a control that

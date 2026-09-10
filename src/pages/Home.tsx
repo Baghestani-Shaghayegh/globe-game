@@ -4,6 +4,7 @@ import ModeCard from "../components/ModeCard";
 import ContinentCard from "../components/ContinentCard";
 import DailyCard from "../components/DailyCard";
 import Options from "../components/Options";
+import { choiceClass } from "../components/choice";
 import { getCountryMeta } from "../data/countries";
 import {
   GAME_TYPES,
@@ -233,7 +234,7 @@ export default function Home() {
           <div
             role="tablist"
             aria-label="Game type"
-            className="flex flex-wrap gap-1 rounded-full border border-white/10 bg-white/5 p-1"
+            className="flex flex-wrap gap-1.5"
           >
             {GAME_TYPES.map((t) => (
               <button
@@ -241,11 +242,7 @@ export default function Home() {
                 role="tab"
                 aria-selected={gameType === t.id}
                 onClick={() => setGameType(t.id)}
-                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                  gameType === t.id
-                    ? "bg-white/15 text-zinc-50"
-                    : "text-zinc-400 hover:text-zinc-100"
-                }`}
+                className={choiceClass(gameType === t.id)}
               >
                 {t.label}
               </button>
