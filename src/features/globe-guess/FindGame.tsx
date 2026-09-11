@@ -81,6 +81,16 @@ type Props = {
    * feel like Africa.
    */
   count?: number | null;
+  /**
+   * Draw the whole world behind the round, with the countries in play picked
+   * out and the rest dimmed.
+   *
+   * Wanted where the mode is an arbitrary handful rather than a region: the
+   * daily's ten countries have no geography between them, so on their own they
+   * are specks on an empty sphere with nothing to navigate by. A continent
+   * round still has a recognisable shape without this.
+   */
+  backdrop?: boolean;
 };
 
 /**
@@ -96,6 +106,7 @@ export default function FindGame({
   onRoundEnd,
   record = true,
   count = null,
+  backdrop = false,
   fixedOrder,
 }: Props) {
   // Repaint when the player changes the globe palette.
@@ -110,8 +121,14 @@ export default function FindGame({
   const [loadError, setLoadError] = useState(false);
   /** Names still to ask for, in the order they'll be asked. */
   const [queue, setQueue] = useState<string[]>([]);
-  /** How many this round asks for in total, fixed when the queue is built. */
-  const [askedTotal, setAskedTotal] = useState(0);
+  /** Every country this round asks about, fixed when the queue is built. */
+  const [asked, setAsked] = useState<string[]>([]);
+  /**
+   * The countries this mode asks about. Under `backdrop` the globe draws more
+   * than this — the rest of the world, so there is something to navigate by —
+   * and only this set is ever drawn from to build a round.
+   */
+  const [inPlay, setInPlay] = useState<string[]>([]);
   const [foundNames, setFoundNames] = useState<Set<string>>(new Set());
   const [passedNames, setPassedNames] = useState<Set<string>>(new Set());
   /** Countries the player has answered for at least once. */
@@ -167,13 +184,22 @@ export default function FindGame({
           if (type === "famous") return cluesFor(meta.geoName).length > 0;
           return true;
         });
-        setFeatures(playable);
         const names = playable.map((f) => f.properties.name);
-        const asked = fixedOrder
+        // Under backdrop the globe shows every country there is; without it,
+        // only the ones the mode covers, as it always did.
+        setFeatures(
+          backdrop
+            ? data.features.filter(
+                (f) => getCountryMeta(f.properties.name).tier === "country"
+              )
+            : playable
+        );
+        setInPlay(names);
+        const order = fixedOrder
           ? fixedOrder.filter((n) => names.includes(n))
           : shuffled(names).slice(0, count ?? names.length);
-        setQueue(asked);
-        setAskedTotal(asked.length);
+        setQueue(order);
+        setAsked(order);
       })
       .catch(() => {
         if (!cancelled) setLoadError(true);
@@ -181,7 +207,7 @@ export default function FindGame({
     return () => {
       cancelled = true;
     };
-  }, [mode, reset, type, fixedOrder, count]);
+  }, [mode, reset, type, fixedOrder, count, backdrop]);
 
   useEffect(() => () => window.clearTimeout(wrongTimer.current), []);
 
@@ -220,11 +246,11 @@ export default function FindGame({
   const endRound = useCallback(() => {
     end({
       found: foundNames.size,
-      total: askedTotal,
+      total: asked.length,
       attempted: attempted.size,
       firstTry: [...attempted].filter((name) => !fumbled.has(name)).length,
     });
-  }, [end, foundNames.size, askedTotal, attempted, fumbled]);
+  }, [end, foundNames.size, asked.length, attempted, fumbled]);
 
   // The countdown reaching zero ends the round wherever the player is.
   useEffect(() => {
@@ -367,13 +393,14 @@ export default function FindGame({
     setNarrowedTo(null);
     setCluesShown(1);
     // A second round over the same mode draws a fresh sample, so "play again"
-    // on a short round is ten new countries rather than the same ten.
-    const names = features.map((f) => f.properties.name);
-    const asked = fixedOrder
+    // on a short round is ten new countries rather than the same ten. Drawn
+    // from what is in play, never from the backdrop.
+    const names = inPlay;
+    const order = fixedOrder
       ? fixedOrder.filter((n) => names.includes(n))
       : shuffled(names).slice(0, count ?? names.length);
-    setQueue(asked);
-    setAskedTotal(asked.length);
+    setQueue(order);
+    setAsked(order);
   };
 
   const reported = useRef(false);
@@ -393,11 +420,9 @@ export default function FindGame({
       ms: summary.ms,
       found: [...foundNames],
       fumbled: got,
-      missed: features
-        .map((f) => f.properties.name)
-        .filter((name) => !foundNames.has(name)),
+      missed: asked.filter((name) => !foundNames.has(name)),
     });
-  }, [summary, onRoundEnd, foundNames, fumbled, attempted, passedNames, features]);
+  }, [summary, onRoundEnd, foundNames, fumbled, attempted, passedNames, asked]);
 
   const capColor = useMemo(
     () => (d: object) => {
@@ -460,7 +485,7 @@ export default function FindGame({
       <GameHud
         onBack={handleBack}
         found={foundNames.size}
-        total={askedTotal}
+        total={asked.length}
         ms={round.displayMs}
         countdown={round.countdown}
         modeLabel={mode.label}
@@ -627,7 +652,7 @@ export default function FindGame({
       {round.confirmingExit && (
         <ExitConfirm
           found={foundNames.size}
-          total={askedTotal}
+          total={asked.length}
           onFinish={endRound}
           onKeepPlaying={() => round.setConfirmingExit(false)}
           onDiscard={() => navigate("/")}

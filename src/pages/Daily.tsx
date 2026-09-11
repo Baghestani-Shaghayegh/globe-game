@@ -272,6 +272,11 @@ export default function Daily() {
       {...shared}
       type={challenge.type}
       fixedOrder={challenge.countries}
+      // The day's ten countries are picked at random from the whole world, so
+      // they share no geography. Drawn alone they are specks on an empty
+      // sphere with nothing to navigate by; the rest of the map is what makes
+      // finding them possible.
+      backdrop
       onRoundEnd={finish}
     />
   );

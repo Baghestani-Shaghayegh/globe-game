@@ -6,6 +6,7 @@ import DailyCard from "../components/DailyCard";
 import Options from "../components/Options";
 import AdSlot from "../components/AdSlot";
 import { playTap } from "../lib/sound";
+import { replayTodaysDailies } from "../lib/localData";
 import { choiceClass } from "../components/choice";
 import { getCountryMeta } from "../data/countries";
 import {
@@ -206,7 +207,11 @@ export default function Home() {
         </header>
 
         {/* Today — one click each, the same for everyone, gone tomorrow. */}
-        <Section title="Today" hint="new at midnight UTC">
+        <Section
+          title="Today"
+          hint="new at midnight UTC"
+          action={import.meta.env.DEV ? <ReplayToday /> : null}
+        >
           <div className="flex flex-col gap-2.5 sm:flex-row">
             <DailyCard
               to="/daily"
@@ -380,10 +385,13 @@ export default function Home() {
 function Section({
   title,
   hint,
+  action,
   children,
 }: {
   title: string;
   hint?: string;
+  /** Something to put on the header line, beside the hint. */
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -394,9 +402,33 @@ function Section({
         </h2>
         <span className="h-px flex-1 bg-white/[0.07]" aria-hidden="true" />
         {hint && <span className="text-xs text-zinc-600">{hint}</span>}
+        {action}
       </div>
       {children}
     </section>
+  );
+}
+
+/**
+ * Put today's three puzzles back to unplayed, from the row they sit on.
+ *
+ * The same thing exists in Settings, and that turned out to be the wrong place
+ * for it: it is wanted at the moment of looking at a played card, not two
+ * pages away. Development only — `import.meta.env.DEV` keeps it out of every
+ * built bundle, because a daily anyone can replay is not a daily at all.
+ */
+function ReplayToday() {
+  return (
+    <button
+      onClick={() => {
+        replayTodaysDailies(dayKey());
+        window.location.reload();
+      }}
+      title="Development only — puts today's three puzzles back to unplayed"
+      className="shrink-0 rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-xs font-medium text-amber-200/90 transition-colors hover:bg-amber-400/20"
+    >
+      Replay today
+    </button>
   );
 }
 
