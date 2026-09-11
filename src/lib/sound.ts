@@ -213,6 +213,23 @@ export function playOther() {
   tone(step(C5, -2), { type: "sine", start: 0.07, duration: 0.12, volume: 0.06 });
 }
 
+/**
+ * One second going by, in the last stretch of a countdown.
+ *
+ * Very quiet, and only worth playing when the clock is nearly out: a tick for
+ * every second of a five-minute round would be a metronome nobody asked for.
+ * The final second is a touch higher, so running out is heard as arriving
+ * somewhere rather than as the ticking simply stopping.
+ */
+export function playTick(secondsLeft: number) {
+  if (!playing()) return;
+  tone(step(C5, secondsLeft <= 1 ? 0 : -12), {
+    type: "sine",
+    duration: 0.06,
+    volume: 0.07,
+  });
+}
+
 /** A personal best, landing on top of the round-end triad. */
 export function playRecord() {
   if (!playing()) return;

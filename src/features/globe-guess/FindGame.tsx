@@ -151,7 +151,17 @@ export default function FindGame({
 
   // Read once: a preference changed mid-round shouldn't move the goalposts.
   const [hintsOn] = useState(hintsEnabled);
-  const round = useRound(recordKey(type, mode.id, limitMs, ruleset), limitMs, { record });
+  const limitSeconds = limitMs === null ? null : Math.round(limitMs / 1000);
+  // recordKey speaks seconds, like the URL does; this component carries
+  // milliseconds. Handing it `limitMs` filed timed rounds under "@180000"
+  // while the menu looked them up under "@180", so a timed mode's best time
+  // was written somewhere nothing ever read. The round length has to go in
+  // too, or a ten-country run shares a bucket with the full list.
+  const round = useRound(
+    recordKey(type, mode.id, limitSeconds, ruleset, count),
+    limitMs,
+    { record }
+  );
   const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
     round;
 

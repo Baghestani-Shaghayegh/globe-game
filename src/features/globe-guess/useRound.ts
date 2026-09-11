@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { addRun, bestScore, bestTime, formatDuration } from "../../lib/records";
 import { postScore } from "../../lib/leaderboard";
 import {
@@ -16,8 +16,12 @@ import {
   playHint,
   playRecord,
   playRoundEnd,
+  playTick,
   playWrong,
 } from "../../lib/sound";
+
+/** How near the end a countdown starts being audible. */
+const TICK_FROM_SECONDS = 10;
 
 /**
  * What the last correct answer paid, for the figure that floats up off the
@@ -102,6 +106,7 @@ export function useRound(
     setScore(emptyScore);
     scoreNow.current = emptyScore;
     setGain(null);
+    lastTick.current = null;
   }, []);
 
   const tick = useCallback(() => {
@@ -183,6 +188,22 @@ export function useRound(
 
   const remainingMs =
     limitMs === null ? null : Math.max(0, limitMs - elapsedMs);
+
+  // The last ten seconds, once each. The clock is read from `remainingMs`
+  // rather than counted, so a browser that throttles a background tab can skip
+  // seconds without the ticks drifting out of step with what is on screen.
+  const lastTick = useRef<number | null>(null);
+  useEffect(() => {
+    if (remainingMs === null || summary) {
+      lastTick.current = null;
+      return;
+    }
+    const secondsLeft = Math.ceil(remainingMs / 1000);
+    if (secondsLeft > TICK_FROM_SECONDS || secondsLeft <= 0) return;
+    if (lastTick.current === secondsLeft) return;
+    lastTick.current = secondsLeft;
+    playTick(secondsLeft);
+  }, [remainingMs, summary]);
 
   return {
     begin,

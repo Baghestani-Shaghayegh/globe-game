@@ -8,7 +8,6 @@ import {
   playedDays,
   resultFor,
   saveResult,
-  shareText,
   streak,
   type DailyResult,
 } from "./daily";
@@ -138,13 +137,3 @@ describe("streaks", () => {
   });
 });
 
-describe("the shared card", () => {
-  it("names the round and shows squares, but never the countries", () => {
-    const text = shareText(result("2026-09-07", { type: "flag" }));
-    expect(text).toContain("WorldGuess #250");
-    expect(text).toContain("Flags");
-    expect(text).toContain("8/10");
-    expect(text).toContain("🟩🟩🟨⬜");
-    expect(text).not.toMatch(/Country/);
-  });
-});

@@ -83,7 +83,13 @@ export default function GlobeGame({
 
   // Read once: a preference changed mid-round shouldn't move the goalposts.
   const [hintsOn] = useState(hintsEnabled);
-  const round = useRound(recordKey("name", mode.id, limitMs, ruleset), limitMs, { record });
+  const limitSeconds = limitMs === null ? null : Math.round(limitMs / 1000);
+  // Seconds, not milliseconds, and with the round length — see FindGame.
+  const round = useRound(
+    recordKey("name", mode.id, limitSeconds, ruleset, count),
+    limitMs,
+    { record }
+  );
   const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
     round;
 

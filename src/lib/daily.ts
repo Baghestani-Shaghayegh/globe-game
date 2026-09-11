@@ -168,20 +168,4 @@ function previousDay(key: string): string {
   return new Date(Date.UTC(y, m - 1, d) - 86_400_000).toISOString().slice(0, 10);
 }
 
-const SQUARES: Record<Outcome, string> = {
-  first: "🟩",
-  retried: "🟨",
-  missed: "⬜",
-};
 
-/** The text people paste elsewhere. Deliberately spoiler-free. */
-export function shareText(result: DailyResult): string {
-  const label =
-    GAME_TYPES.find((t) => t.id === result.type)?.label ?? result.type;
-  const squares = result.outcomes.map((o) => SQUARES[o]).join("");
-  return [
-    `WorldGuess #${result.number} — ${label}`,
-    `${result.found}/${result.total} · ${result.points.toLocaleString()} pts`,
-    squares,
-  ].join("\n");
-}
