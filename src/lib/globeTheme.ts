@@ -189,6 +189,18 @@ export function backdropColor(): string {
   return mix(theme.sphere, theme.unfound, 0.45);
 }
 
+/**
+ * Land on the decorative globe behind the menu.
+ *
+ * Brighter than the land in a round, and deliberately: nothing is being read
+ * off it, it sits under a scrim, and a backdrop too dark to make out is the
+ * same as not drawing one. Lifted towards the palette's own atmosphere colour
+ * so it stays that palette's globe rather than becoming a second theme.
+ */
+export function backdropLand(): string {
+  return mix(theme.idle, theme.atmosphere, 0.42);
+}
+
 /** Blends two #rrggbb colours, `amount` of the way from the first to the second. */
 function mix(from: string, to: string, amount: number): string {
   const channels = (hex: string) =>

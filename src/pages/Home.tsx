@@ -1,18 +1,17 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import ModeCard from "../components/ModeCard";
-import ContinentCard from "../components/ContinentCard";
 import DailyCard from "../components/DailyCard";
 import Options from "../components/Options";
 import AdSlot from "../components/AdSlot";
 import { playTap } from "../lib/sound";
 import { replayTodaysDailies } from "../lib/localData";
 import { clearTodaysDailyScore } from "../lib/leaderboard";
-import { choiceClass } from "../components/choice";
 import { getCountryMeta } from "../data/countries";
 import {
   GAME_TYPES,
   MODES,
+  ROUND_LENGTHS,
+  RULESETS,
   DEFAULT_ROUND_LENGTH,
   gamePath,
   recordKey,
@@ -35,11 +34,14 @@ import { capitalOf } from "../data/capitals";
 // Three.js is heavy — let the menu paint first, then fade the globe in behind it.
 const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
 
+/** How many game types sit on the bar before the rest fold into "More". */
+const TABS_SHOWN = 3;
+
 /**
  * Whether the decorative globe behind the menu is worth its download.
  *
  * It costs about half a megabyte of three.js, which is most of what the menu
- * weighs — and on a phone it is mostly hidden behind the cards anyway. Small
+ * weighs — and on a phone it is mostly hidden behind the content anyway. Small
  * screens and metered connections get the gradient alone, and three.js then
  * only arrives when a round actually starts.
  */
@@ -61,7 +63,7 @@ type Counts = Partial<Record<ModeId, number>>;
 
 /**
  * How many places each mode asks for, read from the same map the game uses so
- * the cards can't drift out of date. The globe behind the menu fetches this
+ * the labels can't drift out of date. The globe behind the menu fetches this
  * file too, so it comes from the browser cache.
  */
 function useModeCounts(type: GameType): Counts {
@@ -89,7 +91,7 @@ function useModeCounts(type: GameType): Counts {
         );
       })
       .catch(() => {
-        /* the cards read fine without a count */
+        /* the labels read fine without a count */
       });
     return () => {
       cancelled = true;
@@ -99,42 +101,151 @@ function useModeCounts(type: GameType): Counts {
   return counts;
 }
 
-/**
- * Records are per game type, clock and round length, so the labels follow all
- * three — a ten-country best has nothing to say about a marathon.
- */
-function useBests(
+/** The best time or score for the settings currently chosen, or null. */
+function useBest(
   type: GameType,
+  modeId: ModeId,
   limit: number | null,
   ruleset: Ruleset,
   count: number | null
-): Partial<Record<ModeId, string | null>> {
-  const [bests, setBests] = useState<Partial<Record<ModeId, string | null>>>({});
+): string | null {
+  const [best, setBest] = useState<string | null>(null);
 
   // Read after mount — storage isn't available while rendering on every client.
   useEffect(() => {
-    setBests(
-      Object.fromEntries(
-        MODES.map((mode) => [
-          mode.id,
-          bestLabel(recordKey(type, mode.id, limit, ruleset, count)),
-        ])
-      )
-    );
-  }, [type, limit, ruleset, count]);
+    setBest(bestLabel(recordKey(type, modeId, limit, ruleset, count)));
+  }, [type, modeId, limit, ruleset, count]);
 
-  return bests;
+  return best;
 }
+
+const selectClass =
+  "w-full appearance-none rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2.5 text-sm text-zinc-100 outline-none transition-colors hover:border-white/30 focus:border-teal-300/60";
+
+/** A labelled dropdown. Native select: it is one tap on a phone and free. */
+function Picker({
+  label,
+  value,
+  onChange,
+  children,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block min-w-0 flex-1">
+      <span className="mb-1.5 block text-xs text-zinc-400">{label}</span>
+      <span className="relative block">
+        <select
+          value={value}
+          onChange={(e) => {
+            playTap();
+            onChange(e.target.value);
+          }}
+          className={selectClass}
+        >
+          {children}
+        </select>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </span>
+    </label>
+  );
+}
+
+/** One of today's three, or one of the other ways to play. */
+function WayToPlay({
+  to,
+  title,
+  note,
+  icon,
+  badge,
+}: {
+  to: string;
+  title: string;
+  note: string;
+  icon: React.ReactNode;
+  badge?: string;
+}) {
+  return (
+    <Link
+      onClick={playTap}
+      to={to}
+      className="group flex items-center gap-3.5 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 transition-colors hover:border-white/25 hover:bg-white/[0.05]"
+    >
+      <span className="shrink-0 text-zinc-400 transition-colors group-hover:text-zinc-200">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <span className="font-medium text-zinc-100">{title}</span>
+          {badge && (
+            <span className="shrink-0 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-200">
+              {badge}
+            </span>
+          )}
+        </span>
+        <span className="block truncate text-sm text-zinc-400">{note}</span>
+      </span>
+      <span
+        aria-hidden="true"
+        className="shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-300"
+      >
+        ›
+      </span>
+    </Link>
+  );
+}
+
+/** The icons on the cards — drawn, so they match at any size and any theme. */
+const icons = {
+  practice: (
+    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <path d="M5 20V10M12 20V4M19 20v-7" />
+    </svg>
+  ),
+  together: (
+    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0M17 11a2.6 2.6 0 1 0-2-4.3M17.5 19a5 5 0 0 0-3-4.6" />
+    </svg>
+  ),
+  bigger: (
+    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 20 20 4M4 14v6h6M20 10V4h-6" />
+    </svg>
+  ),
+} as const;
 
 export default function Home() {
   const navigate = useNavigate();
-  const { session, profile } = useAuth();
-  const [gameType, setGameType] = useState<GameType>("name");
-  const counts = useModeCounts(gameType);
-  const [limit, setLimit] = useState<number | null>(null);
-  const [count, setCount] = useState<number | null>(DEFAULT_ROUND_LENGTH);
-  const [ruleset, setRuleset] = useState<Ruleset>("relaxed");
+  const { profile, session } = useAuth();
   const backdropWanted = useBackdropWanted();
+
+  const [gameType, setGameType] = useState<GameType>("name");
+  const [modeId, setModeId] = useState<ModeId>("easy");
+  const [count, setCount] = useState<number | null>(DEFAULT_ROUND_LENGTH);
+  const [limit, setLimit] = useState<number | null>(null);
+  const [ruleset, setRuleset] = useState<Ruleset>("relaxed");
+  const [hints, setHints] = useState(true);
+  const [customising, setCustomising] = useState(false);
+  const [moreTypes, setMoreTypes] = useState(false);
+
+  const [daily, setDaily] = useState<{ played: boolean; streak: number } | null>(
+    null
+  );
   // Which of today's three are finished. Mystery and connect count as done
   // only when solved — one abandoned halfway is still waiting for you.
   const [doneToday, setDoneToday] = useState({
@@ -142,12 +253,10 @@ export default function Home() {
     mystery: false,
     connect: false,
   });
-  const [daily, setDaily] = useState<{ played: boolean; streak: number } | null>(
-    null
-  );
   const [duePractice, setDuePractice] = useState(0);
-  // Unlike the clock and rules, this is a standing preference, so it sticks.
-  const [hints, setHints] = useState(true);
+
+  const counts = useModeCounts(gameType);
+  const best = useBest(gameType, modeId, limit, ruleset, count);
 
   useEffect(() => {
     const today = dayKey();
@@ -161,12 +270,18 @@ export default function Home() {
     setHints(hintsEnabled());
   }, []);
 
-  const bests = useBests(gameType, limit, ruleset, count);
-  const blurb =
-    GAME_TYPES.find((t) => t.id === gameType)?.blurb ?? GAME_TYPES[0].blurb;
+  const shown = GAME_TYPES.slice(0, TABS_SHOWN);
+  const folded = GAME_TYPES.slice(TABS_SHOWN);
+  // The chosen type always has a tab, even when it lives under "More".
+  const openMore = moreTypes || folded.some((t) => t.id === gameType);
 
-  const headline = MODES.filter((mode) => !mode.regional);
-  const regional = MODES.filter((mode) => mode.regional);
+  const start = () =>
+    navigate(gamePath(gameType, modeId, limit, ruleset, count));
+
+  const rulesLabel =
+    RULESETS.find((r) => r.id === ruleset)?.label ?? "Relaxed";
+  const roundLabel =
+    ROUND_LENGTHS.find((r) => r.count === count)?.label ?? "10";
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#07111c]">
@@ -179,279 +294,350 @@ export default function Home() {
       )}
 
       {/*
-        Pushes the globe back behind the cards. The old scrim was tuned for a
-        centred hero with space around it; this layout is a dense column, and
-        anything less than this reads as noise through the cards rather than
-        depth behind them.
+        The globe sits behind the right-hand side, so the scrim runs across
+        rather than down: dense at the left where the words are, thinning out
+        over the ocean where nothing has to be read.
       */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "linear-gradient(180deg, rgba(7,17,28,0.55) 0%, rgba(7,17,28,0.86) 30%, rgba(7,17,28,0.94) 100%)",
+            "linear-gradient(100deg, rgba(7,17,28,0.96) 0%, rgba(7,17,28,0.9) 34%, rgba(7,17,28,0.55) 58%, rgba(7,17,28,0.18) 100%)",
         }}
       />
 
-      <main className="relative mx-auto flex min-h-screen w-full max-w-2xl flex-col px-5 py-10 sm:py-14">
-        <header className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-4xl font-semibold tracking-tight text-zinc-50 sm:text-5xl">
-              WorldGuess
-            </h1>
-            <p className="mt-2 text-zinc-400">
-              How much of the world map can you actually recall?
-            </p>
-          </div>
-          {accountsEnabled && (
-            <Link
-              to="/account"
-              className="flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-white/25 hover:text-zinc-100"
+      <div className="relative mx-auto w-full max-w-6xl px-5 sm:px-8">
+        <header className="flex flex-wrap items-center gap-x-6 gap-y-3 py-5">
+          <span className="flex items-center gap-2.5">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="h-7 w-7 text-teal-300"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
             >
-              {profile?.country && (
-                <img
-                  src={`/flags/${profile.country}.svg`}
-                  alt=""
-                  width={20}
-                  height={15}
-                  className="w-5 rounded-[2px]"
-                />
-              )}
-              {profile ? profile.username : session ? "Finish setup" : "Sign in"}
+              <circle cx="12" cy="12" r="9" />
+              <ellipse cx="12" cy="12" rx="4" ry="9" />
+              <path d="M3.3 9h17.4M3.3 15h17.4" />
+            </svg>
+            <span className="text-xl font-semibold tracking-tight text-zinc-50">
+              WorldGuess
+            </span>
+          </span>
+
+          <nav className="flex items-center gap-5 text-sm">
+            <span className="border-b-2 border-teal-300 pb-0.5 font-medium text-zinc-100">
+              Play
+            </span>
+            {accountsEnabled && (
+              <Link
+                to="/leaderboard"
+                onClick={playTap}
+                className="text-zinc-400 transition-colors hover:text-zinc-100"
+              >
+                Leaderboard
+              </Link>
+            )}
+            <Link
+              to="/records"
+              onClick={playTap}
+              className="text-zinc-400 transition-colors hover:text-zinc-100"
+            >
+              My progress
             </Link>
-          )}
+          </nav>
+
+          <div className="ml-auto flex items-center gap-3">
+            <Link
+              to="/settings"
+              onClick={playTap}
+              className="flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-zinc-100"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              >
+                <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+                <circle cx="16" cy="7" r="2.2" />
+                <circle cx="10" cy="17" r="2.2" />
+              </svg>
+              <span className="hidden sm:inline">Settings</span>
+            </Link>
+            {accountsEnabled && (
+              <Link
+                to="/account"
+                onClick={playTap}
+                className="flex items-center gap-2 rounded-xl border border-white/15 px-3.5 py-1.5 text-sm text-zinc-100 transition-colors hover:border-white/35"
+              >
+                {profile?.country && (
+                  <img
+                    src={`/flags/${profile.country}.svg`}
+                    alt=""
+                    width={18}
+                    height={14}
+                    className="w-[18px] rounded-[2px]"
+                  />
+                )}
+                {profile ? profile.username : session ? "Finish setup" : "Sign in"}
+              </Link>
+            )}
+          </div>
         </header>
 
-        {/* Today — one click each, the same for everyone, gone tomorrow. */}
-        <Section
-          title="Today"
-          hint="new at midnight UTC"
-          action={import.meta.env.DEV ? <ReplayToday /> : null}
-        >
-          {/*
-            Says "the daily challenge", not "these": the mystery and the
-            connect keep their scores to themselves — neither files a run or
-            posts to a board — so a line promising all three counted double
-            would be two thirds wrong.
-          */}
-          <p className="mb-2.5 px-1 text-sm text-zinc-500">
-            Three puzzles, the same for everyone, gone at midnight. The daily
-            challenge counts {DAILY_MULTIPLIER}× towards the leaderboard.
-          </p>
-          <div className="flex flex-col gap-2.5 sm:flex-row">
-            <DailyCard
-              to="/daily"
-              icon="🗓️"
-              title="Daily challenge"
-              note={
-                daily?.played
-                  ? "Played — see your result"
-                  : "Ten countries, the same for everyone."
-              }
-              accent="sky"
-              badge={daily && daily.streak > 1 ? `🔥 ${daily.streak}` : undefined}
-              done={doneToday.daily}
-            />
-            <DailyCard
-              to="/mystery"
-              icon="🔥"
-              title="Mystery country"
-              note={
-                doneToday.mystery
-                  ? "Found — see your result"
-                  : "One hidden country. Warmer or colder with every guess."
-              }
-              accent="rose"
-              done={doneToday.mystery}
-            />
-            <DailyCard
-              to="/connect"
-              icon="🔗"
-              title="Connect"
-              note={
-                doneToday.connect
-                  ? "Linked — see your result"
-                  : "Two ends. Name the countries that link them."
-              }
-              accent="violet"
-              done={doneToday.connect}
-            />
-          </div>
-        </Section>
+        <main className="pb-10">
+          <section className="pt-8 sm:pt-12">
+            <p className="text-xs uppercase tracking-[0.22em] text-teal-300/80">
+              The world is your playground
+            </p>
+            <h1 className="mt-4 max-w-lg text-4xl font-semibold leading-[1.08] tracking-tight text-zinc-50 sm:text-5xl">
+              How well do you know your world?
+            </h1>
+            <p className="mt-3 text-lg text-zinc-400">
+              Pick a challenge. Discover somewhere new.
+            </p>
+          </section>
 
-        {/* Play — the configurable round. */}
-        <Section title="Play">
-          <div
-            role="tablist"
-            aria-label="Game type"
-            className="flex flex-wrap gap-1.5"
-          >
-            {GAME_TYPES.map((t) => (
+          {/* Start a round: what kind, where, how long, go. */}
+          <section className="mt-7 max-w-xl">
+            <div role="tablist" aria-label="Game type" className="flex flex-wrap gap-1.5">
+              {[...shown, ...(openMore ? folded : [])].map((t) => (
+                <button
+                  key={t.id}
+                  role="tab"
+                  aria-selected={gameType === t.id}
+                  onClick={() => {
+                    playTap();
+                    setGameType(t.id);
+                  }}
+                  className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+                    gameType === t.id
+                      ? "bg-teal-300 text-[#07111c]"
+                      : "border border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/25 hover:text-zinc-100"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+              {!openMore && (
+                <button
+                  onClick={() => {
+                    playTap();
+                    setMoreTypes(true);
+                  }}
+                  aria-expanded={false}
+                  className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-white/25 hover:text-zinc-100"
+                >
+                  More
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Stacked on a phone: side by side, "Countries only · 167" loses
+                its count to the ellipsis. */}
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <Picker
+                label="Map"
+                value={modeId}
+                onChange={(v) => setModeId(v as ModeId)}
+              >
+                {MODES.map((mode) => (
+                  <option key={mode.id} value={mode.id}>
+                    {mode.name}
+                    {counts[mode.id] ? ` · ${counts[mode.id]}` : ""}
+                  </option>
+                ))}
+              </Picker>
+              <Picker
+                label="Round"
+                value={String(count ?? "all")}
+                onChange={(v) => setCount(v === "all" ? null : Number(v))}
+              >
+                {ROUND_LENGTHS.map((option) => (
+                  <option key={option.label} value={String(option.count ?? "all")}>
+                    {option.count === null
+                      ? "Everything"
+                      : `${option.count} countries`}
+                  </option>
+                ))}
+              </Picker>
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
               <button
-                key={t.id}
-                role="tab"
-                aria-selected={gameType === t.id}
                 onClick={() => {
                   playTap();
-                  setGameType(t.id);
+                  start();
                 }}
-                className={choiceClass(gameType === t.id)}
+                className="flex items-center gap-2 rounded-xl bg-teal-300 px-7 py-3 font-semibold text-[#07111c] transition-colors hover:bg-teal-200"
               >
-                {t.label}
+                Start playing
+                <span aria-hidden="true">→</span>
               </button>
-            ))}
-          </div>
-          <p className="mt-2.5 px-1 text-sm text-zinc-400">{blurb}</p>
+              <button
+                onClick={() => {
+                  playTap();
+                  setCustomising((open) => !open);
+                }}
+                aria-expanded={customising}
+                className="text-sm text-zinc-300 underline underline-offset-4 transition-colors hover:text-zinc-100"
+              >
+                Customize round
+              </button>
+            </div>
 
-          <Options
-            count={count}
-            onCount={setCount}
-            limit={limit}
-            onLimit={setLimit}
-            ruleset={ruleset}
-            onRuleset={setRuleset}
-            hints={hints}
-            onHints={(on) => {
-              setHints(on);
-              setHintsEnabled(on);
-            }}
-          />
+            <p className="mt-3 text-sm text-zinc-500">
+              {rulesLabel} mode · {hints ? "Hints on" : "Hints off"} ·{" "}
+              {roundLabel === "Everything" ? "every country" : `${roundLabel} countries`}
+              {best && <> · your best {best}</>}
+            </p>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {headline.map((mode) => (
-              <ModeCard
-                key={mode.id}
-                name={mode.name}
-                desc={mode.desc}
-                label={mode.label}
-                level={mode.level}
-                accent={mode.accent}
-                noun={mode.noun}
-                count={counts[mode.id] ?? null}
-                best={bests[mode.id] ?? null}
-                onSelect={() =>
-                  navigate(gamePath(gameType, mode.id, limit, ruleset, count))
-                }
+            {customising && (
+              <Options
+                count={count}
+                onCount={setCount}
+                limit={limit}
+                onLimit={setLimit}
+                ruleset={ruleset}
+                onRuleset={setRuleset}
+                hints={hints}
+                onHints={(on) => {
+                  setHints(on);
+                  setHintsEnabled(on);
+                }}
               />
-            ))}
-          </div>
+            )}
+          </section>
 
-          <div className="mt-3 grid gap-2 sm:grid-cols-3">
-            {regional.map((mode) => (
-              <ContinentCard
-                key={mode.id}
-                name={mode.name}
-                accent={mode.accent}
-                noun={mode.noun}
-                count={counts[mode.id] ?? null}
-                best={bests[mode.id] ?? null}
-                onSelect={() =>
-                  navigate(gamePath(gameType, mode.id, limit, ruleset, count))
+          <section className="mt-12">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 className="text-2xl font-semibold tracking-tight text-zinc-50">
+                Today's challenges
+              </h2>
+              <span className="flex items-center gap-3">
+                {import.meta.env.DEV && <ReplayToday />}
+                <span className="text-xs text-zinc-500">Resets at midnight UTC</span>
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <DailyCard
+                to="/daily"
+                icon="🗓️"
+                title="Daily challenge"
+                note={
+                  doneToday.daily
+                    ? "Played — see your result"
+                    : "10 countries. One shared challenge."
                 }
+                accent="sky"
+                badge={daily && daily.streak > 1 ? `🔥 ${daily.streak}` : undefined}
+                done={doneToday.daily}
+                pill={`${DAILY_MULTIPLIER}× leaderboard points`}
+                action="Play daily"
               />
-            ))}
-          </div>
-        </Section>
+              <DailyCard
+                to="/mystery"
+                icon="🔥"
+                title="Mystery country"
+                note={
+                  doneToday.mystery
+                    ? "Found — see your result"
+                    : "Find it with warmer-or-colder clues."
+                }
+                accent="rose"
+                done={doneToday.mystery}
+                action="Solve mystery"
+              />
+              <DailyCard
+                to="/connect"
+                icon="🔗"
+                title="Connect"
+                note={
+                  doneToday.connect
+                    ? "Linked — see your result"
+                    : "Link two countries across the map."
+                }
+                accent="violet"
+                done={doneToday.connect}
+                action="Make a connection"
+              />
+            </div>
+          </section>
 
-        {/* Everything that isn't a round of the main game. */}
-        <Section title="More">
-          <div className="grid gap-2.5 sm:grid-cols-3">
-            <SmallLink
-              to="/play-together"
-              icon="⚔️"
-              title="Play together"
-              note="Race a friend"
-              hidden={!accountsEnabled}
-            />
-            <SmallLink
-              to="/bigger"
-              icon="⚖️"
-              title="Which is bigger?"
-              note="Pick the larger one"
-            />
-            <SmallLink
-              to="/practice"
-              icon="🎯"
-              title="Practice"
-              note={
-                duePractice > 0
-                  ? `${duePractice} waiting`
-                  : "Drill your weak spots"
-              }
-              highlight={duePractice > 0}
-            />
-          </div>
-        </Section>
+          <section className="mt-10">
+            <h2 className="text-2xl font-semibold tracking-tight text-zinc-50">
+              More ways to play
+            </h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <WayToPlay
+                to="/practice"
+                title="Practice"
+                note={
+                  duePractice > 0
+                    ? `${duePractice} waiting`
+                    : "Work on your weak spots"
+                }
+                icon={icons.practice}
+              />
+              {accountsEnabled && (
+                <WayToPlay
+                  to="/play-together"
+                  title="Play together"
+                  note="Challenge a friend"
+                  icon={icons.together}
+                />
+              )}
+              <WayToPlay
+                to="/bigger"
+                title="Which is bigger?"
+                note="Compare country sizes"
+                icon={icons.bigger}
+              />
+            </div>
+          </section>
 
-        <AdSlot className="mt-10" />
+          <AdSlot className="mt-10" />
 
-        <nav className="mt-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-zinc-500">
-          {[
-            ["/records", "Records"],
-            ["/stats", "Stats"],
-            ["/achievements", "Badges"],
-            ["/levels", "Level & themes"],
-            ...(accountsEnabled ? [["/leaderboard", "Leaderboard"]] : []),
-            ["/settings", "Settings"],
-            ["/privacy", "Privacy"],
-          ].flatMap(([to, label], i) => [
-            // The separator is its own item, so one gap sits between every
-            // pair rather than a gap plus a nested gap.
-            ...(i > 0
-              ? [
-                  <span key={`${to}-sep`} aria-hidden="true" className="text-zinc-700">
-                    ·
-                  </span>,
-                ]
-              : []),
+          <footer className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] pt-5 text-sm text-zinc-500">
+            <Link to="/records" className="transition-colors hover:text-zinc-300">
+              Records
+            </Link>
+            <Link to="/stats" className="transition-colors hover:text-zinc-300">
+              Stats
+            </Link>
+            <Link to="/achievements" className="transition-colors hover:text-zinc-300">
+              Badges
+            </Link>
+            <Link to="/levels" className="transition-colors hover:text-zinc-300">
+              Level &amp; themes
+            </Link>
             <Link
-              key={to}
-              to={to}
-              className="underline underline-offset-4 transition-colors hover:text-zinc-300"
+              to="/privacy"
+              className="ml-auto transition-colors hover:text-zinc-300"
             >
-              {label}
-            </Link>,
-          ])}
-        </nav>
-      </main>
-    </div>
-  );
-}
-
-/** A titled band of the menu, so the page reads as three decisions not thirty. */
-function Section({
-  title,
-  hint,
-  action,
-  children,
-}: {
-  title: string;
-  hint?: string;
-  /** Something to put on the header line, beside the hint. */
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="mt-8">
-      <div className="mb-2.5 flex items-baseline gap-3 px-1">
-        <h2 className="text-xs uppercase tracking-wider text-zinc-500">
-          {title}
-        </h2>
-        <span className="h-px flex-1 bg-white/[0.07]" aria-hidden="true" />
-        {hint && <span className="text-xs text-zinc-600">{hint}</span>}
-        {action}
+              Privacy
+            </Link>
+          </footer>
+        </main>
       </div>
-      {children}
-    </section>
+    </div>
   );
 }
 
 /**
  * Put today's three puzzles back to unplayed, from the row they sit on.
  *
- * The same thing exists in Settings, and that turned out to be the wrong place
- * for it: it is wanted at the moment of looking at a played card, not two
- * pages away. Development only — `import.meta.env.DEV` keeps it out of every
- * built bundle, because a daily anyone can replay is not a daily at all.
+ * Development only — `import.meta.env.DEV` keeps it out of every built bundle,
+ * because a daily anyone can replay is not a daily at all.
  */
 function ReplayToday() {
   return (
@@ -459,8 +645,7 @@ function ReplayToday() {
       onClick={() => {
         replayTodaysDailies(dayKey());
         // Also takes today's score off the board, so a replayed daily can
-        // actually land there. Allowed for listed accounts only — see
-        // clearTodaysDailyScore — and a no-op for anyone else.
+        // actually land there. Allowed for listed accounts only.
         void clearTodaysDailyScore().finally(() => window.location.reload());
       }}
       title="Development only — puts today's three puzzles back to unplayed"
@@ -468,44 +653,5 @@ function ReplayToday() {
     >
       Replay today
     </button>
-  );
-}
-
-/** A secondary destination: present, but not competing with the main game. */
-function SmallLink({
-  to,
-  icon,
-  title,
-  note,
-  hidden,
-  highlight,
-}: {
-  to: string;
-  icon: string;
-  title: string;
-  note: string;
-  hidden?: boolean;
-  highlight?: boolean;
-}) {
-  if (hidden) return null;
-  return (
-    <Link
-      to={to}
-      className={`group flex items-center gap-2.5 rounded-xl border px-3.5 py-3 transition-colors ${
-        highlight
-          ? "border-amber-400/30 bg-amber-400/[0.06] hover:border-amber-400/50"
-          : "border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06]"
-      }`}
-    >
-      <span aria-hidden="true" className="text-base leading-none">
-        {icon}
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate text-sm font-medium text-zinc-100">
-          {title}
-        </span>
-        <span className="block truncate text-xs text-zinc-500">{note}</span>
-      </span>
-    </Link>
   );
 }

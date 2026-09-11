@@ -13,6 +13,8 @@ export default function DailyCard({
   accent,
   badge,
   done = false,
+  pill,
+  action,
 }: {
   to: string;
   icon: string;
@@ -31,6 +33,10 @@ export default function DailyCard({
    * two you have yet to play.
    */
   done?: boolean;
+  /** A standing fact about the puzzle, e.g. what its points are worth. */
+  pill?: string;
+  /** The call to action at the foot of the card. */
+  action?: string;
 }) {
   const tone = done
     ? "border-white/10 bg-white/[0.02] hover:border-white/20"
@@ -76,6 +82,22 @@ export default function DailyCard({
       >
         {note}
       </span>
+
+      {pill && !done && (
+        <span className="mt-0.5 w-fit rounded-full border border-teal-300/30 bg-teal-300/10 px-2.5 py-0.5 text-xs font-medium text-teal-200">
+          {pill}
+        </span>
+      )}
+
+      {action && (
+        <span
+          className={`mt-auto pt-2 text-sm font-medium ${
+            done ? "text-zinc-500" : "text-teal-300 group-hover:text-teal-200"
+          }`}
+        >
+          {done ? "See your result" : action} <span aria-hidden="true">→</span>
+        </span>
+      )}
     </Link>
   );
 }
