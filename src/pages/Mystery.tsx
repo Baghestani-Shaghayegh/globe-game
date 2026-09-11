@@ -1,10 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
 import { Link } from "react-router-dom";
 import { useGlobeClick } from "../features/globe-guess/useGlobeClick";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
 import { getCountryMeta } from "../data/countries";
+import { resolveName } from "../lib/answerMatch";
 import { globeMaterial, theme } from "../lib/globeTheme";
 import { featureCentre, type Geometry } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
@@ -100,7 +108,7 @@ export default function Mystery() {
 
   const [burst, setBurst] = useState(0);
 
-  const handleClick = useCallback(
+  const guess = useCallback(
     (name: string) => {
       if (!result || result.solved || !answer) return;
       if (guessed.has(name)) {
@@ -138,9 +146,30 @@ export default function Mystery() {
     [result, answer, guessed, centres]
   );
 
-  const globeClick = useGlobeClick<CountryFeature>((feature) =>
-    handleClick(feature.properties.name)
+  const [typed, setTyped] = useState("");
+
+  /** Every country this round will accept as a guess. */
+  const playable = useMemo(
+    () => features.map((f) => f.properties.name),
+    [features]
   );
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (!result || result.solved) return;
+    const name = resolveName(typed, playable);
+    if (!name) {
+      setFlash(`No country called "${typed.trim()}".`);
+      playWrong();
+      return;
+    }
+    setTyped("");
+    guess(name);
+  };
+
+  // Hovering still names a country, which is worth keeping: it is how someone
+  // finds out what they are looking at in order to type it.
+  const globeClick = useGlobeClick<CountryFeature>(() => {});
 
   const capColor = useMemo(
     () => (d: object) => {
@@ -264,8 +293,30 @@ export default function Mystery() {
               Find the mystery country
             </p>
             <p className="max-w-xs text-sm text-zinc-300">
-              Click anywhere. The closer you are, the warmer it goes.
+              Name a country. The closer it is, the warmer it goes.
             </p>
+            <form onSubmit={submit} className="pointer-events-auto mt-0.5 flex gap-2">
+              <label htmlFor="guess" className="sr-only">
+                Country name
+              </label>
+              <input
+                id="guess"
+                value={typed}
+                onChange={(e) => setTyped(e.target.value)}
+                placeholder="Country name"
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                autoFocus
+                className="w-44 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
+              />
+              <button
+                type="submit"
+                className="rounded-md border border-white/15 bg-white/10 px-3 py-1.5 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/15"
+              >
+                Guess
+              </button>
+            </form>
             {flash && <p className="text-xs text-amber-300/80">{flash}</p>}
           </>
         )}

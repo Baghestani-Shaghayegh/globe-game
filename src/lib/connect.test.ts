@@ -7,7 +7,6 @@ import {
   loadConnect,
   parBetween,
   puzzleFor,
-  resolveName,
   saveConnect,
   scoreFor,
   shareText,
@@ -15,7 +14,11 @@ import {
   touchesChain,
   type ConnectResult,
 } from "./connect";
+import { resolveName } from "./answerMatch";
 import { BORDERS, neighboursOf } from "../data/borders";
+
+/** resolveName over the connect pool, which it used to default to. */
+const resolve = (typed: string) => resolveName(typed, connectable());
 
 beforeEach(() => localStorage.clear());
 
@@ -316,29 +319,29 @@ describe("shareText", () => {
 
 describe("resolveName", () => {
   it("takes the plain name", () => {
-    expect(resolveName("France")).toBe("France");
+    expect(resolve("France")).toBe("France");
   });
 
   it("ignores case and stray spaces", () => {
-    expect(resolveName("  fRaNcE ")).toBe("France");
+    expect(resolve("  fRaNcE ")).toBe("France");
   });
 
   it("takes an alias the game already knows", () => {
-    expect(resolveName("USA")).toBe("USA");
-    expect(resolveName("United States")).toBe("USA");
+    expect(resolve("USA")).toBe("USA");
+    expect(resolve("United States")).toBe("USA");
   });
 
   it("forgives a small typo", () => {
-    expect(resolveName("Portugual")).toBe("Portugal");
+    expect(resolve("Portugual")).toBe("Portugal");
   });
 
   it("returns null for something that isn't a country", () => {
-    expect(resolveName("Atlantis")).toBeNull();
-    expect(resolveName("")).toBeNull();
+    expect(resolve("Atlantis")).toBeNull();
+    expect(resolve("")).toBeNull();
   });
 
   it("returns null for a country with no land borders", () => {
     // Islands aren't in the connectable pool, so they can't be played.
-    expect(resolveName("Japan")).toBeNull();
+    expect(resolve("Japan")).toBeNull();
   });
 });

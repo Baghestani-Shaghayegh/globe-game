@@ -11,10 +11,10 @@ import ShareButton from "../components/ShareButton";
 import Celebrate from "../components/Celebrate";
 import { playSolved, playStep, playWrong } from "../lib/sound";
 import {
+  connectable,
   isConnected,
   loadConnect,
   puzzleFor,
-  resolveName,
   saveConnect,
   scoreFor,
   shareText,
@@ -22,6 +22,7 @@ import {
   touchesChain,
   type ConnectResult,
 } from "../lib/connect";
+import { resolveName } from "../lib/answerMatch";
 
 type CountryFeature = {
   properties: { name: string };
@@ -106,7 +107,7 @@ export default function Connect() {
       event.preventDefault();
       if (!result || result.solved) return;
 
-      const name = resolveName(typed);
+      const name = resolveName(typed, connectable());
       if (!name) {
         setNote("No country by that name.");
         playWrong();

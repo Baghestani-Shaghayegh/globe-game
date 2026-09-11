@@ -1,7 +1,6 @@
 import { BORDERS, neighboursOf } from "../data/borders";
 import { hash, mulberry32, dayNumber } from "./daily";
 import { getCountryMeta } from "../data/countries";
-import { isCorrectGuess } from "./answerMatch";
 
 /**
  * Connect the countries: two ends, and the player names a chain of countries
@@ -170,18 +169,3 @@ export function shareText(result: ConnectResult): string {
   return `WorldGuess Connect #${result.number} — ${getCountryMeta(result.from).displayName} → ${getCountryMeta(result.to).displayName}\n${tally} steps (par ${result.par})\n${squares}`;
 }
 
-/**
- * Turns what someone typed into a country, or null.
- *
- * The same forgiving matching the rest of the game uses — aliases, accents and
- * the odd typo — so "cote divoire" and "Ivory Coast" both land, and a near-miss
- * isn't punished as a wrong turn.
- */
-export function resolveName(typed: string, pool = connectable()): string | null {
-  const trimmed = typed.trim();
-  if (!trimmed) return null;
-  for (const name of pool) {
-    if (isCorrectGuess(trimmed, getCountryMeta(name))) return name;
-  }
-  return null;
-}

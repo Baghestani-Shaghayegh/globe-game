@@ -120,3 +120,22 @@ export function isCorrectGuess(guess: string, country: CountryMeta): boolean {
     return limit > 0 && editDistance(normalized, name, limit) <= limit;
   });
 }
+
+/**
+ * Turns what someone typed into one of the countries on offer, or null.
+ *
+ * The same forgiving matching as everywhere else — aliases, accents and the
+ * odd typo — so "cote divoire" and "Ivory Coast" both land, and a near miss
+ * isn't punished as a wrong answer.
+ *
+ * The pool is the caller's: each mode has its own idea of which countries are
+ * in play, and a name outside it is not a country this round knows about.
+ */
+export function resolveName(typed: string, pool: string[]): string | null {
+  const trimmed = typed.trim();
+  if (!trimmed) return null;
+  for (const name of pool) {
+    if (isCorrectGuess(trimmed, getCountryMeta(name))) return name;
+  }
+  return null;
+}
