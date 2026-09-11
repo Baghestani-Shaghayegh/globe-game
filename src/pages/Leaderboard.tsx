@@ -3,19 +3,12 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled } from "../lib/supabase";
 import {
-  dayStart,
   overallTop,
-  topScores,
   untilWeekEnd,
   weekStart,
-  type BoardRow,
   type OverallRow,
 } from "../lib/leaderboard";
-import { dailyType, dayKey } from "../lib/daily";
-import { recordKey } from "../data/modes";
 import AdSlot from "../components/AdSlot";
-import { choiceClass } from "../components/choice";
-import { playTap } from "../lib/sound";
 
 /** Gold, silver, bronze, then nothing — a podium only reads as one if it's short. */
 function rankColor(rank: number): string {
@@ -100,12 +93,7 @@ function Empty({ children }: { children: React.ReactNode }) {
 export default function Leaderboard() {
   const { profile } = useAuth();
   const meId = profile?.id ?? null;
-  // Two boards, one at a time. Stacked, the daily sat under twenty weekly
-  // rows and was never seen; a tab keeps both a click away however many people
-  // are playing.
-  const [view, setView] = useState<"week" | "daily">("week");
   const [overall, setOverall] = useState<OverallRow[] | null>(null);
-  const [daily, setDaily] = useState<BoardRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Only ever this week. An all-time table freezes: whoever played most in the
@@ -132,24 +120,6 @@ export default function Leaderboard() {
     };
   }, [since]);
 
-  // Today's daily is its own board: everyone played the identical round, which
-  // makes it the fairest comparison the game has. Its key comes from the date
-  // — the game type is a function of the day — rather than from a survey of
-  // every board that has anyone on it, which is what this used to cost.
-  const dailyBucket = useMemo(
-    () => recordKey(dailyType(dayKey()), "daily", null),
-    []
-  );
-  useEffect(() => {
-    let cancelled = false;
-    topScores(dailyBucket, dayStart(), 10)
-      .then((rows) => !cancelled && setDaily(rows))
-      .catch(() => !cancelled && setDaily([]));
-    return () => {
-      cancelled = true;
-    };
-  }, [dailyBucket]);
-
   return (
     <div className="min-h-screen bg-[#07111c] px-5 py-10">
       <main className="mx-auto w-full max-w-2xl">
@@ -164,32 +134,9 @@ export default function Leaderboard() {
           Leaderboard
         </h1>
 
-        <div role="tablist" aria-label="Board" className="mt-4 flex flex-wrap gap-1.5">
-          {(
-            [
-              ["week", "This week"],
-              ["daily", "Today's daily"],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              role="tab"
-              aria-selected={view === id}
-              onClick={() => {
-                playTap();
-                setView(id);
-              }}
-              className={choiceClass(view === id)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <p className="mt-2.5 px-1 text-sm text-zinc-500">
-          {view === "week"
-            ? `Points from every round you play. Everyone starts level again in ${untilWeekEnd()}.`
-            : "The same ten countries for everyone, one go each."}
+        <p className="mt-2 text-sm text-zinc-500">
+          Points from every round you play, the daily included. Everyone starts
+          level again in {untilWeekEnd()}.
         </p>
 
         {!accountsEnabled ? (
@@ -199,38 +146,17 @@ export default function Leaderboard() {
           </p>
         ) : (
           <>
-            <div className="mt-4">
+            <div className="mt-5">
               <Panel>
-                {view === "week" ? (
-                  overall === null ? (
-                    <Empty>Loading…</Empty>
-                  ) : overall.length === 0 ? (
-                    <Empty>
-                      {error ?? "Nobody has played yet. Be the first name here."}
-                    </Empty>
-                  ) : (
-                    <ul className="divide-y divide-white/[0.05]">
-                      {overall.map((row) => (
-                        <Row
-                          key={row.user_id}
-                          rank={row.rank}
-                          username={row.username}
-                          country={row.country}
-                          isYou={row.user_id === meId}
-                          headline={row.points.toLocaleString()}
-                        />
-                      ))}
-                    </ul>
-                  )
-                ) : daily === null ? (
+                {overall === null ? (
                   <Empty>Loading…</Empty>
-                ) : daily.length === 0 ? (
+                ) : overall.length === 0 ? (
                   <Empty>
-                    Nobody has played today's daily yet. Be the first name here.
+                    {error ?? "Nobody has played yet. Be the first name here."}
                   </Empty>
                 ) : (
                   <ul className="divide-y divide-white/[0.05]">
-                    {daily.map((row) => (
+                    {overall.map((row) => (
                       <Row
                         key={row.user_id}
                         rank={row.rank}
