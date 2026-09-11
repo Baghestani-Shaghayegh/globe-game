@@ -11,7 +11,13 @@ import {
 } from "./levels";
 import type { Bucket, Run } from "./records";
 import type { Earned } from "./achievements";
-import { GLOBE_THEMES, themeById, unlockedThemes } from "./globeTheme";
+import {
+  DEFAULT_THEME,
+  GLOBE_THEMES,
+  themeById,
+  unlockedThemes,
+} from "./globeTheme";
+import { globeThemeId } from "./prefs";
 
 const run = (over: Partial<Run> = {}): Run => ({
   ms: 60_000,
@@ -158,7 +164,7 @@ describe("progressFor", () => {
 describe("globe themes", () => {
   it("has one available from the very start", () => {
     expect(unlockedThemes(1)).toHaveLength(1);
-    expect(unlockedThemes(1)[0].id).toBe("atlantic");
+    expect(unlockedThemes(1)[0].id).toBe("meridian");
   });
 
   it("unlocks more as the level climbs, and all of them by the cap", () => {
@@ -179,7 +185,7 @@ describe("globe themes", () => {
   });
 
   it("falls back to the default for an id it doesn't know", () => {
-    expect(themeById("no-such-theme").id).toBe("atlantic");
+    expect(themeById("no-such-theme").id).toBe("meridian");
   });
 
   it("keeps found and missed distinct in every palette, since they carry meaning", () => {
@@ -188,5 +194,22 @@ describe("globe themes", () => {
       expect(entry.palette.found).not.toBe(entry.palette.unfound);
       expect(entry.palette.missed).not.toBe(entry.palette.unfound);
     }
+  });
+});
+
+describe("the default palette", () => {
+  // It used to be named in two places: the head of GLOBE_THEMES and again in
+  // prefs. Reordering the palettes made them disagree, and the game drew the
+  // new default behind the menu while every round still used the old one.
+  it("is whatever sits at the head of the list", () => {
+    expect(DEFAULT_THEME.id).toBe(GLOBE_THEMES[0].id);
+  });
+
+  it("is what a player with no stored choice gets", () => {
+    expect(themeById(globeThemeId()).id).toBe(DEFAULT_THEME.id);
+  });
+
+  it("is available from level one", () => {
+    expect(DEFAULT_THEME.level).toBe(1);
   });
 });

@@ -7,7 +7,22 @@ const KEY = "worldguess.prefs.v1";
 
 type Prefs = { hints: boolean; sound: boolean; globeTheme: string };
 
-const DEFAULTS: Prefs = { hints: true, sound: true, globeTheme: "atlantic" };
+/**
+ * No palette chosen yet.
+ *
+ * Deliberately empty rather than naming one: `themeById` falls back to the
+ * first entry in GLOBE_THEMES, so the default lives there and only there.
+ * Naming it here as well meant two defaults, and when the palettes were
+ * reordered they disagreed — the menu's backdrop used the new one while every
+ * globe in an actual round kept the old.
+ */
+const NO_THEME_CHOSEN = "";
+
+const DEFAULTS: Prefs = {
+  hints: true,
+  sound: true,
+  globeTheme: NO_THEME_CHOSEN,
+};
 
 function read(): Prefs {
   try {

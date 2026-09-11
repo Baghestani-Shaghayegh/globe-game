@@ -302,7 +302,7 @@ export default function Home() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "linear-gradient(100deg, rgba(7,17,28,0.96) 0%, rgba(7,17,28,0.9) 34%, rgba(7,17,28,0.55) 58%, rgba(7,17,28,0.18) 100%)",
+            "linear-gradient(100deg, rgba(7,17,28,0.96) 0%, rgba(7,17,28,0.9) 34%, rgba(7,17,28,0.5) 58%, rgba(7,17,28,0.1) 100%)",
         }}
       />
 
