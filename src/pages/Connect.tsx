@@ -4,7 +4,7 @@ import type { GlobeMethods } from "react-globe.gl";
 import { Link } from "react-router-dom";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
 import { getCountryMeta } from "../data/countries";
-import { globeMaterial, theme } from "../lib/globeTheme";
+import { backdropColor, globeMaterial, theme } from "../lib/globeTheme";
 import { featureCentre, type Geometry } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
 import Celebrate from "../components/Celebrate";
@@ -178,11 +178,13 @@ export default function Connect() {
   const capColor = useMemo(
     () => (d: object) => {
       const { name } = (d as CountryFeature).properties;
-      if (!result) return theme.sphere;
+      if (!result) return backdropColor();
       if (name === result.from || name === result.to) return theme.selected;
       if (chainSet.has(name)) return theme.found;
-      // Everything else is the sea: present, clickable-through, unreadable.
-      return theme.sphere;
+      // Everything else: land you can see the shape of and nothing more. Its
+      // border is hidden too, so a continent reads as one mass rather than a
+      // set of countries to count along.
+      return backdropColor();
     },
     [result, chainSet]
   );
@@ -219,7 +221,7 @@ export default function Connect() {
         polygonStrokeColor={(d) =>
           onBoard((d as CountryFeature).properties.name)
             ? theme.stroke
-            : theme.sphere
+            : backdropColor()
         }
         polygonAltitude={(d) => {
           const { name } = (d as CountryFeature).properties;

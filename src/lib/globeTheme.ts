@@ -171,6 +171,37 @@ export const globeMaterial = new THREE.MeshPhongMaterial({
   shininess: 0,
 });
 
+/**
+ * Land that is on screen but not in play.
+ *
+ * Lighter than the sea and darker than anything a player can act on. The
+ * connect puzzle hides the map by painting it, and painting it the sea's own
+ * colour left a featureless ball with two countries floating on it — nothing
+ * to orient by at all. This gives the continents back as silhouettes while
+ * their borders stay hidden, so you can tell Arabia from Europe without being
+ * able to count off the countries in between, which is the thing the puzzle
+ * is asking you to remember.
+ *
+ * Derived rather than added to all six palettes, so it cannot be forgotten in
+ * one of them, and so it sits correctly against whichever sea is on screen.
+ */
+export function backdropColor(): string {
+  return mix(theme.sphere, theme.unfound, 0.45);
+}
+
+/** Blends two #rrggbb colours, `amount` of the way from the first to the second. */
+function mix(from: string, to: string, amount: number): string {
+  const channels = (hex: string) =>
+    [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
+  const [r1, g1, b1] = channels(from);
+  const [r2, g2, b2] = channels(to);
+  const blend = (a: number, b: number) =>
+    Math.round(a + (b - a) * amount)
+      .toString(16)
+      .padStart(2, "0");
+  return `#${blend(r1, r2)}${blend(g1, g2)}${blend(b1, b2)}`;
+}
+
 const listeners = new Set<() => void>();
 
 export function activeThemeId(): string {
