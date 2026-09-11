@@ -4,6 +4,7 @@ import ModeCard from "../components/ModeCard";
 import ContinentCard from "../components/ContinentCard";
 import DailyCard from "../components/DailyCard";
 import Options from "../components/Options";
+import AdSlot from "../components/AdSlot";
 import { choiceClass } from "../components/choice";
 import { getCountryMeta } from "../data/countries";
 import {
@@ -328,6 +329,8 @@ export default function Home() {
           </div>
         </Section>
 
+        <AdSlot className="mt-10" />
+
         <nav className="mt-10 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm text-zinc-500">
           {[
             ["/records", "Records"],
@@ -335,6 +338,8 @@ export default function Home() {
             ["/achievements", "Badges"],
             ["/levels", "Level & themes"],
             ...(accountsEnabled ? [["/leaderboard", "Leaderboard"]] : []),
+            ["/settings", "Settings"],
+            ["/privacy", "Privacy"],
           ].flatMap(([to, label], i) => [
             // The separator is its own item, so one gap sits between every
             // pair rather than a gap plus a nested gap.

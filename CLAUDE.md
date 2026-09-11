@@ -29,6 +29,11 @@ without being asked — `main` is what deploys.
   the GitHub UI.
 - After any dependency change, Sara needs `npm install` locally, and
   `rm -rf node_modules/.vite` if the dev server was running.
+- The service worker is **off in `vite dev`** on purpose. To exercise offline
+  or the update toast, `npm run build && npm run preview`.
+- Ads and the cookie banner stay dark unless `VITE_ADSENSE_CLIENT` and
+  `VITE_ADSENSE_SLOT` are set, which they are not in the repo. Set them on the
+  command line to see either one.
 
 ## Conventions
 
@@ -42,3 +47,6 @@ without being asked — `main` is what deploys.
 - `theme` in `lib/globeTheme.ts` is a live mutable object — the globes read it
   at render time, so a palette swap recolours everything without touching
   imports.
+- Anything new that writes to `localStorage` must be added to `LOCAL_KEYS` in
+  `lib/localData.ts`, or "clear my data" silently misses it. A test compares
+  the list against every key the source writes, so forgetting fails the suite.

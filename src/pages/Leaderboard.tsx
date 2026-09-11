@@ -16,6 +16,7 @@ import {
   type OverallRow,
 } from "../lib/leaderboard";
 import { formatDuration } from "../lib/records";
+import AdSlot from "../components/AdSlot";
 
 /** Gold, silver, bronze, then nothing — a podium only reads as one if it's short. */
 function rankColor(rank: number): string {
@@ -367,6 +368,8 @@ export default function Leaderboard() {
             )}
           </>
         )}
+
+        <AdSlot className="mt-10" />
       </main>
     </div>
   );

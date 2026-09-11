@@ -22,6 +22,7 @@ import {
 } from "../lib/daily";
 import { formatDuration } from "../lib/records";
 import ShareButton from "../components/ShareButton";
+import AdSlot from "../components/AdSlot";
 import { dayStart, topScores, type BoardRow } from "../lib/leaderboard";
 import { accountsEnabled } from "../lib/supabase";
 import { recordKey } from "../data/modes";
@@ -239,6 +240,8 @@ export default function Daily() {
             filename={`worldguess-daily-${result.number}.png`}
             className="mt-6 w-full rounded-lg bg-white/10 py-2.5 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/15 disabled:opacity-60"
           />
+
+          <AdSlot className="mt-8" />
 
           <TodaysBoard type={result.type} />
 

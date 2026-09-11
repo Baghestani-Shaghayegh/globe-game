@@ -10,6 +10,10 @@ import Achievements from "./pages/Achievements";
 import Levels from "./pages/Levels";
 import { AuthProvider } from "./features/account/AuthProvider";
 import Daily from "./pages/Daily";
+import Privacy from "./pages/Privacy";
+import Settings from "./pages/Settings";
+import ConsentBanner from "./components/ConsentBanner";
+import UpdateToast from "./components/UpdateToast";
 
 // The game page pulls in three.js (~2 MB) — load it only when a game starts.
 const Game = lazy(() => import("./pages/Game"));
@@ -40,6 +44,8 @@ function App() {
             <Route path="/stats" element={<Stats />} />
             <Route path="/account" element={<Account />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="/achievements" element={<Achievements />} />
             <Route path="/levels" element={<Levels />} />
             <Route path="/practice" element={<Practice />} />
@@ -57,6 +63,8 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
+        <ConsentBanner />
+        <UpdateToast />
       </BrowserRouter>
     </AuthProvider>
   );
