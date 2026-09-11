@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { playTap } from "../lib/sound";
 
 type Props = {
   name: string;
@@ -25,7 +26,10 @@ export default function ContinentCard({
 }: Props) {
   return (
     <button
-      onClick={onSelect}
+      onClick={() => {
+        playTap();
+        onSelect();
+      }}
       style={{ "--accent": accent } as CSSProperties}
       className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] p-3.5 text-left backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-[var(--accent)]/50 hover:bg-white/[0.07] focus-visible:border-[var(--accent)] focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
     >

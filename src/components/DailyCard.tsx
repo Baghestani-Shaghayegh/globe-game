@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { playTap } from "../lib/sound";
 
 /**
  * One of today's rounds. Compact and equal-weight: these three are the reason
@@ -29,6 +30,7 @@ export default function DailyCard({
 
   return (
     <Link
+      onClick={playTap}
       to={to}
       className={`group relative flex flex-1 flex-col gap-1.5 rounded-2xl border px-4 py-4 transition-colors ${tone}`}
     >

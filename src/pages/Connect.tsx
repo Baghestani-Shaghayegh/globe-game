@@ -8,6 +8,8 @@ import { globeMaterial, theme } from "../lib/globeTheme";
 import { featureCentre, type Geometry } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
 import ShareButton from "../components/ShareButton";
+import Celebrate from "../components/Celebrate";
+import { playSolved, playStep, playWrong } from "../lib/sound";
 import {
   isConnected,
   loadConnect,
@@ -97,6 +99,8 @@ export default function Connect() {
 
   const chainSet = useMemo(() => new Set(result?.chain ?? []), [result]);
 
+  const [burst, setBurst] = useState(0);
+
   const submit = useCallback(
     (event: FormEvent) => {
       event.preventDefault();
@@ -105,14 +109,17 @@ export default function Connect() {
       const name = resolveName(typed);
       if (!name) {
         setNote("No country by that name.");
+        playWrong();
         return;
       }
       if (name === result.from || name === result.to) {
         setNote(`${display(name)} is already one of the ends.`);
+        playWrong();
         return;
       }
       if (chainSet.has(name)) {
         setNote(`${display(name)} is already in the chain.`);
+        playWrong();
         return;
       }
       if (!touchesChain(result.from, result.to, result.chain, name)) {
@@ -122,6 +129,7 @@ export default function Connect() {
         setResult(next);
         setNote(`${display(name)} doesn't border anything you've placed.`);
         setTyped("");
+        playWrong();
         return;
       }
 
@@ -137,6 +145,15 @@ export default function Connect() {
       setResult(next);
       setTyped("");
       setNote(ordered ? null : `${display(name)} added.`);
+
+      if (ordered) {
+        playSolved();
+        setBurst((n) => n + 1);
+      } else {
+        // Each country placed steps the note up, so a chain being built is
+        // audibly going somewhere.
+        playStep(chain.length * 2);
+      }
     },
     [result, typed, chainSet]
   );
@@ -325,6 +342,9 @@ export default function Connect() {
           {formatDay(day)} · a new pair at midnight UTC
         </p>
       )}
+
+      {/* Only on the move that joins the chain, not on every visit after. */}
+      <Celebrate burst={burst} count={90} />
     </div>
   );
 }

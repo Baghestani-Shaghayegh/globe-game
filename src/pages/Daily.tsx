@@ -23,6 +23,7 @@ import {
 import { formatDuration } from "../lib/records";
 import ShareButton from "../components/ShareButton";
 import AdSlot from "../components/AdSlot";
+import Celebrate from "../components/Celebrate";
 import { dayStart, topScores, type BoardRow } from "../lib/leaderboard";
 import { accountsEnabled } from "../lib/supabase";
 import { recordKey } from "../data/modes";
@@ -124,6 +125,7 @@ export default function Daily() {
   const day = dayKey();
   const [names, setNames] = useState<string[] | null>(null);
   const [result, setResult] = useState<DailyResult | null>(() => resultFor(day));
+  const [burst, setBurst] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -168,6 +170,11 @@ export default function Daily() {
       };
       saveResult(saved);
       setResult(saved);
+      // Fired here rather than on the result screen, so re-opening a finished
+      // daily is a record to read and not a party thrown again.
+      if (outcome.found.length === challenge.countries.length) {
+        setBurst((n) => n + 1);
+      }
     },
     [challenge]
   );
@@ -244,6 +251,8 @@ export default function Daily() {
           <AdSlot className="mt-8" />
 
           <TodaysBoard type={result.type} />
+
+          <Celebrate burst={burst} count={110} />
 
           <p className="mt-6 text-center text-sm text-zinc-500">
             One round a day. The next one lands at midnight UTC.

@@ -9,6 +9,8 @@ import { globeMaterial, theme } from "../lib/globeTheme";
 import { featureCentre, type Geometry } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
 import ShareButton from "../components/ShareButton";
+import Celebrate from "../components/Celebrate";
+import { playSolved, playWarm, playWrong } from "../lib/sound";
 import {
   arrowFor,
   closeness,
@@ -96,11 +98,14 @@ export default function Mystery() {
     [result]
   );
 
+  const [burst, setBurst] = useState(0);
+
   const handleClick = useCallback(
     (name: string) => {
       if (!result || result.solved || !answer) return;
       if (guessed.has(name)) {
         setFlash(`${getCountryMeta(name).displayName} — already guessed`);
+        playWrong();
         return;
       }
       const from = centres.get(name);
@@ -118,10 +123,16 @@ export default function Mystery() {
       setFlash(null);
 
       if (name === answer) {
+        playSolved();
+        setBurst((n) => n + 1);
         const centre = centres.get(answer);
         if (centre) {
           globeRef.current?.pointOfView({ ...centre, altitude: 1.6 }, 900);
         }
+      } else {
+        // The same information the colour carries: warmer is higher. Reuses
+        // the page's own closeness scale so the pitch and the heat agree.
+        playWarm(closeness(km) / 100);
       }
     },
     [result, answer, guessed, centres]
@@ -307,6 +318,10 @@ export default function Mystery() {
           {formatDay(day)} · a new mystery at midnight UTC
         </p>
       )}
+
+      {/* Only on the guess that solves it: a burst on every reload of a
+          finished puzzle would be confetti for opening a page. */}
+      <Celebrate burst={burst} count={90} />
     </div>
   );
 }

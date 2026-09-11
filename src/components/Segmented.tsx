@@ -1,4 +1,5 @@
 import { choiceClass } from "./choice";
+import { playTap } from "../lib/sound";
 
 /**
  * One row of mutually exclusive choices, styled as a real segmented control.
@@ -42,7 +43,10 @@ export default function Segmented<T>({
               key={option.key}
               type="button"
               aria-pressed={active}
-              onClick={() => onChange(option.value)}
+              onClick={() => {
+                playTap();
+                onChange(option.value);
+              }}
               className={choiceClass(active)}
             >
               {option.label}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../features/account/AuthProvider";
 import { useRoom } from "../features/multiplayer/useRoom";
@@ -19,6 +19,8 @@ import {
 } from "../lib/rooms";
 import { getCountryMeta } from "../data/countries";
 import { flagUrl } from "../data/flags";
+import Celebrate from "../components/Celebrate";
+import { playCorrect, playLose, playSolved, playWrong } from "../lib/sound";
 import { cluesFor } from "../data/clues";
 import { GAME_TYPES, MODES } from "../data/modes";
 import type { Geometry } from "../lib/geo";
@@ -116,6 +118,9 @@ export default function Room() {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [lastAward, setLastAward] = useState<number | null>(null);
+  const [burst, setBurst] = useState(0);
+  /** So the end-of-match sound plays once, not on every refresh afterwards. */
+  const sounded = useRef(false);
 
   const me = session?.user.id ?? null;
   const isHost = room?.host_id === me;
@@ -155,6 +160,8 @@ export default function Room() {
   const answer = useCallback(
     async (correct: boolean) => {
       if (!room) return;
+      if (correct) playCorrect(0);
+      else playWrong();
       try {
         setLastAward(await submitAnswer(code, room.current_index, correct));
       } catch (caught) {
@@ -186,6 +193,19 @@ export default function Room() {
   };
 
   const table = useMemo(() => standings(players), [players]);
+
+  // The match ending, sounded once. Winning gets paper; losing gets the fall.
+  useEffect(() => {
+    if (room?.status !== "done" || sounded.current || !table.length) return;
+    sounded.current = true;
+    const mine = table.find((p) => p.user_id === me);
+    if (mine?.rank === 1) {
+      playSolved();
+      setBurst((n) => n + 1);
+    } else {
+      playLose();
+    }
+  }, [room?.status, table, me]);
 
   // Checked before the room is looked up: a signed-out visitor following a
   // shared link can't read it anyway, and would otherwise sit on the spinner
@@ -379,6 +399,7 @@ export default function Room() {
             Leave the room
           </button>
         </main>
+        <Celebrate burst={burst} count={100} />
       </div>
     );
   }

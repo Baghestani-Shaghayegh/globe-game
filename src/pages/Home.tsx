@@ -5,6 +5,7 @@ import ContinentCard from "../components/ContinentCard";
 import DailyCard from "../components/DailyCard";
 import Options from "../components/Options";
 import AdSlot from "../components/AdSlot";
+import { playTap } from "../lib/sound";
 import { choiceClass } from "../components/choice";
 import { getCountryMeta } from "../data/countries";
 import {
@@ -248,7 +249,10 @@ export default function Home() {
                 key={t.id}
                 role="tab"
                 aria-selected={gameType === t.id}
-                onClick={() => setGameType(t.id)}
+                onClick={() => {
+                  playTap();
+                  setGameType(t.id);
+                }}
                 className={choiceClass(gameType === t.id)}
               >
                 {t.label}

@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { playTap } from "../lib/sound";
 
 type ModeCardProps = {
   name: string;
@@ -81,7 +82,10 @@ export default function ModeCard({
 
   return (
     <button
-      onClick={onSelect}
+      onClick={() => {
+        playTap();
+        onSelect();
+      }}
       style={
         {
           "--accent": accent,

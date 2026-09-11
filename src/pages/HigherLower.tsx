@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { getCountryMeta } from "../data/countries";
 import { areaOf } from "../data/areas";
 import { VIEW, outlinePath } from "../lib/outline";
+import Celebrate from "../components/Celebrate";
+import { playCorrect, playLose, playRecord } from "../lib/sound";
 import type { Geometry } from "../lib/geo";
 import {
   askable,
@@ -133,6 +135,8 @@ export default function HigherLower() {
     return { left: of(pair.left), right: of(pair.right) };
   }, [pair, features]);
 
+  const [burst, setBurst] = useState(0);
+
   const pick = useCallback(
     (picked: string) => {
       if (!pair || verdict) return;
@@ -144,6 +148,19 @@ export default function HigherLower() {
         return next;
       });
 
+      // This mode is a streak and nothing else, so the streak is what the
+      // sound tracks: each right answer a step higher, a wrong one the fall.
+      if (correct) {
+        playCorrect(scores.streak);
+        // A new personal best is the only thing here worth paper for.
+        if (scores.streak + 1 > scores.best) {
+          playRecord();
+          setBurst((n) => n + 1);
+        }
+      } else {
+        playLose();
+      }
+
       window.setTimeout(() => {
         setVerdict(null);
         // A correct answer keeps the winner on screen, so it plays as a chain
@@ -153,7 +170,7 @@ export default function HigherLower() {
         );
       }, 1600);
     },
-    [pair, verdict, pool]
+    [pair, verdict, pool, scores.streak, scores.best]
   );
 
   return (
@@ -228,6 +245,8 @@ export default function HigherLower() {
           </>
         )}
       </main>
+
+      <Celebrate burst={burst} count={80} />
     </div>
   );
 }

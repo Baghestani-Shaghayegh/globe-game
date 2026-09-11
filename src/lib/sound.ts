@@ -144,6 +144,75 @@ export function playRoundEnd(completed: boolean) {
   );
 }
 
+/**
+ * A guess in the mystery round, pitched by how close it landed. Warmer is
+ * literally higher: the sound carries the same information as the colour, for
+ * anyone who plays with their eyes on the globe rather than the readout.
+ *
+ * `closeness` runs 0 (cold) to 1 (on top of it).
+ */
+export function playWarm(closeness: number) {
+  if (!playing()) return;
+  const clamped = Math.min(1, Math.max(0, closeness));
+  tone(step(C5, -12 + Math.round(clamped * 19)), {
+    type: "triangle",
+    duration: 0.16,
+    volume: 0.13,
+  });
+}
+
+/** A puzzle solved — the daily, the mystery, a chain joined up. */
+export function playSolved() {
+  if (!playing()) return;
+  [0, 4, 7, 12, 16].forEach((note, i) =>
+    tone(step(C5, note), {
+      type: "triangle",
+      start: i * 0.08,
+      duration: 0.35,
+      volume: 0.15,
+    })
+  );
+}
+
+/** A step that lands but doesn't finish anything: a country placed, a pair won. */
+export function playStep(height = 0) {
+  if (!playing()) return;
+  tone(step(C5, Math.min(height, 12)), {
+    type: "triangle",
+    duration: 0.12,
+    volume: 0.13,
+  });
+}
+
+/** A run ending badly — the wrong pick, the broken chain. */
+export function playLose() {
+  if (!playing()) return;
+  [7, 3, 0].forEach((note, i) =>
+    tone(step(C5, note - 12), {
+      type: "sawtooth",
+      start: i * 0.1,
+      duration: 0.26,
+      volume: 0.09,
+    })
+  );
+}
+
+/**
+ * A button, a card, a tab. Quiet and short on purpose: a menu click that
+ * announces itself is one you turn the sound off to escape.
+ */
+export function playTap() {
+  if (!playing()) return;
+  tone(step(C5, 7), { type: "sine", duration: 0.045, volume: 0.045 });
+}
+
+/** Someone else's move in a shared room — an opponent scoring, a player joining. */
+export function playOther() {
+  if (!playing()) return;
+  tone(step(C5, -7), { type: "sine", duration: 0.1, volume: 0.08 });
+  tone(step(C5, -2), { type: "sine", start: 0.07, duration: 0.12, volume: 0.06 });
+}
+
 /** A personal best, landing on top of the round-end triad. */
 export function playRecord() {
   if (!playing()) return;
