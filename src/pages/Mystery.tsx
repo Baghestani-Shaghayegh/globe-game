@@ -19,7 +19,6 @@ import { dayKey, formatDay } from "../lib/daily";
 import Celebrate from "../components/Celebrate";
 import { playSolved, playWarm, playWrong } from "../lib/sound";
 import {
-  arrowFor,
   closeness,
   distanceKm,
   heatColor,
@@ -130,13 +129,18 @@ export default function Mystery() {
       setResult(next);
       setFlash(null);
 
+      // Turn the globe to whatever was just named. Without this a guess on the
+      // far side changed a colour nobody could see — you typed China, Africa
+      // stayed on screen, and the answer to "how warm was that?" was behind
+      // the planet. Closer in once it is the right one.
+      globeRef.current?.pointOfView(
+        { ...from, altitude: name === answer ? 1.6 : 2.1 },
+        name === answer ? 900 : 700
+      );
+
       if (name === answer) {
         playSolved();
         setBurst((n) => n + 1);
-        const centre = centres.get(answer);
-        if (centre) {
-          globeRef.current?.pointOfView({ ...centre, altitude: 1.6 }, 900);
-        }
       } else {
         // The same information the colour carries: warmer is higher. Reuses
         // the page's own closeness scale so the pitch and the heat agree.
@@ -196,10 +200,6 @@ export default function Mystery() {
   }
 
   const guesses = result?.guesses ?? [];
-  const nearest = guesses.length
-    ? guesses.reduce((best, g) => (g.km < best.km ? g : best))
-    : null;
-  const answerCentre = answer ? centres.get(answer) : undefined;
 
   return (
     <div
@@ -321,42 +321,6 @@ export default function Mystery() {
           </>
         )}
       </div>
-
-      {/*
-        What the guesses added up to, rather than every guess.
-
-        This used to be the full list, one row each, which is unbounded: a
-        player who cannot find it ends up with their own history covering the
-        globe they are reading. The heat is on the globe already — that is the
-        game — so all the list had to carry is the one line that cannot be seen
-        by looking at it.
-      */}
-      {nearest && !result?.solved && (
-        <div className="pointer-events-none absolute bottom-4 left-4 z-10 max-w-[calc(100vw-2rem)] rounded-xl border border-white/10 bg-[#141b23]/90 px-3.5 py-2.5 backdrop-blur">
-          <p className="text-xs uppercase tracking-wider text-zinc-500">
-            Warmest so far
-          </p>
-          <p className="mt-0.5 flex items-center gap-2 text-sm text-zinc-100">
-            <span
-              aria-hidden="true"
-              className="h-3 w-3 shrink-0 rounded-sm"
-              style={{ backgroundColor: heatColor(nearest.km) }}
-            />
-            {getCountryMeta(nearest.name).displayName}
-            <span className="tabular-nums text-zinc-400">
-              {closeness(nearest.km)}%
-            </span>
-            {(() => {
-              const from = centres.get(nearest.name);
-              return from && answerCentre ? (
-                <span aria-label="direction to the answer" className="text-zinc-400">
-                  {arrowFor(from, answerCentre)}
-                </span>
-              ) : null;
-            })()}
-          </p>
-        </div>
-      )}
 
       {result?.solved && (
         <p className="pointer-events-none absolute inset-x-0 bottom-5 z-10 text-center text-sm text-zinc-500">
