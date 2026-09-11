@@ -7,7 +7,6 @@ import { getCountryMeta } from "../data/countries";
 import { globeMaterial, theme } from "../lib/globeTheme";
 import { featureCentre, type Geometry } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
-import ShareButton from "../components/ShareButton";
 import Celebrate from "../components/Celebrate";
 import { playSolved, playStep, playWrong } from "../lib/sound";
 import {
@@ -17,8 +16,6 @@ import {
   puzzleFor,
   saveConnect,
   scoreFor,
-  shareText,
-  shortestPath,
   touchesChain,
   type ConnectResult,
 } from "../lib/connect";
@@ -43,7 +40,6 @@ export default function Connect() {
   const [result, setResult] = useState<ConnectResult | null>(null);
   const [typed, setTyped] = useState("");
   const [note, setNote] = useState<string | null>(null);
-  const [giveUp, setGiveUp] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -159,18 +155,36 @@ export default function Connect() {
     [result, typed, chainSet]
   );
 
+  /**
+   * Whether a country is on the board at all.
+   *
+   * The map used to be drawn in full, which gave the puzzle away: the answer
+   * to "what lies between the Emirates and Slovenia" was legible by looking,
+   * so the mode tested reading a map rather than knowing one. Only the two
+   * ends start visible, and each country named correctly appears — the route
+   * draws itself as it is recalled.
+   */
+  const onBoard = useCallback(
+    (name: string) =>
+      Boolean(
+        result &&
+          (name === result.from ||
+            name === result.to ||
+            chainSet.has(name))
+      ),
+    [result, chainSet]
+  );
+
   const capColor = useMemo(
     () => (d: object) => {
       const { name } = (d as CountryFeature).properties;
-      if (!result) return theme.unfound;
+      if (!result) return theme.sphere;
       if (name === result.from || name === result.to) return theme.selected;
       if (chainSet.has(name)) return theme.found;
-      if (giveUp && shortestPath(result.from, result.to)?.includes(name)) {
-        return theme.missed;
-      }
-      return theme.unfound;
+      // Everything else is the sea: present, clickable-through, unreadable.
+      return theme.sphere;
     },
-    [result, chainSet, giveUp]
+    [result, chainSet]
   );
 
   if (loadError || !puzzle) {
@@ -189,7 +203,6 @@ export default function Connect() {
     );
   }
 
-  const answer = giveUp ? shortestPath(puzzle.from, puzzle.to) : null;
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-[#07111c]">
@@ -203,7 +216,11 @@ export default function Connect() {
         polygonsData={features}
         polygonCapColor={capColor}
         polygonSideColor={() => theme.sphere}
-        polygonStrokeColor={() => theme.stroke}
+        polygonStrokeColor={(d) =>
+          onBoard((d as CountryFeature).properties.name)
+            ? theme.stroke
+            : theme.sphere
+        }
         polygonAltitude={(d) => {
           const { name } = (d as CountryFeature).properties;
           return name === result?.from || name === result?.to || chainSet.has(name)
@@ -247,28 +264,11 @@ export default function Connect() {
             <p className="text-sm text-zinc-400">
               {[puzzle.from, ...result.chain, puzzle.to].map(display).join(" → ")}
             </p>
-            <div className="pointer-events-auto w-full pt-1">
-              <ShareButton
-                card={() => ({
-                  eyebrow: `Connect #${result.number}`,
-                  title: `${display(result.from)} → ${display(result.to)}`,
-                  subtitle: `${result.chain.length} steps · par ${result.par}`,
-                  tiles: result.chain.map((_, i) =>
-                    i < result.par ? "#5bb98c" : "#f2a93b"
-                  ),
-                  note: `${scoreFor(result).toLocaleString()} points`,
-                })}
-                text={shareText(result)}
-                filename={`worldguess-connect-${result.number}.png`}
-                className="w-full rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/15 disabled:opacity-60"
-              />
-            </div>
           </>
         ) : (
           <>
             <p className="max-w-xs text-sm text-zinc-400">
-              Name countries that link them up. Each one has to border something
-              already on the board.
+              Name countries that link them up.
             </p>
             <form onSubmit={submit} className="pointer-events-auto flex gap-2 pt-1">
               <label htmlFor="link" className="sr-only">
@@ -294,49 +294,6 @@ export default function Connect() {
           </>
         )}
       </div>
-
-      {(result?.chain.length ?? 0) > 0 && (
-        <div className="pointer-events-none absolute bottom-4 left-4 z-10 w-64 max-w-[calc(100vw-2rem)]">
-          <ul className="max-h-[45vh] overflow-y-auto rounded-xl border border-white/10 bg-[#141b23]/90 backdrop-blur">
-            {result!.chain.map((name, i) => (
-              <li
-                key={name}
-                className="flex items-center gap-2.5 border-b border-white/[0.05] px-3 py-2 text-sm last:border-b-0"
-              >
-                <span className="w-4 shrink-0 text-right tabular-nums text-zinc-600">
-                  {i + 1}
-                </span>
-                <span className="min-w-0 truncate text-zinc-100">
-                  {display(name)}
-                </span>
-              </li>
-            ))}
-          </ul>
-          {result!.wrong > 0 && (
-            <p className="mt-2 px-1 text-xs text-zinc-600">
-              {result!.wrong} that didn't touch anything
-            </p>
-          )}
-        </div>
-      )}
-
-      {!result?.solved && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-5 z-10 flex flex-col items-center gap-2">
-          {answer && (
-            <p className="rounded-lg border border-white/10 bg-[#141b23]/90 px-3 py-1.5 text-sm text-zinc-300 backdrop-blur">
-              One way: {answer.map(display).join(" → ")}
-            </p>
-          )}
-          {!answer && (
-            <button
-              onClick={() => setGiveUp(true)}
-              className="pointer-events-auto text-xs text-zinc-600 underline underline-offset-4 transition-colors hover:text-zinc-400"
-            >
-              Show me one route
-            </button>
-          )}
-        </div>
-      )}
 
       {result?.solved && (
         <p className="pointer-events-none absolute inset-x-0 bottom-5 z-10 text-center text-sm text-zinc-500">

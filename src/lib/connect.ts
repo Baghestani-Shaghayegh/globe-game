@@ -160,12 +160,3 @@ export function scoreFor(result: ConnectResult): number {
   const over = Math.max(0, result.chain.length - result.par);
   return Math.max(100, 1000 - over * 100 - result.wrong * 50);
 }
-
-export function shareText(result: ConnectResult): string {
-  const squares = result.solved
-    ? "🟩".repeat(result.par) + "🟨".repeat(Math.max(0, result.chain.length - result.par))
-    : "⬜".repeat(result.chain.length);
-  const tally = result.solved ? `${result.chain.length}` : "X";
-  return `WorldGuess Connect #${result.number} — ${getCountryMeta(result.from).displayName} → ${getCountryMeta(result.to).displayName}\n${tally} steps (par ${result.par})\n${squares}`;
-}
-

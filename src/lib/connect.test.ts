@@ -9,7 +9,6 @@ import {
   puzzleFor,
   saveConnect,
   scoreFor,
-  shareText,
   shortestPath,
   touchesChain,
   type ConnectResult,
@@ -285,37 +284,6 @@ describe("the saved round", () => {
   });
 });
 
-describe("shareText", () => {
-  it("shows the ends, the count and the par", () => {
-    const text = shareText({
-      day: "2026-09-10",
-      number: 253,
-      from: "Portugal",
-      to: "Germany",
-      par: 2,
-      chain: ["Spain", "France"],
-      solved: true,
-      wrong: 0,
-    });
-    expect(text).toContain("Portugal → Germany");
-    expect(text).toContain("2 steps (par 2)");
-    expect(text).toContain("🟩🟩");
-  });
-
-  it("marks the steps over par differently", () => {
-    const text = shareText({
-      day: "2026-09-10",
-      number: 253,
-      from: "Portugal",
-      to: "Germany",
-      par: 2,
-      chain: ["Spain", "France", "Switzerland", "Austria"],
-      solved: true,
-      wrong: 0,
-    });
-    expect(text).toContain("🟩🟩🟨🟨");
-  });
-});
 
 describe("resolveName", () => {
   it("takes the plain name", () => {
