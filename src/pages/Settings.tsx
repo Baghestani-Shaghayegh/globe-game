@@ -18,8 +18,10 @@ import {
 import {
   LOCAL_SUMMARY,
   clearLocalData,
+  replayTodaysDailies,
   storedCount,
 } from "../lib/localData";
+import { dayKey } from "../lib/daily";
 import { GLOBE_THEMES, activeThemeId } from "../lib/globeTheme";
 
 function Row({
@@ -163,6 +165,44 @@ function ClearData() {
   );
 }
 
+/**
+ * Replaying today's three puzzles, for testing them more than once a day.
+ *
+ * Behind `import.meta.env.DEV`, so it exists while `vite dev` is running and
+ * is absent from every built bundle. A daily challenge everyone can replay is
+ * not a daily challenge — it would make the shared board meaningless and turn
+ * the streak into a button — so this must never reach a player.
+ */
+function ReplayDailies() {
+  const [done, setDone] = useState(false);
+
+  return (
+    <Row
+      title="Replay today's puzzles"
+      hint="Development only. Puts the daily, the mystery and the connect back to unplayed. Earlier days and your streak are untouched."
+    >
+      {done ? (
+        <span className="text-sm text-emerald-300">
+          Ready to play again — reloading…
+        </span>
+      ) : (
+        <button
+          onClick={() => {
+            replayTodaysDailies(dayKey());
+            setDone(true);
+            // A full reload rather than a state nudge: three separate pages
+            // read their result once on mount.
+            window.setTimeout(() => window.location.reload(), 350);
+          }}
+          className={choiceClass(false)}
+        >
+          Replay today
+        </button>
+      )}
+    </Row>
+  );
+}
+
 export default function Settings() {
   const [hints, setHints] = useState(hintsEnabled);
   const [sound, setSound] = useState(soundEnabled);
@@ -249,6 +289,12 @@ export default function Settings() {
         <Panel>
           <ClearData />
         </Panel>
+
+        {import.meta.env.DEV && (
+          <Panel>
+            <ReplayDailies />
+          </Panel>
+        )}
 
         <p className="mt-6 text-sm text-zinc-500">
           Your account, if you have one, is managed on the{" "}

@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { LOCAL_KEYS, clearLocalData, storedCount } from "./localData";
+import {
+  LOCAL_KEYS,
+  clearLocalData,
+  replayTodaysDailies,
+  storedCount,
+} from "./localData";
 
 /** Every source file, so the list can be checked against what the code writes. */
 function sources(dir: string): string[] {
@@ -51,5 +56,49 @@ describe("local data", () => {
     expect(storedCount()).toBe(0);
     expect(() => clearLocalData()).not.toThrow();
     globalThis.localStorage = storage;
+  });
+});
+
+describe("replaying today", () => {
+  const TODAY = "2026-09-11";
+  const YESTERDAY = "2026-09-10";
+
+  beforeEach(() => {
+    localStorage.setItem(
+      "worldguess.daily.v1",
+      JSON.stringify({
+        [YESTERDAY]: { day: YESTERDAY, points: 900 },
+        [TODAY]: { day: TODAY, points: 1200 },
+      })
+    );
+    localStorage.setItem("worldguess.mystery.v1", JSON.stringify({ day: TODAY }));
+    localStorage.setItem("worldguess.connect.v1", JSON.stringify({ day: TODAY }));
+  });
+
+  it("makes all three playable again", () => {
+    replayTodaysDailies(TODAY);
+    const daily = JSON.parse(localStorage.getItem("worldguess.daily.v1")!);
+    expect(daily[TODAY]).toBeUndefined();
+    expect(localStorage.getItem("worldguess.mystery.v1")).toBe(null);
+    expect(localStorage.getItem("worldguess.connect.v1")).toBe(null);
+  });
+
+  // The whole reason it takes a day rather than clearing the key: wiping the
+  // history would reset the streak, and a streak is the thing hardest to
+  // rebuild while testing.
+  it("leaves earlier days, and the streak they carry, alone", () => {
+    replayTodaysDailies(TODAY);
+    const daily = JSON.parse(localStorage.getItem("worldguess.daily.v1")!);
+    expect(daily[YESTERDAY]).toEqual({ day: YESTERDAY, points: 900 });
+  });
+
+  it("does nothing harmful when nothing has been played", () => {
+    localStorage.clear();
+    expect(() => replayTodaysDailies(TODAY)).not.toThrow();
+  });
+
+  it("survives a corrupt store", () => {
+    localStorage.setItem("worldguess.daily.v1", "{not json");
+    expect(() => replayTodaysDailies(TODAY)).not.toThrow();
   });
 });

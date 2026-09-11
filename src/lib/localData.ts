@@ -31,6 +31,40 @@ export const LOCAL_SUMMARY = [
   "Settings, including your answer about cookies",
 ];
 
+/**
+ * The three puzzles on the Today row, and where each keeps its result.
+ *
+ * `daily` is filed per day, so today's entry can be lifted out on its own and
+ * the streak survives. Mystery and connect only ever hold the current day, so
+ * for those the whole key goes.
+ */
+const DAILY_KEY = "worldguess.daily.v1";
+const TODAY_ONLY_KEYS = ["worldguess.mystery.v1", "worldguess.connect.v1"];
+
+/**
+ * Puts today's three puzzles back to unplayed, for testing them more than once
+ * a day. Yesterday's results and the streak built on them are left alone: the
+ * point is to replay today, not to erase a history.
+ *
+ * Deliberately not something a player can reach — see where it is called.
+ */
+export function replayTodaysDailies(day: string) {
+  try {
+    const raw = localStorage.getItem(DAILY_KEY);
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        const store = parsed as Record<string, unknown>;
+        delete store[day];
+        localStorage.setItem(DAILY_KEY, JSON.stringify(store));
+      }
+    }
+    for (const key of TODAY_ONLY_KEYS) localStorage.removeItem(key);
+  } catch {
+    // Unreadable storage means there is nothing stored to replay.
+  }
+}
+
 /** How many of those keys actually hold something right now. */
 export function storedCount(): number {
   try {
