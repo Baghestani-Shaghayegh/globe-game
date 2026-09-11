@@ -14,6 +14,8 @@ import {
 import { dailyType, dayKey } from "../lib/daily";
 import { recordKey } from "../data/modes";
 import AdSlot from "../components/AdSlot";
+import { choiceClass } from "../components/choice";
+import { playTap } from "../lib/sound";
 
 /** Gold, silver, bronze, then nothing — a podium only reads as one if it's short. */
 function rankColor(rank: number): string {
@@ -36,20 +38,25 @@ function Flag({ code }: { code: string | null }) {
   );
 }
 
+/**
+ * One place on a board: rank, who, and the number they are ranked by.
+ *
+ * Nothing else. The rows used to carry a second figure — how many rounds the
+ * weekly total came from, how many countries the daily score found — and it
+ * competed with the number that actually decides the order.
+ */
 function Row({
   rank,
   username,
   country,
   isYou,
   headline,
-  detail,
 }: {
   rank: number;
   username: string;
   country: string | null;
   isYou: boolean;
   headline: string;
-  detail?: string;
 }) {
   return (
     <li
@@ -68,13 +75,8 @@ function Row({
         {username}
         {isYou && <span className="ml-1.5 text-xs text-sky-300/70">you</span>}
       </span>
-      <span className="ml-auto flex shrink-0 items-center gap-3 tabular-nums">
-        {detail && (
-          <span className="hidden text-zinc-600 sm:inline">{detail}</span>
-        )}
-        <span className="w-20 text-right font-medium text-zinc-200">
-          {headline}
-        </span>
+      <span className="ml-auto w-20 shrink-0 text-right font-medium tabular-nums text-zinc-200">
+        {headline}
       </span>
     </li>
   );
@@ -98,12 +100,18 @@ function Empty({ children }: { children: React.ReactNode }) {
 export default function Leaderboard() {
   const { profile } = useAuth();
   const meId = profile?.id ?? null;
-  const [thisWeek, setThisWeek] = useState(true);
+  // Two boards, one at a time. Stacked, the daily sat under twenty weekly
+  // rows and was never seen; a tab keeps both a click away however many people
+  // are playing.
+  const [view, setView] = useState<"week" | "daily">("week");
   const [overall, setOverall] = useState<OverallRow[] | null>(null);
   const [daily, setDaily] = useState<BoardRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const since = useMemo(() => (thisWeek ? weekStart() : null), [thisWeek]);
+  // Only ever this week. An all-time table freezes: whoever played most in the
+  // first month sits on top of it forever, and a board nobody can climb is one
+  // nobody tries at. The weekly reset is the board.
+  const since = useMemo(() => weekStart(), []);
 
   useEffect(() => {
     if (!accountsEnabled) return;
@@ -152,32 +160,36 @@ export default function Leaderboard() {
           ← Modes
         </Link>
 
-        <div className="mt-5 flex flex-wrap items-baseline justify-between gap-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">
-            Leaderboard
-          </h1>
-          <div className="flex gap-1 rounded-full border border-white/10 bg-white/5 p-1">
-            {[true, false].map((weekly) => (
-              <button
-                key={String(weekly)}
-                onClick={() => setThisWeek(weekly)}
-                aria-pressed={thisWeek === weekly}
-                className={`rounded-full px-3.5 py-1 text-sm font-medium transition-colors ${
-                  thisWeek === weekly
-                    ? "bg-white/15 text-zinc-50"
-                    : "text-zinc-400 hover:text-zinc-100"
-                }`}
-              >
-                {weekly ? "This week" : "All time"}
-              </button>
-            ))}
-          </div>
+        <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
+          Leaderboard
+        </h1>
+
+        <div role="tablist" aria-label="Board" className="mt-4 flex flex-wrap gap-1.5">
+          {(
+            [
+              ["week", "This week"],
+              ["daily", "Today's daily"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={view === id}
+              onClick={() => {
+                playTap();
+                setView(id);
+              }}
+              className={choiceClass(view === id)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
-        <p className="mt-2 text-sm text-zinc-500">
-          {thisWeek
+        <p className="mt-2.5 px-1 text-sm text-zinc-500">
+          {view === "week"
             ? `Points from every round you play. Everyone starts level again in ${untilWeekEnd()}.`
-            : "Points from every round ever played."}
+            : "The same ten countries for everyone, one go each."}
         </p>
 
         {!accountsEnabled ? (
@@ -187,46 +199,18 @@ export default function Leaderboard() {
           </p>
         ) : (
           <>
-            <div className="mt-6">
+            <div className="mt-4">
               <Panel>
-                {overall === null ? (
-                  <Empty>Loading…</Empty>
-                ) : overall.length === 0 ? (
-                  <Empty>
-                    {error ?? "Nobody has played yet. Be the first name here."}
-                  </Empty>
-                ) : (
-                  <ul className="divide-y divide-white/[0.05]">
-                    {overall.map((row) => (
-                      <Row
-                        key={row.user_id}
-                        rank={row.rank}
-                        username={row.username}
-                        country={row.country}
-                        isYou={row.user_id === meId}
-                        headline={row.points.toLocaleString()}
-                        detail={`${row.runs} ${row.runs === 1 ? "round" : "rounds"}`}
-                      />
-                    ))}
-                  </ul>
-                )}
-              </Panel>
-            </div>
-
-            {daily && daily.length > 0 && (
-              <section className="mt-9">
-                <div className="flex items-baseline gap-3 px-1">
-                  <h2 className="text-sm uppercase tracking-wider text-zinc-500">
-                    Today's daily
-                  </h2>
-                  <span className="text-xs text-zinc-600">
-                    the same ten countries for everyone
-                  </span>
-                </div>
-                <div className="mt-2">
-                  <Panel>
+                {view === "week" ? (
+                  overall === null ? (
+                    <Empty>Loading…</Empty>
+                  ) : overall.length === 0 ? (
+                    <Empty>
+                      {error ?? "Nobody has played yet. Be the first name here."}
+                    </Empty>
+                  ) : (
                     <ul className="divide-y divide-white/[0.05]">
-                      {daily.map((row) => (
+                      {overall.map((row) => (
                         <Row
                           key={row.user_id}
                           rank={row.rank}
@@ -234,14 +218,32 @@ export default function Leaderboard() {
                           country={row.country}
                           isYou={row.user_id === meId}
                           headline={row.points.toLocaleString()}
-                          detail={`${row.found}/${row.total}`}
                         />
                       ))}
                     </ul>
-                  </Panel>
-                </div>
-              </section>
-            )}
+                  )
+                ) : daily === null ? (
+                  <Empty>Loading…</Empty>
+                ) : daily.length === 0 ? (
+                  <Empty>
+                    Nobody has played today's daily yet. Be the first name here.
+                  </Empty>
+                ) : (
+                  <ul className="divide-y divide-white/[0.05]">
+                    {daily.map((row) => (
+                      <Row
+                        key={row.user_id}
+                        rank={row.rank}
+                        username={row.username}
+                        country={row.country}
+                        isYou={row.user_id === meId}
+                        headline={row.points.toLocaleString()}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </Panel>
+            </div>
 
             {!profile && (
               <p className="mt-8 text-sm text-zinc-500">
