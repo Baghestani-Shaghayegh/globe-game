@@ -3,6 +3,7 @@ import { GAME_TYPES } from "../data/modes";
 import {
   DAILY_COUNTRIES,
   challengeFor,
+  dailyType,
   dayKey,
   dayNumber,
   playedDays,
@@ -137,3 +138,29 @@ describe("streaks", () => {
   });
 });
 
+
+describe("dailyType", () => {
+  // The leaderboard builds today's bucket key from this without loading a
+  // country list, so it has to agree with what the challenge actually is.
+  it("matches the type the day's challenge is built as", () => {
+    for (const day of [
+      "2026-09-11",
+      "2026-09-12",
+      "2026-01-01",
+      "2025-12-31",
+      "2026-06-15",
+      "2026-03-03",
+    ]) {
+      expect(dailyType(day)).toBe(challengeFor(day, ["Peru", "Chad"]).type);
+    }
+  });
+
+  it("works its way through every game type", () => {
+    const seen = new Set<string>();
+    for (let i = 0; i < 40; i++) {
+      const day = new Date(Date.UTC(2026, 0, 1 + i)).toISOString().slice(0, 10);
+      seen.add(dailyType(day));
+    }
+    expect(seen.size).toBe(GAME_TYPES.length);
+  });
+});

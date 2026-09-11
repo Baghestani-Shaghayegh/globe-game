@@ -78,9 +78,18 @@ const TYPES: GameType[] = GAME_TYPES.map((t) => t.id);
  * countries the chosen game type can actually ask for — a flag round needs a
  * flag, a famous-for round needs a clue.
  */
+/**
+ * Which game today's daily is played as. Derived from the date alone, so it
+ * can be known without the country list — the leaderboard needs the day's
+ * bucket key but has no use for the countries in it.
+ */
+export function dailyType(day: string): GameType {
+  return TYPES[Math.abs(dayNumber(day)) % TYPES.length];
+}
+
 export function challengeFor(day: string, pool: string[]): Challenge {
   const number = dayNumber(day);
-  const type = TYPES[Math.abs(number) % TYPES.length];
+  const type = dailyType(day);
 
   const random = mulberry32(hash(day));
   const shuffled = [...pool];

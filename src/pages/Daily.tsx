@@ -10,6 +10,7 @@ import { flagUrl } from "../data/flags";
 import { GAME_TYPES, type Mode } from "../data/modes";
 import {
   challengeFor,
+  dailyType,
   dayKey,
   formatDay,
   resultFor,
@@ -144,7 +145,7 @@ export default function Daily() {
   // which countries can be asked about at all.
   const challenge = useMemo(() => {
     if (!names) return null;
-    const type = challengeFor(day, ["placeholder"]).type;
+    const type = dailyType(day);
     return challengeFor(day, poolFor(type, names));
   }, [day, names]);
 

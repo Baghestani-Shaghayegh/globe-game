@@ -3,19 +3,16 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled } from "../lib/supabase";
 import {
-  activeBoards,
   dayStart,
-  describeBucket,
-  isDailyBucket,
   overallTop,
   topScores,
   untilWeekEnd,
   weekStart,
-  type ActiveBoard,
   type BoardRow,
   type OverallRow,
 } from "../lib/leaderboard";
-import { formatDuration } from "../lib/records";
+import { dailyType, dayKey } from "../lib/daily";
+import { recordKey } from "../data/modes";
 import AdSlot from "../components/AdSlot";
 
 /** Gold, silver, bronze, then nothing — a podium only reads as one if it's short. */
@@ -97,57 +94,13 @@ function Empty({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** One per-bucket board, opened from the list below the headline one. */
-function BucketBoard({
-  bucket,
-  since,
-  meId,
-}: {
-  bucket: string;
-  since: Date | null;
-  meId: string | null;
-}) {
-  const [rows, setRows] = useState<BoardRow[] | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setRows(null);
-    topScores(bucket, since, 10)
-      .then((data) => !cancelled && setRows(data))
-      .catch(() => !cancelled && setRows([]));
-    return () => {
-      cancelled = true;
-    };
-  }, [bucket, since]);
-
-  if (rows === null) return <Empty>Loading…</Empty>;
-  if (!rows.length) return <Empty>Nothing here yet.</Empty>;
-
-  return (
-    <ul className="divide-y divide-white/[0.05]">
-      {rows.map((row) => (
-        <Row
-          key={row.user_id}
-          rank={row.rank}
-          username={row.username}
-          country={row.country}
-          isYou={row.user_id === meId}
-          headline={row.points.toLocaleString()}
-          detail={`${row.found}/${row.total} · ${formatDuration(row.ms)}`}
-        />
-      ))}
-    </ul>
-  );
-}
 
 export default function Leaderboard() {
   const { profile } = useAuth();
   const meId = profile?.id ?? null;
   const [thisWeek, setThisWeek] = useState(true);
   const [overall, setOverall] = useState<OverallRow[] | null>(null);
-  const [boards, setBoards] = useState<ActiveBoard[]>([]);
   const [daily, setDaily] = useState<BoardRow[] | null>(null);
-  const [open, setOpen] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const since = useMemo(() => (thisWeek ? weekStart() : null), [thisWeek]);
@@ -157,18 +110,12 @@ export default function Leaderboard() {
     let cancelled = false;
     setOverall(null);
     setError(null);
-    setOpen(null);
 
-    Promise.all([overallTop(since, 20), activeBoards(since)])
-      .then(([top, active]) => {
-        if (cancelled) return;
-        setOverall(top);
-        setBoards(active);
-      })
+    overallTop(since, 20)
+      .then((top) => !cancelled && setOverall(top))
       .catch(() => {
         if (cancelled) return;
         setOverall([]);
-        setBoards([]);
         setError("Couldn't reach the leaderboard. Check your connection.");
       });
 
@@ -178,23 +125,22 @@ export default function Leaderboard() {
   }, [since]);
 
   // Today's daily is its own board: everyone played the identical round, which
-  // makes it the fairest comparison the game has.
-  const todaysDaily = boards.find((board) => isDailyBucket(board.bucket));
+  // makes it the fairest comparison the game has. Its key comes from the date
+  // — the game type is a function of the day — rather than from a survey of
+  // every board that has anyone on it, which is what this used to cost.
+  const dailyBucket = useMemo(
+    () => recordKey(dailyType(dayKey()), "daily", null),
+    []
+  );
   useEffect(() => {
-    if (!todaysDaily) {
-      setDaily(null);
-      return;
-    }
     let cancelled = false;
-    topScores(todaysDaily.bucket, dayStart(), 10)
+    topScores(dailyBucket, dayStart(), 10)
       .then((rows) => !cancelled && setDaily(rows))
       .catch(() => !cancelled && setDaily([]));
     return () => {
       cancelled = true;
     };
-  }, [todaysDaily]);
-
-  const otherBoards = boards.filter((board) => !isDailyBucket(board.bucket));
+  }, [dailyBucket]);
 
   return (
     <div className="min-h-screen bg-[#07111c] px-5 py-10">
@@ -294,63 +240,6 @@ export default function Leaderboard() {
                     </ul>
                   </Panel>
                 </div>
-              </section>
-            )}
-
-            {otherBoards.length > 0 && (
-              <section className="mt-9">
-                <div className="flex items-baseline gap-3 px-1">
-                  <h2 className="text-sm uppercase tracking-wider text-zinc-500">
-                    By mode
-                  </h2>
-                  <span className="text-xs text-zinc-600">
-                    best single run
-                  </span>
-                </div>
-
-                <ul className="mt-2 flex flex-col gap-2">
-                  {otherBoards.map((board) => {
-                    const showing = open === board.bucket;
-                    return (
-                      <li key={board.bucket}>
-                        <Panel>
-                          <button
-                            onClick={() =>
-                              setOpen(showing ? null : board.bucket)
-                            }
-                            aria-expanded={showing}
-                            className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition-colors hover:bg-white/[0.03]"
-                          >
-                            <span className="min-w-0 truncate text-zinc-100">
-                              {describeBucket(board.bucket)}
-                            </span>
-                            <span className="ml-auto flex shrink-0 items-center gap-3 tabular-nums text-xs text-zinc-600">
-                              <span>
-                                {board.players}{" "}
-                                {board.players === 1 ? "player" : "players"}
-                              </span>
-                              <span
-                                aria-hidden="true"
-                                className={`transition-transform ${showing ? "rotate-90" : ""}`}
-                              >
-                                ›
-                              </span>
-                            </span>
-                          </button>
-                          {showing && (
-                            <div className="border-t border-white/[0.07]">
-                              <BucketBoard
-                                bucket={board.bucket}
-                                since={since}
-                                meId={meId}
-                              />
-                            </div>
-                          )}
-                        </Panel>
-                      </li>
-                    );
-                  })}
-                </ul>
               </section>
             )}
 
