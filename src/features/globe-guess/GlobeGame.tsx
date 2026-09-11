@@ -33,6 +33,13 @@ type Props = {
   mode: Mode;
   limitMs: number | null;
   ruleset: Ruleset;
+  /**
+   * How many countries to name before the round ends, or null to go for the
+   * whole map. Unlike the other game types this one lets the player choose
+   * what to name, so a short round is a target to reach rather than a fixed
+   * set of questions — the entire map stays on screen and in play.
+   */
+  count?: number | null;
   /** Told how the round went, for callers that report on it. */
   onRoundEnd?: (outcome: RoundOutcome) => void;
   /** False for practice: a drill shouldn't land in records or on a board. */
@@ -45,6 +52,7 @@ export default function GlobeGame({
   ruleset,
   onRoundEnd,
   record = true,
+  count = null,
 }: Props) {
   // Repaint when the player changes the globe palette.
   useGlobeTheme();
@@ -150,20 +158,27 @@ export default function GlobeGame({
     [features]
   );
 
+  /** The round's size: the target on a short round, the map on a full one. */
+  const target =
+    count === null ? features.length : Math.min(count, features.length);
+
   // Under blitz a country can be lost as well as found, and the round is over
-  // once every country has gone one way or the other.
+  // once every country has gone one way or the other. A short round ends the
+  // moment the target is reached, however much map is left.
   const allFound =
-    features.length > 0 && foundNames.size + expired.size === features.length;
+    features.length > 0 &&
+    (foundNames.size >= target ||
+      foundNames.size + expired.size === features.length);
 
   const endRun = useCallback(() => {
     end({
       found: foundNames.size,
-      total: features.length,
+      total: target,
       attempted: attempted.size,
       firstTry: [...attempted].filter((name) => !fumbled.has(name)).length,
     });
     setSelected(null);
-  }, [end, foundNames.size, features.length, attempted, fumbled]);
+  }, [end, foundNames.size, target, attempted, fumbled]);
 
   // The countdown reaching zero ends the round wherever the player is.
   useEffect(() => {
@@ -397,13 +412,14 @@ export default function GlobeGame({
       <GameHud
         onBack={handleBack}
         found={foundNames.size}
-        total={features.length}
+        total={target}
         ms={round.displayMs}
         countdown={round.countdown}
         modeLabel={mode.label}
         modeLevel={mode.level}
         points={round.score.points}
         streak={round.score.streak}
+        gain={round.gain}
         onFinish={summary ? null : endRun}
       />
 
@@ -433,7 +449,7 @@ export default function GlobeGame({
       {round.confirmingExit && (
         <ExitConfirm
           found={foundNames.size}
-          total={features.length}
+          total={target}
           onFinish={endRun}
           onKeepPlaying={() => round.setConfirmingExit(false)}
           onDiscard={() => navigate("/")}

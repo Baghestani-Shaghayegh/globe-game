@@ -74,6 +74,13 @@ type Props = {
    * challenge needs everyone to meet them in the same sequence.
    */
   fixedOrder?: string[];
+  /**
+   * How many countries to ask for, or null for the mode's whole list. A short
+   * round still renders the full map — the other countries are simply never
+   * asked about, which is what makes a ten-question round over Africa still
+   * feel like Africa.
+   */
+  count?: number | null;
 };
 
 /**
@@ -88,6 +95,7 @@ export default function FindGame({
   type,
   onRoundEnd,
   record = true,
+  count = null,
   fixedOrder,
 }: Props) {
   // Repaint when the player changes the globe palette.
@@ -102,6 +110,8 @@ export default function FindGame({
   const [loadError, setLoadError] = useState(false);
   /** Names still to ask for, in the order they'll be asked. */
   const [queue, setQueue] = useState<string[]>([]);
+  /** How many this round asks for in total, fixed when the queue is built. */
+  const [askedTotal, setAskedTotal] = useState(0);
   const [foundNames, setFoundNames] = useState<Set<string>>(new Set());
   const [passedNames, setPassedNames] = useState<Set<string>>(new Set());
   /** Countries the player has answered for at least once. */
@@ -159,9 +169,11 @@ export default function FindGame({
         });
         setFeatures(playable);
         const names = playable.map((f) => f.properties.name);
-        setQueue(
-          fixedOrder ? fixedOrder.filter((n) => names.includes(n)) : shuffled(names)
-        );
+        const asked = fixedOrder
+          ? fixedOrder.filter((n) => names.includes(n))
+          : shuffled(names).slice(0, count ?? names.length);
+        setQueue(asked);
+        setAskedTotal(asked.length);
       })
       .catch(() => {
         if (!cancelled) setLoadError(true);
@@ -169,7 +181,7 @@ export default function FindGame({
     return () => {
       cancelled = true;
     };
-  }, [mode, reset, type, fixedOrder]);
+  }, [mode, reset, type, fixedOrder, count]);
 
   useEffect(() => () => window.clearTimeout(wrongTimer.current), []);
 
@@ -208,11 +220,11 @@ export default function FindGame({
   const endRound = useCallback(() => {
     end({
       found: foundNames.size,
-      total: features.length,
+      total: askedTotal,
       attempted: attempted.size,
       firstTry: [...attempted].filter((name) => !fumbled.has(name)).length,
     });
-  }, [end, foundNames.size, features.length, attempted, fumbled]);
+  }, [end, foundNames.size, askedTotal, attempted, fumbled]);
 
   // The countdown reaching zero ends the round wherever the player is.
   useEffect(() => {
@@ -354,8 +366,14 @@ export default function FindGame({
     setRevealed(null);
     setNarrowedTo(null);
     setCluesShown(1);
+    // A second round over the same mode draws a fresh sample, so "play again"
+    // on a short round is ten new countries rather than the same ten.
     const names = features.map((f) => f.properties.name);
-    setQueue(fixedOrder ? fixedOrder.filter((n) => names.includes(n)) : shuffled(names));
+    const asked = fixedOrder
+      ? fixedOrder.filter((n) => names.includes(n))
+      : shuffled(names).slice(0, count ?? names.length);
+    setQueue(asked);
+    setAskedTotal(asked.length);
   };
 
   const reported = useRef(false);
@@ -442,13 +460,14 @@ export default function FindGame({
       <GameHud
         onBack={handleBack}
         found={foundNames.size}
-        total={features.length}
+        total={askedTotal}
         ms={round.displayMs}
         countdown={round.countdown}
         modeLabel={mode.label}
         modeLevel={mode.level}
         points={round.score.points}
         streak={round.score.streak}
+        gain={round.gain}
         onFinish={summary ? null : endRound}
       />
 
@@ -608,7 +627,7 @@ export default function FindGame({
       {round.confirmingExit && (
         <ExitConfirm
           found={foundNames.size}
-          total={features.length}
+          total={askedTotal}
           onFinish={endRound}
           onKeepPlaying={() => round.setConfirmingExit(false)}
           onDiscard={() => navigate("/")}

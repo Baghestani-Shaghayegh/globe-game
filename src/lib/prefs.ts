@@ -5,9 +5,9 @@
  */
 const KEY = "worldguess.prefs.v1";
 
-type Prefs = { hints: boolean; globeTheme: string };
+type Prefs = { hints: boolean; sound: boolean; globeTheme: string };
 
-const DEFAULTS: Prefs = { hints: true, globeTheme: "atlantic" };
+const DEFAULTS: Prefs = { hints: true, sound: true, globeTheme: "atlantic" };
 
 function read(): Prefs {
   try {
@@ -15,9 +15,10 @@ function read(): Prefs {
     if (!raw) return DEFAULTS;
     const parsed: unknown = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return DEFAULTS;
-    const { hints, globeTheme } = parsed as Partial<Prefs>;
+    const { hints, sound, globeTheme } = parsed as Partial<Prefs>;
     return {
       hints: typeof hints === "boolean" ? hints : DEFAULTS.hints,
+      sound: typeof sound === "boolean" ? sound : DEFAULTS.sound,
       globeTheme:
         typeof globeTheme === "string" ? globeTheme : DEFAULTS.globeTheme,
     };
@@ -34,6 +35,18 @@ export function hintsEnabled(): boolean {
 export function setHintsEnabled(hints: boolean) {
   try {
     localStorage.setItem(KEY, JSON.stringify({ ...read(), hints }));
+  } catch {
+    /* the setting just won't survive a reload */
+  }
+}
+
+export function soundEnabled(): boolean {
+  return read().sound;
+}
+
+export function setSoundEnabled(sound: boolean) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify({ ...read(), sound }));
   } catch {
     /* the setting just won't survive a reload */
   }

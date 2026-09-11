@@ -36,9 +36,35 @@ body {
   animation: fade-in 1.2s ease-out both;
 }
 
+/* The points a correct answer paid, rising off the score and fading. */
+@keyframes score-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.9);
+  }
+  18% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18px) scale(1);
+  }
+}
+
+.animate-score-pop {
+  animation: score-pop 0.9s ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-shake,
-  .animate-fade-in {
+  .animate-fade-in,
+  .animate-score-pop {
     animation: none;
+  }
+
+  /* Without the rise it would simply hang there, so it does not show at all. */
+  .animate-score-pop {
+    display: none;
   }
 }

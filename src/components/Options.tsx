@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { RULESETS, TIME_LIMITS, type Ruleset } from "../data/modes";
+import {
+  DEFAULT_ROUND_LENGTH,
+  ROUND_LENGTHS,
+  RULESETS,
+  TIME_LIMITS,
+  type Ruleset,
+} from "../data/modes";
 import Segmented from "./Segmented";
 
 /**
@@ -13,6 +19,8 @@ import Segmented from "./Segmented";
  * player who has set a three-minute blitz can see that from the closed state.
  */
 export default function Options({
+  count,
+  onCount,
   limit,
   onLimit,
   ruleset,
@@ -20,6 +28,8 @@ export default function Options({
   hints,
   onHints,
 }: {
+  count: number | null;
+  onCount: (count: number | null) => void;
   limit: number | null;
   onLimit: (seconds: number | null) => void;
   ruleset: Ruleset;
@@ -30,11 +40,18 @@ export default function Options({
   const [open, setOpen] = useState(false);
 
   const chips = [
+    ROUND_LENGTHS.find((r) => r.count === count)?.label === "Everything"
+      ? "Everything"
+      : `${count} countries`,
     TIME_LIMITS.find((t) => t.seconds === limit)?.label ?? "Count up",
     RULESETS.find((r) => r.id === ruleset)?.label ?? "Relaxed",
     hints ? "Hints on" : "Hints off",
   ];
-  const customised = limit !== null || ruleset !== "relaxed" || !hints;
+  const customised =
+    count !== DEFAULT_ROUND_LENGTH ||
+    limit !== null ||
+    ruleset !== "relaxed" ||
+    !hints;
 
   return (
     <div className="mt-3">
@@ -97,6 +114,21 @@ export default function Options({
       {open && (
         <div className="divide-y divide-white/[0.06] rounded-b-xl border border-t-0 border-white/15 bg-white/[0.02]">
           <Segmented
+            label="Round"
+            hint={
+              count === null
+                ? "Every country in the mode"
+                : `${count} countries, then it's over`
+            }
+            options={ROUND_LENGTHS.map((option) => ({
+              key: option.label,
+              label: option.label,
+              value: option.count,
+            }))}
+            value={count}
+            onChange={onCount}
+          />
+          <Segmented
             label="Clock"
             hint={
               limit === null
@@ -141,6 +173,7 @@ export default function Options({
             <div className="px-4 py-2.5">
               <button
                 onClick={() => {
+                  onCount(DEFAULT_ROUND_LENGTH);
                   onLimit(null);
                   onRuleset("relaxed");
                   onHints(true);

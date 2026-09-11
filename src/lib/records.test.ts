@@ -121,20 +121,31 @@ describe("buckets round-trip through their keys", () => {
   // "Play this again" on the Records page rebuilds a URL from the stored key,
   // so recordKey and allBuckets have to agree.
   it.each([
-    ["name", "europe", null, "/play/europe"],
-    ["find", "europe", null, "/find/europe"],
-    ["name", "asia", 180, "/play/asia?limit=180"],
-    ["find", "oceania", 60, "/find/oceania?limit=60"],
-  ] as const)("%s %s %s", (type, modeId, limit, path) => {
-    const key = recordKey(type, modeId, limit);
+    ["name", "europe", null, null, "/play/europe?count=all"],
+    ["find", "europe", null, 10, "/find/europe?count=10"],
+    ["name", "asia", 180, null, "/play/asia?limit=180&count=all"],
+    ["find", "oceania", 60, 25, "/find/oceania?limit=60&count=25"],
+  ] as const)("%s %s %s %s", (type, modeId, limit, count, path) => {
+    const key = recordKey(type, modeId, limit, "relaxed", count);
     addRun(key, { ms: 1000, found: 1, total: 10 });
 
     const bucket = allBuckets().find((b) => b.key === key);
     expect(bucket).toBeDefined();
-    expect(bucket).toMatchObject({ type, modeId, limitSeconds: limit });
-    expect(gamePath(bucket!.type, bucket!.modeId, bucket!.limitSeconds)).toBe(
-      path
-    );
+    expect(bucket).toMatchObject({
+      type,
+      modeId,
+      limitSeconds: limit,
+      count,
+    });
+    expect(
+      gamePath(
+        bucket!.type,
+        bucket!.modeId,
+        bucket!.limitSeconds,
+        bucket!.ruleset,
+        bucket!.count
+      )
+    ).toBe(path);
   });
 
   it("skips buckets with no runs", () => {
@@ -183,8 +194,14 @@ describe("sudden death keeps its own records", () => {
       ruleset: "sudden",
     });
     expect(
-      gamePath(bucket.type, bucket.modeId, bucket.limitSeconds, bucket.ruleset)
-    ).toBe("/find/asia?limit=180&rules=sudden");
+      gamePath(
+        bucket.type,
+        bucket.modeId,
+        bucket.limitSeconds,
+        bucket.ruleset,
+        bucket.count
+      )
+    ).toBe("/find/asia?limit=180&rules=sudden&count=all");
   });
 
   it("reads the ruleset out of the URL, defaulting to relaxed", () => {
@@ -212,8 +229,14 @@ describe("flag rounds keep their own records", () => {
       ruleset: "blitz",
     });
     expect(
-      gamePath(bucket.type, bucket.modeId, bucket.limitSeconds, bucket.ruleset)
-    ).toBe("/flags/asia?limit=180&rules=blitz");
+      gamePath(
+        bucket.type,
+        bucket.modeId,
+        bucket.limitSeconds,
+        bucket.ruleset,
+        bucket.count
+      )
+    ).toBe("/flags/asia?limit=180&rules=blitz&count=all");
   });
 });
 
@@ -229,8 +252,14 @@ describe("famous-for rounds keep their own records", () => {
     const bucket = allBuckets().find((b) => b.key === key)!;
     expect(bucket).toMatchObject({ type: "famous", modeId: "africa" });
     expect(
-      gamePath(bucket.type, bucket.modeId, bucket.limitSeconds, bucket.ruleset)
-    ).toBe("/famous/africa?limit=300");
+      gamePath(
+        bucket.type,
+        bucket.modeId,
+        bucket.limitSeconds,
+        bucket.ruleset,
+        bucket.count
+      )
+    ).toBe("/famous/africa?limit=300&count=all");
   });
 });
 

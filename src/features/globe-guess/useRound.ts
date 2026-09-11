@@ -3,12 +3,33 @@ import { addRun, bestScore, bestTime, formatDuration } from "../../lib/records";
 import { postScore } from "../../lib/leaderboard";
 import {
   emptyScore,
+  formatMultiplier,
+  pointsFor,
   scoreCorrect,
   scoreHint,
   scoreWrong,
   type HintKind,
   type Score,
 } from "../../lib/scoring";
+import {
+  playCorrect,
+  playHint,
+  playRecord,
+  playRoundEnd,
+  playWrong,
+} from "../../lib/sound";
+
+/**
+ * What the last correct answer paid, for the figure that floats up off the
+ * globe. `id` rather than a timestamp so two answers worth the same amount in
+ * quick succession still read as two separate awards.
+ */
+export type Gain = {
+  points: number;
+  /** How it was written: "1.5x" while a streak is running, else null. */
+  multiplier: string | null;
+  id: number;
+};
 
 /** Everything the summary screen needs, frozen at the moment the run ended. */
 export type Summary = {
@@ -53,6 +74,18 @@ export function useRound(
   const [confirmingExit, setConfirmingExit] = useState(false);
   const [reviewingMap, setReviewingMap] = useState(false);
   const [score, setScore] = useState<Score>(emptyScore);
+  const [gain, setGain] = useState<Gain | null>(null);
+  // The score as of this instant. `setScore`'s updater can't be the place to
+  // play a sound or raise a popup — React may run it twice — so the streak is
+  // read from here, outside the updater, and the updater stays pure.
+  const scoreNow = useRef<Score>(emptyScore);
+  const gainId = useRef(0);
+
+  const applyScore = useCallback((next: (score: Score) => Score) => {
+    const updated = next(scoreNow.current);
+    scoreNow.current = updated;
+    setScore(updated);
+  }, []);
 
   /** Starts the clock the first time it's called; later calls do nothing. */
   const begin = useCallback(() => {
@@ -67,6 +100,8 @@ export function useRound(
     setConfirmingExit(false);
     setReviewingMap(false);
     setScore(emptyScore);
+    scoreNow.current = emptyScore;
+    setGain(null);
   }, []);
 
   const tick = useCallback(() => {
@@ -113,6 +148,13 @@ export function useRound(
         });
       }
 
+      const isBest = completed
+        ? !previousTime || ms < previousTime.ms
+        : found > 0 && (!previousScore || found > previousScore.found);
+
+      playRoundEnd(completed);
+      if (isBest) playRecord();
+
       setSummary({
         ms,
         points: score.points,
@@ -125,9 +167,7 @@ export function useRound(
         // collapse, and three tries at one country sank the whole round.
         accuracy:
           attempted > 0 ? Math.round((firstTry / attempted) * 100) : null,
-        isBest: completed
-          ? !previousTime || ms < previousTime.ms
-          : found > 0 && (!previousScore || found > previousScore.found),
+        isBest,
         previousBest: completed
           ? previousTime
             ? formatDuration(previousTime.ms)
@@ -151,14 +191,33 @@ export function useRound(
     end,
     score,
     /** Records a correct answer, continuing the streak. */
-    correct: useCallback(() => setScore(scoreCorrect), []),
+    correct: useCallback(() => {
+      const before = scoreNow.current.streak;
+      playCorrect(before);
+      setGain({
+        points: pointsFor(before),
+        // A first answer is worth the base and nothing more; calling that
+        // "1x" would dress up the ordinary case as a bonus.
+        multiplier: before > 0 ? formatMultiplier(before) : null,
+        id: ++gainId.current,
+      });
+      applyScore(scoreCorrect);
+    }, [applyScore]),
     /** Records a wrong answer, which only costs the streak. */
-    wrong: useCallback(() => setScore(scoreWrong), []),
+    wrong: useCallback(() => {
+      playWrong();
+      applyScore(scoreWrong);
+    }, [applyScore]),
     /** Charges for a hint. */
     spendHint: useCallback(
-      (hint: HintKind) => setScore((s) => scoreHint(s, hint)),
-      []
+      (hint: HintKind) => {
+        playHint();
+        applyScore((s) => scoreHint(s, hint));
+      },
+      [applyScore]
     ),
+    /** The last award, for the figure that floats up. */
+    gain,
     summary,
     /** True once a countdown has run out and the round hasn't been filed yet. */
     timeUp: remainingMs === 0 && !summary,

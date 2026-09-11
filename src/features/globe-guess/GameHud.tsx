@@ -1,4 +1,6 @@
 import { formatDuration } from "../../lib/records";
+import { formatMultiplier } from "../../lib/scoring";
+import type { Gain } from "./useRound";
 
 type Props = {
   onBack: () => void;
@@ -11,6 +13,8 @@ type Props = {
   modeLevel: 1 | 2 | 3;
   points: number;
   streak: number;
+  /** What the last correct answer paid, to float up off the score. */
+  gain?: Gain | null;
   /** Ends the round. Null once it has already ended. */
   onFinish: (() => void) | null;
 };
@@ -32,6 +36,7 @@ export default function GameHud({
   modeLevel,
   points,
   streak,
+  gain,
   onFinish,
 }: Props) {
   const progress = total ? Math.round((found / total) * 100) : 0;
@@ -61,16 +66,33 @@ export default function GameHud({
 
       <span className="h-4 w-px bg-white/10" aria-hidden="true" />
 
-      <span className="tabular-nums font-medium text-zinc-100" aria-label="Score">
+      <span className="relative tabular-nums font-medium text-zinc-100" aria-label="Score">
         {points.toLocaleString()}
+        {gain && (
+          // Keyed by the award, so two answers in a row replay the rise
+          // instead of the second one landing on a finished animation.
+          <span
+            key={gain.id}
+            aria-hidden="true"
+            className="animate-score-pop absolute -top-1 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs font-semibold text-emerald-300"
+          >
+            +{gain.points}
+          </span>
+        )}
       </span>
 
-      {streak > 1 && (
+      {/* The streak always paid; until now the only thing shown was how long
+          it was, which said nothing about what the next answer was worth. */}
+      {streak > 0 && (
         <span
-          className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-xs font-medium tabular-nums text-amber-300"
-          aria-label={`Streak of ${streak}`}
+          className={`rounded-md px-1.5 py-0.5 text-xs font-medium tabular-nums transition-colors ${
+            streak >= 10
+              ? "bg-amber-400/25 text-amber-200"
+              : "bg-amber-400/15 text-amber-300"
+          }`}
+          aria-label={`Streak of ${streak}, next answer worth ${formatMultiplier(streak)}`}
         >
-          {streak}×
+          {formatMultiplier(streak)}
         </span>
       )}
 

@@ -161,7 +161,8 @@ export async function topScores(
  * versions of the game.
  */
 export function describeBucket(bucket: string): string {
-  const [head, limit] = bucket.split("@");
+  const [withoutCount, count] = bucket.split("#");
+  const [head, limit] = withoutCount.split("@");
   const ruleset = head.startsWith("sudden:")
     ? "Sudden death"
     : head.startsWith("blitz:")
@@ -182,10 +183,18 @@ export function describeBucket(bucket: string): string {
       `${limit}s`)
     : null;
 
-  return [typeLabel, modeName, clock, ruleset].filter(Boolean).join(" · ");
+  const length = count ? `${count} countries` : null;
+
+  return [typeLabel, modeName, length, clock, ruleset]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 /** Whether a bucket is one of the daily challenge's. */
 export function isDailyBucket(bucket: string): boolean {
-  return bucket.split("@")[0].replace(/^(sudden|blitz):/, "").endsWith("daily");
+  return bucket
+    .split("#")[0]
+    .split("@")[0]
+    .replace(/^(sudden|blitz):/, "")
+    .endsWith("daily");
 }

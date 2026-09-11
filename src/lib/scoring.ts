@@ -29,6 +29,23 @@ export function pointsFor(streakBefore: number): number {
   );
 }
 
+/**
+ * The same number said out loud: what the next correct answer is worth as a
+ * multiple of the base. The streak always paid — 3.5x at the top — but the
+ * only thing on screen was a count, so nobody could tell. This is the figure
+ * the HUD shows, and it is derived from `pointsFor` rather than restated, so
+ * the display cannot drift from the scoring.
+ */
+export function multiplierFor(streakBefore: number): number {
+  return pointsFor(streakBefore) / POINTS_PER_COUNTRY;
+}
+
+/** The multiplier as it is written on screen: "2x", "2.25x". */
+export function formatMultiplier(streakBefore: number): string {
+  const multiplier = multiplierFor(streakBefore);
+  return `${Number.isInteger(multiplier) ? multiplier : multiplier.toFixed(2).replace(/0$/, "")}\u00d7`;
+}
+
 export type Score = {
   points: number;
   /** Correct answers in a row right now. */

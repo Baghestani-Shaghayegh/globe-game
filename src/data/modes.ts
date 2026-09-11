@@ -76,6 +76,33 @@ export const TIME_LIMITS: { seconds: number | null; label: string }[] = [
   { seconds: 600, label: "10 min" },
 ];
 
+/**
+ * How many countries a round asks for.
+ *
+ * The game shipped with every mode running its full list — 167 countries for
+ * Easy, which is ten minutes of typing before anyone sees a score. That is a
+ * sitting, not a session, and the daily challenge proved the point by being
+ * the most replayed thing here at ten questions. Short is now the default;
+ * the full list is still there for whoever wants the marathon.
+ */
+export const ROUND_LENGTHS: { count: number | null; label: string }[] = [
+  { count: 10, label: "10" },
+  { count: 25, label: "25" },
+  { count: 50, label: "50" },
+  { count: null, label: "Everything" },
+];
+
+export const DEFAULT_ROUND_LENGTH = 10;
+
+/** Only lengths we offer are accepted, so a hand-edited URL can't set an odd one. */
+export function parseCount(raw: string | null): number | null {
+  if (raw === "all") return null;
+  const count = Number(raw);
+  return ROUND_LENGTHS.some((l) => l.count !== null && l.count === count)
+    ? count
+    : DEFAULT_ROUND_LENGTH;
+}
+
 /** Only limits we offer are accepted, so a hand-edited URL can't set an odd one. */
 export function parseLimit(raw: string | null): number | null {
   const seconds = Number(raw);
@@ -129,12 +156,16 @@ export function gamePath(
   type: GameType,
   modeId: string,
   limitSeconds: number | null,
-  ruleset: Ruleset = "relaxed"
+  ruleset: Ruleset = "relaxed",
+  count: number | null = DEFAULT_ROUND_LENGTH
 ): string {
   const base = `/${ROUTES[type]}/${modeId}`;
   const query = new URLSearchParams();
   if (limitSeconds !== null) query.set("limit", String(limitSeconds));
   if (ruleset !== "relaxed") query.set("rules", ruleset);
+  // Written even when it is the default, because the default may change and a
+  // shared link should keep meaning what it meant when it was sent.
+  query.set("count", count === null ? "all" : String(count));
   const search = query.toString();
   return search ? `${base}?${search}` : base;
 }
@@ -147,14 +178,21 @@ export function recordKey(
   type: GameType,
   modeId: string,
   limitSeconds: number | null,
-  ruleset: Ruleset = "relaxed"
+  ruleset: Ruleset = "relaxed",
+  count: number | null = null
 ): string {
   const prefix = ruleset === "relaxed" ? "" : `${ruleset}:`;
   const base = prefix + BUCKET_PREFIX[type] + modeId;
   // A timed round and an open one aren't comparable — under a countdown the
   // clock always reads the same, so only the score means anything. Each limit
   // keeps its own record.
-  return limitSeconds === null ? base : `${base}@${limitSeconds}`;
+  const timed = limitSeconds === null ? base : `${base}@${limitSeconds}`;
+  // Nor are ten countries and a hundred and sixty-seven: finishing a short
+  // round is a different feat, and letting the two share a best time would
+  // retire every marathon record the day short rounds arrived. Keys written
+  // before round lengths existed carry no suffix and stay the full-list
+  // records they always were.
+  return count === null ? timed : `${timed}#${count}`;
 }
 
 export type ModeId =

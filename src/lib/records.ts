@@ -88,14 +88,18 @@ export type Bucket = {
   type: GameType;
   modeId: string;
   limitSeconds: number | null;
+  /** Countries asked for, or null for the mode's whole list. */
+  count: number | null;
   ruleset: Ruleset;
   runs: Run[];
 };
 
 /**
  * Every bucket that holds runs, newest activity first. Keys look like
- * `europe`, `find:europe`, `find:europe@180` or `sudden:find:europe@180`, so
- * this is `recordKey` read backwards.
+ * `europe`, `find:europe`, `find:europe@180`, `sudden:find:europe@180` or
+ * `find:europe@180#10`, so this is `recordKey` read backwards. The round
+ * length is peeled off first because it is the outermost suffix, and keys
+ * written before it existed simply don't have one.
  */
 export function allBuckets(): Bucket[] {
   const store = read();
@@ -104,7 +108,8 @@ export function allBuckets(): Bucket[] {
       const valid = Array.isArray(runs) ? runs.filter(isRun) : [];
       if (!valid.length) return null;
 
-      const [head, limit] = key.split("@");
+      const [withoutCount, count] = key.split("#");
+      const [head, limit] = withoutCount.split("@");
       const ruleset: Ruleset = head.startsWith("sudden:")
         ? "sudden"
         : head.startsWith("blitz:")
@@ -118,6 +123,7 @@ export function allBuckets(): Bucket[] {
         ruleset,
         modeId: modeIdFromBucket(withoutRules),
         limitSeconds: limit ? Number(limit) : null,
+        count: count ? Number(count) : null,
         runs: valid,
       } satisfies Bucket;
     })

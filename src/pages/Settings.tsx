@@ -1,7 +1,13 @@
 import { useState, useSyncExternalStore } from "react";
 import { Link } from "react-router-dom";
 import { choiceClass } from "../components/choice";
-import { hintsEnabled, setHintsEnabled } from "../lib/prefs";
+import {
+  hintsEnabled,
+  setHintsEnabled,
+  setSoundEnabled,
+  soundEnabled,
+} from "../lib/prefs";
+import { playCorrect } from "../lib/sound";
 import { adsConfigured } from "../lib/ads";
 import {
   clearConsent,
@@ -159,6 +165,7 @@ function ClearData() {
 
 export default function Settings() {
   const [hints, setHints] = useState(hintsEnabled);
+  const [sound, setSound] = useState(soundEnabled);
   const palette = GLOBE_THEMES.find((t) => t.id === activeThemeId());
 
   return (
@@ -190,6 +197,30 @@ export default function Settings() {
                   }}
                   aria-pressed={hints === on}
                   className={choiceClass(hints === on)}
+                >
+                  {on ? "On" : "Off"}
+                </button>
+              ))}
+            </div>
+          </Row>
+
+          <Row
+            title="Sound"
+            hint="A note for each right answer, rising as your streak grows."
+          >
+            <div className="flex flex-wrap gap-1.5">
+              {[true, false].map((on) => (
+                <button
+                  key={String(on)}
+                  onClick={() => {
+                    setSound(on);
+                    setSoundEnabled(on);
+                    // Turning it on plays one, so the choice is audible rather
+                    // than a promise about the next round.
+                    if (on) playCorrect(3);
+                  }}
+                  aria-pressed={sound === on}
+                  className={choiceClass(sound === on)}
                 >
                   {on ? "On" : "Off"}
                 </button>

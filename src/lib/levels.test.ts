@@ -26,6 +26,7 @@ const bucket = (runs: Run[]): Bucket => ({
   type: "name",
   modeId: "europe",
   limitSeconds: null,
+  count: null,
   ruleset: "relaxed",
   runs,
 });

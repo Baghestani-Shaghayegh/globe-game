@@ -3,6 +3,7 @@ import GlobeGame from "../features/globe-guess/GlobeGame";
 import FindGame from "../features/globe-guess/FindGame";
 import {
   getMode,
+  parseCount,
   parseLimit,
   parseRuleset,
   type GameType,
@@ -17,7 +18,8 @@ export default function Game({ type }: { type: GameType }) {
   const seconds = parseLimit(params.get("limit"));
   const limitMs = seconds === null ? null : seconds * 1000;
   const ruleset = parseRuleset(params.get("rules"));
-  const props = { mode, limitMs, ruleset };
+  const count = parseCount(params.get("count"));
+  const props = { mode, limitMs, ruleset, count };
 
   // Only "Name it" works the other way round: click a country, type its name.
   return type === "name" ? (

@@ -10,6 +10,7 @@ import { getCountryMeta } from "../data/countries";
 import {
   GAME_TYPES,
   MODES,
+  DEFAULT_ROUND_LENGTH,
   gamePath,
   recordKey,
   type GameType,
@@ -93,11 +94,15 @@ function useModeCounts(type: GameType): Counts {
   return counts;
 }
 
-/** Records are per game type and clock, so the labels follow both controls. */
+/**
+ * Records are per game type, clock and round length, so the labels follow all
+ * three — a ten-country best has nothing to say about a marathon.
+ */
 function useBests(
   type: GameType,
   limit: number | null,
-  ruleset: Ruleset
+  ruleset: Ruleset,
+  count: number | null
 ): Partial<Record<ModeId, string | null>> {
   const [bests, setBests] = useState<Partial<Record<ModeId, string | null>>>({});
 
@@ -107,11 +112,11 @@ function useBests(
       Object.fromEntries(
         MODES.map((mode) => [
           mode.id,
-          bestLabel(recordKey(type, mode.id, limit, ruleset)),
+          bestLabel(recordKey(type, mode.id, limit, ruleset, count)),
         ])
       )
     );
-  }, [type, limit, ruleset]);
+  }, [type, limit, ruleset, count]);
 
   return bests;
 }
@@ -122,6 +127,7 @@ export default function Home() {
   const [gameType, setGameType] = useState<GameType>("name");
   const counts = useModeCounts(gameType);
   const [limit, setLimit] = useState<number | null>(null);
+  const [count, setCount] = useState<number | null>(DEFAULT_ROUND_LENGTH);
   const [ruleset, setRuleset] = useState<Ruleset>("relaxed");
   const backdropWanted = useBackdropWanted();
   const [daily, setDaily] = useState<{ played: boolean; streak: number } | null>(
@@ -138,7 +144,7 @@ export default function Home() {
     setHints(hintsEnabled());
   }, []);
 
-  const bests = useBests(gameType, limit, ruleset);
+  const bests = useBests(gameType, limit, ruleset, count);
   const blurb =
     GAME_TYPES.find((t) => t.id === gameType)?.blurb ?? GAME_TYPES[0].blurb;
 
@@ -252,6 +258,8 @@ export default function Home() {
           <p className="mt-2.5 px-1 text-sm text-zinc-400">{blurb}</p>
 
           <Options
+            count={count}
+            onCount={setCount}
             limit={limit}
             onLimit={setLimit}
             ruleset={ruleset}
@@ -276,7 +284,7 @@ export default function Home() {
                 count={counts[mode.id] ?? null}
                 best={bests[mode.id] ?? null}
                 onSelect={() =>
-                  navigate(gamePath(gameType, mode.id, limit, ruleset))
+                  navigate(gamePath(gameType, mode.id, limit, ruleset, count))
                 }
               />
             ))}
@@ -292,7 +300,7 @@ export default function Home() {
                 count={counts[mode.id] ?? null}
                 best={bests[mode.id] ?? null}
                 onSelect={() =>
-                  navigate(gamePath(gameType, mode.id, limit, ruleset))
+                  navigate(gamePath(gameType, mode.id, limit, ruleset, count))
                 }
               />
             ))}

@@ -25,6 +25,7 @@ const bucket = (over: Partial<Bucket> = {}): Bucket => ({
   type: "name",
   modeId: "europe",
   limitSeconds: null,
+  count: null,
   ruleset: "relaxed",
   runs: [run()],
   ...over,
