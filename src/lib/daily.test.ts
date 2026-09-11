@@ -3,6 +3,7 @@ import { GAME_TYPES } from "../data/modes";
 import {
   DAILY_COUNTRIES,
   challengeFor,
+  DAILY_MULTIPLIER,
   dailyType,
   dayKey,
   dayNumber,
@@ -162,5 +163,15 @@ describe("dailyType", () => {
       seen.add(dailyType(day));
     }
     expect(seen.size).toBe(GAME_TYPES.length);
+  });
+});
+
+describe("the daily bonus", () => {
+  // The daily is ten countries against a hundred and sixty-seven, so without
+  // a multiplier the one round everyone plays together is the worst-paying
+  // thing on the board.
+  it("is a whole number a player can hold in their head", () => {
+    expect(Number.isInteger(DAILY_MULTIPLIER)).toBe(true);
+    expect(DAILY_MULTIPLIER).toBeGreaterThan(1);
   });
 });

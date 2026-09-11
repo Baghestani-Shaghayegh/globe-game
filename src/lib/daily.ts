@@ -10,6 +10,21 @@ import { GAME_TYPES, type GameType } from "../data/modes";
  */
 export const DAILY_COUNTRIES = 10;
 
+/**
+ * What the daily's points are multiplied by before they are filed.
+ *
+ * Without it the daily is the worst-paying thing in the game: ten countries
+ * against a hundred and sixty-seven, so the board rewarded whoever ground the
+ * longest mode and the one round everybody plays together counted for least.
+ * Doubling does not make it the fastest way to points — a marathon still pays
+ * more in absolute terms — it makes playing the daily worth the two minutes
+ * rather than a sentimental detour.
+ *
+ * Two, because a player has to be able to hold it in their head. "Counts
+ * double" is a rule; "counts 1.6x" is a patch note.
+ */
+export const DAILY_MULTIPLIER = 2;
+
 /** The date key a challenge is identified by, in UTC so it turns over at once. */
 export function dayKey(now: Date = new Date()): string {
   return now.toISOString().slice(0, 10);

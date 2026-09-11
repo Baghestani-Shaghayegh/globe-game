@@ -81,6 +81,8 @@ type Props = {
    * feel like Africa.
    */
   count?: number | null;
+  /** Multiplies the round's score once it ends. The daily doubles. */
+  pointsMultiplier?: number;
   /**
    * Draw the whole world behind the round, with the countries in play picked
    * out and the rest dimmed.
@@ -106,6 +108,7 @@ export default function FindGame({
   onRoundEnd,
   record = true,
   count = null,
+  pointsMultiplier = 1,
   backdrop = false,
   fixedOrder,
 }: Props) {
@@ -160,7 +163,7 @@ export default function FindGame({
   const round = useRound(
     recordKey(type, mode.id, limitSeconds, ruleset, count),
     limitMs,
-    { record }
+    { record, pointsMultiplier }
   );
   const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
     round;

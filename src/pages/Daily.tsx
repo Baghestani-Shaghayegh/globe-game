@@ -11,6 +11,7 @@ import { GAME_TYPES, type Mode } from "../data/modes";
 import {
   challengeFor,
   dailyType,
+  DAILY_MULTIPLIER,
   dayKey,
   formatDay,
   resultFor,
@@ -205,6 +206,9 @@ export default function Daily() {
           <p className="mt-1 text-sm text-zinc-500">
             {formatDay(result.day)} · {label}
           </p>
+          <p className="mt-1 text-xs text-sky-300/70">
+            Daily rounds count {DAILY_MULTIPLIER}× towards the leaderboard.
+          </p>
 
           <div className="mt-7 rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center">
             <p className="text-4xl font-semibold tabular-nums text-zinc-50">
@@ -247,7 +251,12 @@ export default function Daily() {
   }
 
   const mode = dailyMode(challenge);
-  const shared = { mode, limitMs: null, ruleset: "relaxed" as const };
+  const shared = {
+    mode,
+    limitMs: null,
+    ruleset: "relaxed" as const,
+    pointsMultiplier: DAILY_MULTIPLIER,
+  };
 
   return challenge.type === "name" ? (
     <GlobeGame {...shared} onRoundEnd={finish} />

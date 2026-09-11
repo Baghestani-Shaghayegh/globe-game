@@ -40,6 +40,8 @@ type Props = {
    * set of questions — the entire map stays on screen and in play.
    */
   count?: number | null;
+  /** Multiplies the round's score once it ends. The daily doubles. */
+  pointsMultiplier?: number;
   /** Told how the round went, for callers that report on it. */
   onRoundEnd?: (outcome: RoundOutcome) => void;
   /** False for practice: a drill shouldn't land in records or on a board. */
@@ -53,6 +55,7 @@ export default function GlobeGame({
   onRoundEnd,
   record = true,
   count = null,
+  pointsMultiplier = 1,
 }: Props) {
   // Repaint when the player changes the globe palette.
   useGlobeTheme();
@@ -88,7 +91,7 @@ export default function GlobeGame({
   const round = useRound(
     recordKey("name", mode.id, limitSeconds, ruleset, count),
     limitMs,
-    { record }
+    { record, pointsMultiplier }
   );
   const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
     round;

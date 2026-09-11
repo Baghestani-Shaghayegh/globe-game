@@ -24,7 +24,9 @@ import { bestLabel } from "../lib/records";
 import { hintsEnabled, setHintsEnabled } from "../lib/prefs";
 import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled } from "../lib/supabase";
-import { dayKey, resultFor, streak } from "../lib/daily";
+import { DAILY_MULTIPLIER, dayKey, resultFor, streak } from "../lib/daily";
+import { loadMystery } from "../lib/mystery";
+import { loadConnect } from "../lib/connect";
 import { dueCount } from "../lib/practice";
 import { flagUrl } from "../data/flags";
 import { cluesFor } from "../data/clues";
@@ -133,6 +135,13 @@ export default function Home() {
   const [count, setCount] = useState<number | null>(DEFAULT_ROUND_LENGTH);
   const [ruleset, setRuleset] = useState<Ruleset>("relaxed");
   const backdropWanted = useBackdropWanted();
+  // Which of today's three are finished. Mystery and connect count as done
+  // only when solved — one abandoned halfway is still waiting for you.
+  const [doneToday, setDoneToday] = useState({
+    daily: false,
+    mystery: false,
+    connect: false,
+  });
   const [daily, setDaily] = useState<{ played: boolean; streak: number } | null>(
     null
   );
@@ -143,6 +152,11 @@ export default function Home() {
   useEffect(() => {
     const today = dayKey();
     setDaily({ played: resultFor(today) !== null, streak: streak(today) });
+    setDoneToday({
+      daily: resultFor(today) !== null,
+      mystery: loadMystery(today)?.solved === true,
+      connect: loadConnect(today)?.solved === true,
+    });
     setDuePractice(dueCount());
     setHints(hintsEnabled());
   }, []);
@@ -213,6 +227,16 @@ export default function Home() {
           hint="new at midnight UTC"
           action={import.meta.env.DEV ? <ReplayToday /> : null}
         >
+          {/*
+            Says "the daily challenge", not "these": the mystery and the
+            connect keep their scores to themselves — neither files a run or
+            posts to a board — so a line promising all three counted double
+            would be two thirds wrong.
+          */}
+          <p className="mb-2.5 px-1 text-sm text-zinc-500">
+            Three puzzles, the same for everyone, gone at midnight. The daily
+            challenge counts {DAILY_MULTIPLIER}× towards the leaderboard.
+          </p>
           <div className="flex flex-col gap-2.5 sm:flex-row">
             <DailyCard
               to="/daily"
@@ -225,20 +249,31 @@ export default function Home() {
               }
               accent="sky"
               badge={daily && daily.streak > 1 ? `🔥 ${daily.streak}` : undefined}
+              done={doneToday.daily}
             />
             <DailyCard
               to="/mystery"
               icon="🔥"
               title="Mystery country"
-              note="One hidden country. Warmer or colder with every guess."
+              note={
+                doneToday.mystery
+                  ? "Found — see your result"
+                  : "One hidden country. Warmer or colder with every guess."
+              }
               accent="rose"
+              done={doneToday.mystery}
             />
             <DailyCard
               to="/connect"
               icon="🔗"
               title="Connect"
-              note="Two ends. Name the countries that link them."
+              note={
+                doneToday.connect
+                  ? "Linked — see your result"
+                  : "Two ends. Name the countries that link them."
+              }
               accent="violet"
+              done={doneToday.connect}
             />
           </div>
         </Section>

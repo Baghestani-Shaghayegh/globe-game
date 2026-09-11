@@ -69,7 +69,18 @@ export function useRound(
    * drill over the eight countries you keep missing is not a score anyone
    * should be ranked on.
    */
-  { record = true }: { record?: boolean } = {}
+  {
+    record = true,
+    pointsMultiplier = 1,
+  }: {
+    record?: boolean;
+    /**
+     * Applied to the round's score once, at the end. The daily doubles; see
+     * DAILY_MULTIPLIER for why. Applied here rather than per answer so the
+     * running total in the HUD stays the plain arithmetic a player can follow.
+     */
+    pointsMultiplier?: number;
+  } = {}
 ) {
   const startedAt = useRef<number | null>(null);
   const recorded = useRef(false);
@@ -129,6 +140,7 @@ export function useRound(
       const raw = performance.now() - startedAt.current;
       const ms = limitMs === null ? raw : Math.min(raw, limitMs);
       const completed = total > 0 && found === total;
+      const points = Math.round(score.points * pointsMultiplier);
 
       // Read the records before filing this run, so we compare against the past.
       const previousTime = bestTime(recordKey);
@@ -139,18 +151,13 @@ export function useRound(
           ms,
           found,
           total,
-          points: score.points,
+          points,
           bestStreak: score.bestStreak,
         });
         // Onto the weekly board too, if there's an account behind this run.
         // Deliberately not awaited: the summary shouldn't wait on the network,
         // and the run is already saved locally whether or not this lands.
-        void postScore(recordKey, {
-          points: score.points,
-          found,
-          total,
-          ms,
-        });
+        void postScore(recordKey, { points, found, total, ms });
       }
 
       const isBest = completed
@@ -162,7 +169,7 @@ export function useRound(
 
       setSummary({
         ms,
-        points: score.points,
+        points,
         bestStreak: score.bestStreak,
         found,
         total,
@@ -183,7 +190,7 @@ export function useRound(
       });
       setConfirmingExit(false);
     },
-    [recordKey, limitMs, score, record]
+    [recordKey, limitMs, score, record, pointsMultiplier]
   );
 
   const remainingMs =
