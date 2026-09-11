@@ -22,6 +22,7 @@ import {
   storedCount,
 } from "../lib/localData";
 import { dayKey } from "../lib/daily";
+import { clearTodaysDailyScore } from "../lib/leaderboard";
 import { GLOBE_THEMES, activeThemeId } from "../lib/globeTheme";
 
 function Row({
@@ -179,7 +180,7 @@ function ReplayDailies() {
   return (
     <Row
       title="Replay today's puzzles"
-      hint="Development only. Puts the daily, the mystery and the connect back to unplayed. Earlier days and your streak are untouched."
+      hint="Development only. Puts the daily, the mystery and the connect back to unplayed, and takes today's score off the board. Earlier days and your streak are untouched."
     >
       {done ? (
         <span className="text-sm text-emerald-300">
@@ -191,8 +192,11 @@ function ReplayDailies() {
             replayTodaysDailies(dayKey());
             setDone(true);
             // A full reload rather than a state nudge: three separate pages
-            // read their result once on mount.
-            window.setTimeout(() => window.location.reload(), 350);
+            // read their result once on mount. The board row goes too, so the
+            // replayed score is not turned away by the one-a-day rule.
+            void clearTodaysDailyScore().finally(() =>
+              window.setTimeout(() => window.location.reload(), 350)
+            );
           }}
           className={choiceClass(false)}
         >

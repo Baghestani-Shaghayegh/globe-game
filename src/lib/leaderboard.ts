@@ -97,6 +97,41 @@ export async function postScore(
   return !error;
 }
 
+/**
+ * Takes today's daily score back off the board, for replaying it while
+ * testing.
+ *
+ * The server decides whether this is allowed, not the caller: a delete policy
+ * grants it only to accounts on an allow-list that nobody can add themselves
+ * to, and only for daily buckets. Without that, any player could bin a bad
+ * daily and have another go, which is precisely what the one-attempt rule
+ * added alongside it exists to stop. For everyone else the delete matches no
+ * rows and quietly does nothing.
+ *
+ * Returns how many rows went, so a caller can tell "nothing to clear" from
+ * "not allowed" only by checking the error — deliberately, since the two look
+ * the same from outside and neither is worth interrupting anyone over.
+ */
+export async function clearTodaysDailyScore(): Promise<number> {
+  if (!supabase) return 0;
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user.id;
+  if (!userId) return 0;
+
+  const { data: gone, error } = await supabase
+    .from("scores")
+    .delete()
+    .eq("user_id", userId)
+    .like("bucket", "%daily%")
+    .gte("played_at", dayStart().toISOString())
+    .select("id");
+
+  if (error && import.meta.env.DEV) {
+    console.warn("Daily score not cleared:", error.message);
+  }
+  return gone?.length ?? 0;
+}
+
 /** A player's standing on the overall board. */
 export type OverallRow = {
   rank: number;

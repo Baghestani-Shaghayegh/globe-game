@@ -7,6 +7,7 @@ import Options from "../components/Options";
 import AdSlot from "../components/AdSlot";
 import { playTap } from "../lib/sound";
 import { replayTodaysDailies } from "../lib/localData";
+import { clearTodaysDailyScore } from "../lib/leaderboard";
 import { choiceClass } from "../components/choice";
 import { getCountryMeta } from "../data/countries";
 import {
@@ -422,7 +423,10 @@ function ReplayToday() {
     <button
       onClick={() => {
         replayTodaysDailies(dayKey());
-        window.location.reload();
+        // Also takes today's score off the board, so a replayed daily can
+        // actually land there. Allowed for listed accounts only — see
+        // clearTodaysDailyScore — and a no-op for anyone else.
+        void clearTodaysDailyScore().finally(() => window.location.reload());
       }}
       title="Development only — puts today's three puzzles back to unplayed"
       className="shrink-0 rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-xs font-medium text-amber-200/90 transition-colors hover:bg-amber-400/20"
