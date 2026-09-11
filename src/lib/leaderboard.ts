@@ -85,6 +85,15 @@ export async function postScore(
     total: Math.round(run.total),
     ms: Math.round(run.ms),
   });
+
+  // Callers deliberately don't await this — a summary screen should never wait
+  // on the network, and the run is saved locally either way. That silence hid
+  // a real failure once: a database check rejected every bucket key carrying a
+  // round length, so menu rounds quietly stopped reaching the board and
+  // nothing anywhere said so. In development, say so.
+  if (error && import.meta.env.DEV) {
+    console.warn(`Score not posted for bucket "${bucket}":`, error.message);
+  }
   return !error;
 }
 
