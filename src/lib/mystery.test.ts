@@ -7,12 +7,10 @@ import {
   distanceKm,
   heat,
   heatColor,
-  heatSquare,
   loadMystery,
   mysteryFor,
   saveMystery,
   scoreFor,
-  shareText,
   type MysteryResult,
 } from "./mystery";
 
@@ -151,19 +149,6 @@ describe("heatColor", () => {
   });
 });
 
-describe("heatSquare", () => {
-  it("marks the answer green and the far side black", () => {
-    expect(heatSquare(0)).toBe("🟩");
-    expect(heatSquare(19_000)).toBe("⬛");
-  });
-
-  it("warms up as the guess closes in", () => {
-    expect(heatSquare(500)).toBe("🟥");
-    expect(heatSquare(2000)).toBe("🟧");
-    expect(heatSquare(4000)).toBe("🟨");
-    expect(heatSquare(6000)).toBe("🟦");
-  });
-});
 
 describe("mysteryFor", () => {
   it("gives everyone the same country on the same day", () => {
@@ -258,45 +243,3 @@ describe("the saved round", () => {
   });
 });
 
-describe("shareText", () => {
-  it("shows a square per guess, oldest first, however they are stored", () => {
-    const text = shareText({
-      day: "2026-09-10",
-      number: 252,
-      answer: "Chad",
-      // Stored the way the game stores them: newest guess at the front.
-      guesses: [
-        { name: "Chad", km: 0 },
-        { name: "Mali", km: 1800 },
-        { name: "Peru", km: 9000 },
-      ],
-      solved: true,
-    });
-    expect(text).toContain("Mystery #252");
-    expect(text).toContain("3 guesses");
-    // Cold to hot, finishing on the one that got it.
-    expect(text).toContain("⬛🟧🟩");
-  });
-
-  it("never names the country, so a shared card spoils nothing", () => {
-    const text = shareText({
-      day: "2026-09-10",
-      number: 252,
-      answer: "Chad",
-      guesses: [{ name: "Chad", km: 0 }],
-      solved: true,
-    });
-    expect(text).not.toContain("Chad");
-  });
-
-  it("marks an unsolved round with an X rather than a number", () => {
-    const text = shareText({
-      day: "2026-09-10",
-      number: 252,
-      answer: "Chad",
-      guesses: [{ name: "Peru", km: 9000 }],
-      solved: false,
-    });
-    expect(text).toContain("X guesses");
-  });
-});

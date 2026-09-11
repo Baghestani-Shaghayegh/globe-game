@@ -8,7 +8,6 @@ import { getCountryMeta } from "../data/countries";
 import { globeMaterial, theme } from "../lib/globeTheme";
 import { featureCentre, type Geometry } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
-import ShareButton from "../components/ShareButton";
 import Celebrate from "../components/Celebrate";
 import { playSolved, playWarm, playWrong } from "../lib/sound";
 import {
@@ -16,16 +15,17 @@ import {
   closeness,
   distanceKm,
   heatColor,
-  heatSquare,
   loadMystery,
   mysteryFor,
   mysteryNumber,
   saveMystery,
   scoreFor,
-  shareText,
   type MysteryResult,
   type Point,
 } from "../lib/mystery";
+
+/** How many squares of the trail are worth showing on the result card. */
+const MAX_TRAIL = 24;
 
 type CountryFeature = {
   properties: { name: string };
@@ -229,28 +229,33 @@ export default function Mystery() {
               {guesses.length} {guesses.length === 1 ? "guess" : "guesses"} ·{" "}
               {scoreFor(result).toLocaleString()} points
             </p>
-            <p className="mt-1 text-lg leading-none tracking-widest">
+            {/*
+              The trail, oldest first, so it reads as the hunt did.
+
+              Drawn rather than written: as a run of text with letter-spacing
+              it escaped the panel once a hard puzzle got past about thirty
+              guesses, spilling squares out of the rounded box. Wrapped tiles
+              stay inside it at any count. Capped as well, since forty guesses
+              is a trail nobody reads to the end of — the tail is the part that
+              closes in on the answer.
+            */}
+            <div className="mt-1.5 flex max-w-[15rem] flex-wrap justify-center gap-1">
+              {guesses.length > MAX_TRAIL && (
+                <span className="self-center text-xs tabular-nums text-zinc-500">
+                  +{guesses.length - MAX_TRAIL}
+                </span>
+              )}
               {[...guesses]
                 .reverse()
-                .map((g) => heatSquare(g.km))
-                .join("")}
-            </p>
-            <div className="pointer-events-auto w-full pt-1">
-              <ShareButton
-                card={() => ({
-                  eyebrow: `Mystery #${result.number}`,
-                  // Deliberately not the country: the whole point of a shared
-                  // card is that it says nothing the reader hasn't earned.
-                  title: `Found in ${guesses.length}`,
-                  subtitle: guesses.length === 1 ? "first guess" : "guesses",
-                  // Oldest first, so the card reads as the hunt did.
-                  tiles: [...guesses].reverse().map((g) => heatColor(g.km)),
-                  note: `${scoreFor(result).toLocaleString()} points`,
-                })}
-                text={shareText(result)}
-                filename={`worldguess-mystery-${result.number}.png`}
-                className="w-full rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/15 disabled:opacity-60"
-              />
+                .slice(-MAX_TRAIL)
+                .map((g, i) => (
+                  <span
+                    key={`${g.name}-${i}`}
+                    aria-hidden="true"
+                    className="h-3 w-3 rounded-[2px]"
+                    style={{ backgroundColor: heatColor(g.km) }}
+                  />
+                ))}
             </div>
           </>
         ) : (
@@ -266,50 +271,39 @@ export default function Mystery() {
         )}
       </div>
 
-      {/* Guesses, newest first, so the last thing you tried is at the top. */}
-      {guesses.length > 0 && (
-        <div className="pointer-events-none absolute bottom-4 left-4 z-10 w-72 max-w-[calc(100vw-2rem)]">
-          <ul className="max-h-[45vh] overflow-y-auto rounded-xl border border-white/10 bg-[#141b23]/90 backdrop-blur">
-            {guesses.map((guess) => {
-              const from = centres.get(guess.name);
-              return (
-                <li
-                  key={guess.name}
-                  className="flex items-center gap-2.5 border-b border-white/[0.05] px-3 py-2 text-sm last:border-b-0"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="h-3 w-3 shrink-0 rounded-sm"
-                    style={{ backgroundColor: heatColor(guess.km) }}
-                  />
-                  <span className="min-w-0 truncate text-zinc-100">
-                    {getCountryMeta(guess.name).displayName}
-                  </span>
-                  <span className="ml-auto flex shrink-0 items-center gap-2 tabular-nums text-xs text-zinc-400">
-                    {guess.km > 0 && (
-                      <>
-                        <span>{guess.km.toLocaleString()} km</span>
-                        {from && answerCentre && (
-                          <span aria-label="direction to the answer">
-                            {arrowFor(from, answerCentre)}
-                          </span>
-                        )}
-                      </>
-                    )}
-                    <span className="w-9 text-right text-zinc-500">
-                      {closeness(guess.km)}%
-                    </span>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-          {nearest && !result?.solved && (
-            <p className="mt-2 px-1 text-xs text-zinc-500">
-              Warmest so far: {getCountryMeta(nearest.name).displayName},{" "}
+      {/*
+        What the guesses added up to, rather than every guess.
+
+        This used to be the full list, one row each, which is unbounded: a
+        player who cannot find it ends up with their own history covering the
+        globe they are reading. The heat is on the globe already — that is the
+        game — so all the list had to carry is the one line that cannot be seen
+        by looking at it.
+      */}
+      {nearest && !result?.solved && (
+        <div className="pointer-events-none absolute bottom-4 left-4 z-10 max-w-[calc(100vw-2rem)] rounded-xl border border-white/10 bg-[#141b23]/90 px-3.5 py-2.5 backdrop-blur">
+          <p className="text-xs uppercase tracking-wider text-zinc-500">
+            Warmest so far
+          </p>
+          <p className="mt-0.5 flex items-center gap-2 text-sm text-zinc-100">
+            <span
+              aria-hidden="true"
+              className="h-3 w-3 shrink-0 rounded-sm"
+              style={{ backgroundColor: heatColor(nearest.km) }}
+            />
+            {getCountryMeta(nearest.name).displayName}
+            <span className="tabular-nums text-zinc-400">
               {closeness(nearest.km)}%
-            </p>
-          )}
+            </span>
+            {(() => {
+              const from = centres.get(nearest.name);
+              return from && answerCentre ? (
+                <span aria-label="direction to the answer" className="text-zinc-400">
+                  {arrowFor(from, answerCentre)}
+                </span>
+              ) : null;
+            })()}
+          </p>
         </div>
       )}
 

@@ -102,16 +102,6 @@ export function heatColor(km: number): string {
   return toHex(RAMP[RAMP.length - 1].rgb);
 }
 
-/** The band a guess falls in, for the shareable card. */
-export function heatSquare(km: number): string {
-  const t = heat(km);
-  if (t === 0) return "🟩";
-  if (t < 0.1) return "🟥";
-  if (t < 0.25) return "🟧";
-  if (t < 0.45) return "🟨";
-  if (t < 0.7) return "🟦";
-  return "⬛";
-}
 
 /** The day's hidden country, the same for everyone. */
 export function mysteryFor(day: string, pool: string[]): string | null {
@@ -174,16 +164,4 @@ export function saveMystery(result: MysteryResult) {
 export function scoreFor(result: MysteryResult): number {
   if (!result.solved) return 0;
   return Math.max(100, 1000 - (result.guesses.length - 1) * 75);
-}
-
-export function shareText(result: MysteryResult): string {
-  // Guesses are stored newest-first, so the card has to run them back the
-  // other way — otherwise the winning square opens the row instead of closing
-  // it, and the trail reads as a hunt run backwards.
-  const squares = [...result.guesses]
-    .reverse()
-    .map((guess) => heatSquare(guess.km))
-    .join("");
-  const tally = result.solved ? `${result.guesses.length}` : "X";
-  return `WorldGuess Mystery #${result.number} — ${tally} guesses\n${squares}`;
 }
