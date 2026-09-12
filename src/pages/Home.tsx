@@ -300,7 +300,7 @@ export default function Home() {
               left: "28%",
               right: "-14%",
               background:
-                "radial-gradient(closest-side at 43% 50%, transparent 0%, transparent 62%, rgba(47,212,180,0.13) 78%, rgba(47,212,180,0.05) 90%, transparent 100%)",
+                "radial-gradient(closest-side at 43% 50%, transparent 0%, transparent 63%, rgba(53,219,224,0.10) 74%, rgba(56,130,214,0.11) 84%, rgba(56,130,214,0.04) 93%, transparent 100%)",
             }}
           />
           <Suspense fallback={null}>
@@ -321,7 +321,7 @@ export default function Home() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "linear-gradient(100deg, rgba(7,17,28,0.97) 0%, rgba(7,17,28,0.9) 30%, rgba(7,17,28,0.3) 54%, rgba(7,17,28,0.04) 78%, transparent 100%)",
+            "linear-gradient(100deg, rgba(7,17,28,0.97) 0%, rgba(7,17,28,0.88) 26%, rgba(7,17,28,0.44) 41%, rgba(7,17,28,0.1) 55%, transparent 68%)",
         }}
       />
 

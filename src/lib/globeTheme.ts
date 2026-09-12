@@ -42,14 +42,19 @@ export const GLOBE_THEMES: GlobeTheme[] = [
     level: 1,
     palette: {
       page: PAGE,
-      sphere: "#081a2a",
+      // Very dark navy. The land is lit, so the sea has to stay well under it
+      // or the coastline stops being the thing that separates them.
+      sphere: "#061c2c",
       // Bright enough to read as coastlines from across the room. The first
       // pass used a stroke only a shade off the land it was drawn on, and the
       // continents came out as one mass.
-      stroke: "#8fe3c8",
-      atmosphere: "#2fd4b4",
-      idle: "#07464f",
-      unfound: "#07464f",
+      stroke: "#79b9ad",
+      atmosphere: "#35dbe0",
+      // Muted teal. This is the colour of land facing the light square on;
+      // the lighting takes it up towards #43858A where the sun catches it and
+      // down towards #123D48 around the far limb.
+      idle: "#23616a",
+      unfound: "#23616a",
       // Land is teal here, so "found" has to be a green nothing else is: a
       // brighter, yellower spring green rather than the sea-green of the map.
       found: "#4ade80",
@@ -213,6 +218,20 @@ export function backdropColor(): string {
 }
 
 /**
+ * Permanent ice: Greenland, Antarctica and the rest of the white parts.
+ *
+ * Pale and slightly blue against the teal of everything else, which is what
+ * an ice sheet looks like from orbit and, more usefully, what stops Greenland
+ * reading as just another large northern country.
+ *
+ * Only the menu globe uses it. In a round it would be a tell — the one pale
+ * country on the map is an easy guess — so in play the ice is ordinary land.
+ */
+export function iceShade(): string {
+  return mix(theme.sphere, "#cfdce6", 0.8);
+}
+
+/**
  * The shade of land a country is painted, when it is land and nothing more.
  *
  * One flat fill for every landmass made the continents read as a single
@@ -234,8 +253,8 @@ export function landShade(name: string, base: string = theme.unfound): string {
 
   const step = hash(name) % SHADE_STEPS;
   const shade = mix(
-    mix(base, theme.sphere, 0.3),
-    mix(base, theme.stroke, 0.22),
+    mix(base, theme.sphere, 0.2),
+    mix(base, theme.stroke, 0.16),
     step / (SHADE_STEPS - 1)
   );
   shadeCache.set(key, shade);
@@ -244,9 +263,9 @@ export function landShade(name: string, base: string = theme.unfound): string {
 
 /**
  * Few enough that the variation reads as deliberate rather than as noise, and
- * enough that neighbours rarely draw the same one. Measured on the rendered
- * page: seven steps put around forty channel values between the darkest and
- * lightest land, which is visible without the map looking mottled.
+ * enough that neighbours rarely draw the same one. The band is narrow on
+ * purpose: on the menu globe the light already carries a wide range across the
+ * sphere, and this only has to keep one country from merging into the next.
  */
 const SHADE_STEPS = 7;
 
