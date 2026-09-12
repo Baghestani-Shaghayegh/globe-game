@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
-import { backdropLand, globeMaterial, theme } from "../lib/globeTheme";
+import { globeMaterial, theme } from "../lib/globeTheme";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
 
 type Feature = { properties: { name: string } };
@@ -99,7 +99,7 @@ export default function BackgroundGlobe() {
         // sphere with a grid on it reads as a globe rather than a circle.
         showGraticules
         polygonsData={features}
-        polygonCapColor={() => backdropLand()}
+        polygonCapColor={() => theme.idle}
         polygonSideColor={() => theme.sphere}
         polygonStrokeColor={() => theme.stroke}
         polygonAltitude={() => 0.012}

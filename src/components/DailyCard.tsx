@@ -38,8 +38,11 @@ export default function DailyCard({
   /** The call to action at the foot of the card. */
   action?: string;
 }) {
+  // Each wash is laid over an opaque base rather than straight onto the page:
+  // these cards sit on top of the globe, and a 6% tint on its own leaves the
+  // continents reading through the words.
   const tone = done
-    ? "border-white/10 bg-white/[0.02] hover:border-white/20"
+    ? "border-white/10 bg-[#07111c]/75 hover:border-white/20"
     : {
         sky: "border-sky-400/25 bg-sky-400/[0.07] hover:border-sky-400/50",
         rose: "border-rose-400/25 bg-rose-400/[0.06] hover:border-rose-400/50",
@@ -51,7 +54,7 @@ export default function DailyCard({
     <Link
       onClick={playTap}
       to={to}
-      className={`group relative flex flex-1 flex-col gap-1.5 rounded-2xl border px-4 py-4 transition-colors ${tone}`}
+      className={`group relative flex flex-1 flex-col gap-1.5 rounded-2xl border bg-[#07111c]/75 px-4 py-4 backdrop-blur-sm transition-colors ${tone}`}
     >
       <span className="flex items-center gap-2">
         <span

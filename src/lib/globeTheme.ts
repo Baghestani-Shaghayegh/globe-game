@@ -48,8 +48,8 @@ export const GLOBE_THEMES: GlobeTheme[] = [
       // continents came out as one mass.
       stroke: "#8fe3c8",
       atmosphere: "#2fd4b4",
-      idle: "#2f8068",
-      unfound: "#2a725e",
+      idle: "#07464f",
+      unfound: "#07464f",
       // Land is teal here, so "found" has to be a green nothing else is: a
       // brighter, yellower spring green rather than the sea-green of the map.
       found: "#4ade80",
@@ -210,18 +210,6 @@ export const globeMaterial = new THREE.MeshPhongMaterial({
  */
 export function backdropColor(): string {
   return mix(theme.sphere, theme.unfound, 0.45);
-}
-
-/**
- * Land on the decorative globe behind the menu.
- *
- * Brighter than the land in a round, and deliberately: nothing is being read
- * off it, it sits under a scrim, and a backdrop too dark to make out is the
- * same as not drawing one. Lifted towards the palette's own atmosphere colour
- * so it stays that palette's globe rather than becoming a second theme.
- */
-export function backdropLand(): string {
-  return mix(theme.idle, theme.atmosphere, 0.16);
 }
 
 /** Blends two #rrggbb colours, `amount` of the way from the first to the second. */

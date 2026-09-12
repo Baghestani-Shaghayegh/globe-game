@@ -183,7 +183,7 @@ function WayToPlay({
     <Link
       onClick={playTap}
       to={to}
-      className="group flex items-center gap-3.5 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 transition-colors hover:border-white/25 hover:bg-white/[0.05]"
+      className="group flex items-center gap-3.5 rounded-2xl border border-white/10 bg-[#07111c]/70 px-4 py-3.5 backdrop-blur-sm transition-colors hover:border-white/25 hover:bg-[#07111c]/80"
     >
       <span className="shrink-0 text-zinc-400 transition-colors group-hover:text-zinc-200">
         {icon}
@@ -311,14 +311,17 @@ export default function Home() {
 
       {/*
         The globe sits behind the right-hand side, so the scrim runs across
-        rather than down: dense at the left where the words are, thinning out
-        over the ocean where nothing has to be read.
+        rather than down: dense at the left where the words are, gone by the
+        time it reaches the globe. It has to clear early — held over the map it
+        darkens the land past the colour the palette actually asks for, and
+        what is on screen stops being the colour that was chosen. The cards
+        that sit over the globe carry their own backing instead.
       */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "linear-gradient(100deg, rgba(7,17,28,0.96) 0%, rgba(7,17,28,0.9) 34%, rgba(7,17,28,0.42) 58%, rgba(7,17,28,0.04) 100%)",
+            "linear-gradient(100deg, rgba(7,17,28,0.97) 0%, rgba(7,17,28,0.9) 30%, rgba(7,17,28,0.3) 54%, rgba(7,17,28,0.04) 78%, transparent 100%)",
         }}
       />
 
