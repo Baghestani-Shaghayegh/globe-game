@@ -10,6 +10,7 @@ import {
   sunlitLights,
 } from "../lib/globeTerrain";
 import { featureCentre, type Geometry } from "../lib/geo";
+import { GLOBE_PLACEMENT, GLOBE_WIDTH } from "../lib/globePlacement";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
 
 type Feature = { properties: { name: string }; geometry: Geometry };
@@ -31,8 +32,8 @@ const ICE = new Set([
  * fifty degrees the continents nearest the middle bulge towards the viewer.
  */
 const FIELD_OF_VIEW = 30;
-const ALTITUDE_WIDE = 3.1;
-const ALTITUDE_NARROW = 4.55;
+const ALTITUDE_WIDE = 2.9;
+const ALTITUDE_NARROW = 4.05;
 
 /**
  * Decorative globe behind the menu. Slowly self-rotates and ignores the
@@ -80,18 +81,18 @@ export default function BackgroundGlobe() {
     const controls = globe?.controls();
     if (!globe || !controls) return;
 
-    // Set the rotation going before anything else in here. It used to be the
-    // last thing the effect did, which meant every line above it — reaching
-    // into the scene, swapping the lights — was standing between the globe and
-    // the one property that makes it turn.
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const spin = () => {
-      controls.autoRotate = !still.matches;
-    };
-    spin();
-    // And keep watching: someone who turns the setting off wants the motion
-    // back without having to reload the page.
-    still.addEventListener("change", spin);
+    // The rotation goes on first, before anything else in here. It used to be
+    // the last thing the effect did, which left every line above it — reaching
+    // into the scene, swapping the lights — standing between the globe and the
+    // one property that makes it turn.
+    //
+    // And it is now unconditional. It used to stand down for
+    // `prefers-reduced-motion`, which meant anyone carrying that setting saw a
+    // globe that never moved; asked for the turn back, the turn stays. Slow,
+    // continuous, and carrying nothing the player has to track — the mildest
+    // thing motion can be, but motion, and so a choice rather than an
+    // oversight.
+    controls.autoRotate = true;
     controls.autoRotateSpeed = 0.45;
     controls.enableZoom = false;
 
@@ -142,10 +143,7 @@ export default function BackgroundGlobe() {
       material.opacity = 0.16;
     });
 
-    return () => {
-      controls.removeEventListener("change", follow);
-      still.removeEventListener("change", spin);
-    };
+    return () => controls.removeEventListener("change", follow);
   }, [features, size.width]);
 
   // How finely to tile the ground texture, per country, worked out once when
@@ -179,16 +177,12 @@ export default function BackgroundGlobe() {
 
   return (
     <div
-      className="absolute inset-y-0"
-      style={
-        wide
-          ? { left: "28%", right: "-14%" }
-          : { left: 0, right: 0 }
-      }
+      className="absolute"
+      style={wide ? GLOBE_PLACEMENT : { inset: 0 }}
     >
       <Globe
         ref={globeRef}
-        width={wide ? size.width * 0.86 : size.width}
+        width={wide ? size.width * GLOBE_WIDTH : size.width}
         height={size.height}
         rendererConfig={{
           antialias: true,

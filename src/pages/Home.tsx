@@ -30,6 +30,7 @@ import { dueCount } from "../lib/practice";
 import { flagUrl } from "../data/flags";
 import { cluesFor } from "../data/clues";
 import { capitalOf } from "../data/capitals";
+import { GLOBE_PLACEMENT } from "../lib/globePlacement";
 
 // Three.js is heavy — let the menu paint first, then fade the globe in behind it.
 const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
@@ -295,12 +296,18 @@ export default function Home() {
             stops looking like it is lit from behind.
           */}
           <div
-            className="absolute inset-y-0 hidden md:block"
+            className="absolute hidden md:block"
             style={{
-              left: "28%",
-              right: "-14%",
+              ...GLOBE_PLACEMENT,
+              /*
+                Sized in vh and centred on the box, because the globe is too:
+                its canvas is the height of the window and the lens is fixed,
+                so the sphere always comes out at just over half the window's
+                height across. That puts its rim at about 65% of this circle,
+                which is where the glow starts.
+              */
               background:
-                "radial-gradient(closest-side at 43% 50%, transparent 0%, transparent 63%, rgba(53,219,224,0.10) 74%, rgba(56,130,214,0.11) 84%, rgba(56,130,214,0.04) 93%, transparent 100%)",
+                "radial-gradient(circle 80vh at 50% 50%, transparent 0%, transparent 64%, rgba(53,219,224,0.10) 68%, rgba(56,130,214,0.10) 77%, rgba(56,130,214,0.035) 88%, transparent 100%)",
             }}
           />
           <Suspense fallback={null}>
