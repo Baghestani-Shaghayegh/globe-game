@@ -2,14 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
-import { globeMaterial, iceShade, landShade, theme } from "../lib/globeTheme";
+import { iceShade, theme } from "../lib/globeTheme";
 import {
   forgetLandMaterials,
   landMaterial,
-  repeatForSpan,
   sunlitLights,
 } from "../lib/globeTerrain";
-import { featureCentre, type Geometry } from "../lib/geo";
+import { type Geometry } from "../lib/geo";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
 
 type Feature = { properties: { name: string }; geometry: Geometry };
@@ -30,12 +29,12 @@ const ICE = new Set([
  * read as a sphere seen straight on rather than a fisheye. At the default
  * fifty degrees the continents nearest the middle bulge towards the viewer.
  */
-const FIELD_OF_VIEW = 30;
-const ALTITUDE_WIDE = 3.1;
-const ALTITUDE_NARROW = 4.55;
+const FIELD_OF_VIEW = 20;
+const ALTITUDE_WIDE = 4.65;
+const ALTITUDE_NARROW = 6.7;
 
 /**
- * Decorative globe behind the menu. Slowly self-rotates and ignores the
+ * Decorative globe behind the menu. Opens on the Atlantic and ignores the
  * pointer entirely — everything on top stays clickable.
  *
  * Drawn wider than the window and pushed off to the right, so it sits beside
@@ -45,8 +44,17 @@ const ALTITUDE_NARROW = 4.55;
 export default function BackgroundGlobe() {
   // Repaint when the player changes the globe palette.
   const themeId = useGlobeTheme();
+  const oceanMaterial = useMemo(() => new THREE.MeshPhongMaterial({
+    color: themeId === "meridian" ? "#082b43" : theme.sphere,
+    emissive: themeId === "meridian" ? "#031322" : theme.sphere,
+    emissiveIntensity: 0.35,
+    shininess: 0,
+  }), [themeId]);
+
+  useEffect(() => () => oceanMaterial.dispose(), [oceanMaterial]);
 
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
+  const [ready, setReady] = useState(false);
   const [features, setFeatures] = useState<Feature[]>([]);
   const [size, setSize] = useState({
     width: window.innerWidth,
@@ -120,10 +128,7 @@ export default function BackgroundGlobe() {
     const { lights, aim } = sunlitLights();
     globe.lights(lights);
 
-    // Once for where the camera is now, and again whenever it moves. The globe
-    // turns under a fixed camera, and the controls announce every step of it,
-    // so the sun stays up and to the left of the viewer instead of sliding
-    // round to the back as the world rotates.
+    // Keep ocean illumination aligned when the viewport changes.
     aim(camera);
     const follow = () => aim(camera);
     controls.addEventListener("change", follow);
@@ -136,42 +141,66 @@ export default function BackgroundGlobe() {
       const line = object as THREE.LineSegments;
       if (!line.isLineSegments) return;
       const material = line.material as THREE.LineBasicMaterial;
-      if (!material?.color || material.opacity > 0.2) return;
-      if (material.color.getHexString() !== "d3d3d3") return;
-      material.color.set("#5f93c4");
-      material.opacity = 0.16;
+      if (!material?.color) return;
+      if (!line.userData.isGraticule &&
+          (material.color.getHexString() !== "d3d3d3" || material.opacity > 0.2)) return;
+      line.userData.isGraticule = true;
+      material.color.set("#2c7198");
+      material.opacity = 0.38;
+      // Lift the grid clear of the ocean so curved segments stay continuous.
+      line.scale.setScalar(1.0015);
     });
+
+    // A fine cyan edge on the sphere, with the built-in atmosphere outside it.
+    const rimGeometry = new THREE.SphereGeometry(100.4, 96, 64);
+    const rimMaterial = new THREE.ShaderMaterial({
+      uniforms: { rimColor: { value: new THREE.Color(theme.atmosphere) } },
+      vertexShader: `
+        varying vec3 vNormal;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 rimColor;
+        varying vec3 vNormal;
+        void main() {
+          vec3 n = normalize(vNormal);
+          float rim = pow(1.0 - max(n.z, 0.0), 9.0);
+          gl_FragColor = vec4(rimColor, rim * 0.48);
+          #include <colorspace_fragment>
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      depthTest: false,
+    });
+    const rim = new THREE.Mesh(rimGeometry, rimMaterial);
+    rim.renderOrder = 2;
+    globe.scene().add(rim);
 
     return () => {
       controls.removeEventListener("change", follow);
       still.removeEventListener("change", spin);
+      globe.scene().remove(rim);
+      rimGeometry.dispose();
+      rimMaterial.dispose();
     };
-  }, [features, size.width]);
-
-  // How finely to tile the ground texture, per country, worked out once when
-  // the map arrives rather than on every repaint.
-  const grain = useMemo(() => {
-    const byName = new Map<string, number>();
-    for (const feature of features) {
-      byName.set(
-        feature.properties.name,
-        repeatForSpan(featureCentre(feature.geometry).span)
-      );
-    }
-    return byName;
-  }, [features]);
+  }, [features, size.width, themeId, ready]);
 
   const capMaterial = useMemo(() => {
     forgetLandMaterials();
     return (d: object) => {
       const { name } = (d as Feature).properties;
-      const colour = ICE.has(name) ? iceShade() : landShade(name, theme.idle);
-      return landMaterial(colour, grain.get(name) ?? 1);
+      const colour = ICE.has(name) ? iceShade() : theme.idle;
+      return landMaterial(colour, ICE.has(name));
     };
     // themeId is not read here — the colours come from the live `theme` — but
     // a palette change makes every cached material the wrong colour.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [grain, themeId]);
+  }, [themeId]);
 
   // Offset rather than centred. On a phone there is no room to put it beside
   // anything, so it stays where it was.
@@ -182,13 +211,14 @@ export default function BackgroundGlobe() {
       className="absolute inset-y-0"
       style={
         wide
-          ? { left: "28%", right: "-14%" }
+          ? { left: "12%", right: "-14%" }
           : { left: 0, right: 0 }
       }
     >
       <Globe
         ref={globeRef}
-        width={wide ? size.width * 0.86 : size.width}
+        onGlobeReady={() => setReady(true)}
+        width={wide ? size.width * 1.02 : size.width}
         height={size.height}
         rendererConfig={{
           antialias: true,
@@ -196,12 +226,12 @@ export default function BackgroundGlobe() {
           logarithmicDepthBuffer: true,
         }}
         backgroundColor="rgba(0,0,0,0)"
-        globeMaterial={globeMaterial}
+        globeMaterial={oceanMaterial}
         atmosphereColor={theme.atmosphere}
         // Narrow. The wide version read as fog around the globe rather than
         // as a rim; the soft blue spread outside it is a CSS halo on the page,
         // which can be a different colour from the rim itself.
-        atmosphereAltitude={0.14}
+        atmosphereAltitude={0.045}
         // The meridians and parallels in the design. They cost nothing, and a
         // sphere with a grid on it reads as a globe rather than a circle.
         showGraticules
@@ -211,8 +241,9 @@ export default function BackgroundGlobe() {
         // the shade and the texture only vary the ground underneath it.
         polygonCapMaterial={capMaterial}
         polygonSideColor={() => theme.sphere}
-        polygonStrokeColor={() => theme.stroke}
-        polygonAltitude={() => 0.012}
+        polygonStrokeColor={() => new THREE.Color(theme.stroke).multiplyScalar(0.62).getStyle()}
+        polygonAltitude={() => 0.003}
+        polygonCapCurvatureResolution={1}
         polygonsTransitionDuration={0}
       />
     </div>

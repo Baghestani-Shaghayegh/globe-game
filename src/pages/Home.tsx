@@ -297,10 +297,10 @@ export default function Home() {
           <div
             className="absolute inset-y-0 hidden md:block"
             style={{
-              left: "28%",
+              left: "12%",
               right: "-14%",
               background:
-                "radial-gradient(closest-side at 43% 50%, transparent 0%, transparent 63%, rgba(53,219,224,0.10) 74%, rgba(56,130,214,0.11) 84%, rgba(56,130,214,0.04) 93%, transparent 100%)",
+                "radial-gradient(closest-side at 50% 50%, transparent 0%, transparent 63%, rgba(53,219,224,0.10) 74%, rgba(56,130,214,0.11) 84%, rgba(56,130,214,0.04) 93%, transparent 100%)",
             }}
           />
           <Suspense fallback={null}>
