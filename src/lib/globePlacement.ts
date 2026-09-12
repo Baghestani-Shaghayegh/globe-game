@@ -10,15 +10,15 @@
  * is not.
  */
 export const GLOBE_PLACEMENT = {
-  left: "31%",
-  right: "-17%",
-  top: "5%",
-  bottom: "-5%",
+  left: "20.5%",
+  right: "-22.5%",
+  top: "5.5%",
+  bottom: "-5.5%",
 } as const;
 
 /**
  * How much of the window the globe's canvas spans, which is just what `left`
- * and `right` above leave between them: 100% − 31% + 17%. Kept here beside
+ * and `right` above leave between them: 100% − 20.5% + 22.5%. Kept here beside
  * them so moving the globe cannot leave the canvas the wrong width behind it.
  */
-export const GLOBE_WIDTH = 0.86;
+export const GLOBE_WIDTH = 1.02;

@@ -301,13 +301,13 @@ export default function Home() {
               ...GLOBE_PLACEMENT,
               /*
                 Sized in vh and centred on the box, because the globe is too:
-                its canvas is the height of the window and the lens is fixed,
-                so the sphere always comes out at just over half the window's
-                height across. That puts its rim at about 65% of this circle,
-                which is where the glow starts.
+                its canvas is as tall as the window and the lens is fixed, so
+                the sphere always comes out at about 54% of the window's height
+                across. That puts its rim at roughly two-thirds of this circle,
+                which is where the glow starts — outside the map, not over it.
               */
               background:
-                "radial-gradient(circle 80vh at 50% 50%, transparent 0%, transparent 64%, rgba(53,219,224,0.10) 68%, rgba(56,130,214,0.10) 77%, rgba(56,130,214,0.035) 88%, transparent 100%)",
+                "radial-gradient(circle 80vh at 50% 50%, transparent 0%, transparent 67%, rgba(53,219,224,0.10) 71%, rgba(56,130,214,0.10) 79%, rgba(56,130,214,0.035) 89%, transparent 100%)",
             }}
           />
           <Suspense fallback={null}>
