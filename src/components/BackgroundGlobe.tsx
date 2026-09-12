@@ -31,7 +31,7 @@ const ICE = new Set([
  * fifty degrees the continents nearest the middle bulge towards the viewer.
  */
 const FIELD_OF_VIEW = 20;
-const ALTITUDE_WIDE = 4.93;
+const ALTITUDE_WIDE = 5.63;
 const ALTITUDE_NARROW = 6.28;
 
 /**

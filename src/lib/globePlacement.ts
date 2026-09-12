@@ -6,17 +6,21 @@
  * first download, and the halo drawn behind it, which is plain CSS on the page.
  * A second copy is how the glow ends up somewhere the globe is not.
  *
- * The canvas is deliberately taller than the window. Moving the globe down by
+ * The canvas is a little taller than the window. Moving the globe down by
  * shifting a window-sized canvas cut the top off the sphere in a dead straight
  * line under the masthead — which read as the navigation covering the globe,
  * and left the halo hanging above the cut as a crescent with nothing attached
- * to it. Growing the canvas instead and letting it overflow the page keeps the
- * whole sphere drawn; the page clips it at the edge of the window, which is
- * what it should have been doing all along.
+ * to it. Growing the canvas instead keeps the whole sphere drawn.
+ *
+ * The sphere itself comes out at 45% of the window's height in radius, sitting
+ * slightly above centre, which fits it inside the window top to bottom with a
+ * margin either side — on a tall screen the old size ran off both the bottom
+ * and the right and stopped reading as a globe at all. The altitude in
+ * BackgroundGlobe is what sets that, and the two have to be changed together.
  */
 const LEFT = 0.205;
 const WIDTH = 1.02;
-const HEIGHT = 1.11;
+const HEIGHT = 1.04;
 
 /** The canvas, as a multiple of the window. */
 export const GLOBE_CANVAS = { width: WIDTH, height: HEIGHT };

@@ -184,18 +184,28 @@ function WayToPlay({
     <Link
       onClick={playTap}
       to={to}
-      className="group inline-flex items-center gap-2.5 rounded-xl border border-white/10 bg-[#07111c]/70 px-3.5 py-2 text-sm backdrop-blur-sm transition-colors hover:border-white/25 hover:bg-[#07111c]/80"
+      className="group flex items-center gap-3 rounded-xl border border-white/10 bg-[#07111c]/70 px-4 py-[clamp(0.4rem,1.6vh,1.3rem)] backdrop-blur-sm transition-colors hover:border-white/25 hover:bg-[#07111c]/80"
     >
       <span className="shrink-0 text-zinc-400 transition-colors group-hover:text-zinc-200">
         {icon}
       </span>
-      <span className="font-medium text-zinc-100">{title}</span>
-      {badge && (
-        <span className="shrink-0 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-200">
-          {badge}
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <span className="font-medium text-zinc-100">{title}</span>
+          {badge && (
+            <span className="shrink-0 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-200">
+              {badge}
+            </span>
+          )}
         </span>
-      )}
-      <span className="hidden text-zinc-500 sm:inline">· {note}</span>
+        <span className="block truncate text-sm text-zinc-500">{note}</span>
+      </span>
+      <span
+        aria-hidden="true"
+        className="shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-300"
+      >
+        ›
+      </span>
     </Link>
   );
 }
@@ -203,18 +213,18 @@ function WayToPlay({
 /** The icons on the cards — drawn, so they match at any size and any theme. */
 const icons = {
   practice: (
-    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
       <path d="M5 20V10M12 20V4M19 20v-7" />
     </svg>
   ),
   together: (
-    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="9" cy="8" r="3" />
       <path d="M3.5 19a5.5 5.5 0 0 1 11 0M17 11a2.6 2.6 0 1 0-2-4.3M17.5 19a5 5 0 0 0-3-4.6" />
     </svg>
   ),
   bigger: (
-    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 20 20 4M4 14v6h6M20 10V4h-6" />
     </svg>
   ),
@@ -292,13 +302,13 @@ export default function Home() {
               /*
                 Sized in vh and centred on the same box the globe is drawn in,
                 so it stays wrapped around the sphere instead of drifting off
-                it. The sphere comes out at about 54% of the window's height
-                across, which puts its rim at roughly 71% of this circle —
+                it. The sphere's radius is 45% of the window's height, which
+                puts its rim at roughly 70% of this circle —
                 where the glow starts, just outside the land rather than over
                 it.
               */
               background:
-                "radial-gradient(circle 76vh at 50% 50%, transparent 0%, transparent 70%, rgba(53,219,224,0.10) 74%, rgba(56,130,214,0.10) 82%, rgba(56,130,214,0.035) 91%, transparent 100%)",
+                "radial-gradient(circle 64vh at 50% 50%, transparent 0%, transparent 70%, rgba(53,219,224,0.10) 74%, rgba(56,130,214,0.10) 82%, rgba(56,130,214,0.035) 91%, transparent 100%)",
             }}
           />
           <Suspense fallback={null}>
@@ -323,8 +333,8 @@ export default function Home() {
         }}
       />
 
-      <div className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 sm:px-8">
-        <header className="relative z-10 flex flex-wrap items-center gap-x-6 gap-y-3 py-4">
+      <div className="relative flex w-full max-w-[1180px] flex-1 flex-col px-5 sm:px-8 lg:px-12">
+        <header className="relative z-10 flex flex-wrap items-center gap-x-6 gap-y-3 py-4 [text-shadow:0_1px_4px_rgba(7,17,28,0.85)]">
           <span className="flex items-center gap-2.5">
             <svg
               aria-hidden="true"
@@ -408,7 +418,9 @@ export default function Home() {
         </header>
 
         <main className="flex flex-1 flex-col pb-[clamp(0.75rem,2.2vh,1.5rem)]">
-          <section className="pt-[clamp(0.5rem,2.6vh,2.25rem)]">
+          <div aria-hidden="true" className="grow-[0.45]" />
+
+          <section className="pt-[clamp(0.5rem,2.1vh,2.25rem)]">
             <p className="text-xs uppercase tracking-[0.22em] text-teal-300/80">
               The world is your playground
             </p>
@@ -421,7 +433,7 @@ export default function Home() {
           </section>
 
           {/* Start a round: what kind, where, how long, go. */}
-          <section className="mt-[clamp(0.75rem,2.6vh,1.75rem)] max-w-2xl">
+          <section className="mt-[clamp(0.75rem,2.1vh,1.75rem)] max-w-2xl">
             <div role="tablist" aria-label="Game type" className="flex flex-wrap gap-1.5">
               {[...shown, ...(openMore ? folded : [])].map((t) => (
                 <button
@@ -533,15 +545,13 @@ export default function Home() {
             )}
           </section>
 
-          <section className="mt-[clamp(0.75rem,3vh,2.5rem)]">
-            <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <section className="mt-[clamp(0.75rem,2.4vh,2.5rem)]">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <h2 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
                 Today's challenges
               </h2>
-              <span className="flex items-center gap-3">
-                {import.meta.env.DEV && <ReplayToday />}
-                <span className="text-xs text-zinc-500">Resets at midnight UTC</span>
-              </span>
+              <span className="text-xs text-zinc-500">Resets at midnight UTC</span>
+              {import.meta.env.DEV && <ReplayToday />}
             </div>
 
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
@@ -593,7 +603,7 @@ export default function Home() {
             <h2 className="text-xs uppercase tracking-[0.18em] text-zinc-500">
               More ways to play
             </h2>
-            <div className="mt-2.5 flex flex-wrap gap-2">
+            <div className="mt-2.5 grid gap-3 sm:grid-cols-3">
               <WayToPlay
                 to="/practice"
                 title="Practice"
@@ -628,7 +638,7 @@ export default function Home() {
               below the content when it does not. */}
           <div aria-hidden="true" className="flex-1" />
 
-          <footer className="mt-[clamp(0.75rem,2.4vh,1.75rem)] flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] pt-3.5 text-sm text-zinc-500">
+          <footer className="mt-[clamp(0.6rem,1.2vh,1.75rem)] flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] pt-3.5 text-sm text-zinc-500">
             <Link to="/records" className="transition-colors hover:text-zinc-300">
               Records
             </Link>
