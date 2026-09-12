@@ -80,6 +80,21 @@ export default function BackgroundGlobe() {
     const controls = globe?.controls();
     if (!globe || !controls) return;
 
+    // Set the rotation going before anything else in here. It used to be the
+    // last thing the effect did, which meant every line above it — reaching
+    // into the scene, swapping the lights — was standing between the globe and
+    // the one property that makes it turn.
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const spin = () => {
+      controls.autoRotate = !still.matches;
+    };
+    spin();
+    // And keep watching: someone who turns the setting off wants the motion
+    // back without having to reload the page.
+    still.addEventListener("change", spin);
+    controls.autoRotateSpeed = 0.45;
+    controls.enableZoom = false;
+
     // A long lens rather than a wide one, backed off far enough to keep the
     // globe the same size on screen. Straight-on, with the bulge taken out of
     // the middle of the sphere.
@@ -127,14 +142,10 @@ export default function BackgroundGlobe() {
       material.opacity = 0.16;
     });
 
-    const stillPreferred = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-    controls.autoRotate = !stillPreferred;
-    controls.autoRotateSpeed = 0.32;
-    controls.enableZoom = false;
-
-    return () => controls.removeEventListener("change", follow);
+    return () => {
+      controls.removeEventListener("change", follow);
+      still.removeEventListener("change", spin);
+    };
   }, [features, size.width]);
 
   // How finely to tile the ground texture, per country, worked out once when
