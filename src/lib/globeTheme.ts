@@ -42,11 +42,14 @@ export const GLOBE_THEMES: GlobeTheme[] = [
     level: 1,
     palette: {
       page: PAGE,
-      sphere: "#0a1b2b",
-      stroke: "#5fbfa8",
-      atmosphere: "#2bb8a3",
-      idle: "#2f6f63",
-      unfound: "#2a6459",
+      sphere: "#081a2a",
+      // Bright enough to read as coastlines from across the room. The first
+      // pass used a stroke only a shade off the land it was drawn on, and the
+      // continents came out as one mass.
+      stroke: "#8fe3c8",
+      atmosphere: "#2fd4b4",
+      idle: "#2f8068",
+      unfound: "#2a725e",
       // Land is teal here, so "found" has to be a green nothing else is: a
       // brighter, yellower spring green rather than the sea-green of the map.
       found: "#4ade80",
@@ -218,7 +221,7 @@ export function backdropColor(): string {
  * so it stays that palette's globe rather than becoming a second theme.
  */
 export function backdropLand(): string {
-  return mix(theme.idle, theme.atmosphere, 0.55);
+  return mix(theme.idle, theme.atmosphere, 0.16);
 }
 
 /** Blends two #rrggbb colours, `amount` of the way from the first to the second. */

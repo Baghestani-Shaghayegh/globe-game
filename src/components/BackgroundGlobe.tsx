@@ -94,7 +94,7 @@ export default function BackgroundGlobe() {
         backgroundColor="rgba(0,0,0,0)"
         globeMaterial={globeMaterial}
         atmosphereColor={theme.atmosphere}
-        atmosphereAltitude={0.25}
+        atmosphereAltitude={0.26}
         // The meridians and parallels in the design. They cost nothing, and a
         // sphere with a grid on it reads as a globe rather than a circle.
         showGraticules

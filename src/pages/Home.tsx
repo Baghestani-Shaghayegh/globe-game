@@ -287,6 +287,22 @@ export default function Home() {
     <div className="relative min-h-screen overflow-hidden bg-[#07111c]">
       {backdropWanted && (
         <div className="pointer-events-none absolute inset-0 animate-fade-in">
+          {/*
+            The bloom around the globe. three's atmosphere draws the rim but
+            stops at the sphere's edge; this is the light spilling past it.
+            Transparent through the middle on purpose — a gradient that starts
+            bright at the centre tints the whole ocean green and the globe
+            stops looking like it is lit from behind.
+          */}
+          <div
+            className="absolute inset-y-0 hidden md:block"
+            style={{
+              left: "28%",
+              right: "-14%",
+              background:
+                "radial-gradient(closest-side at 43% 50%, transparent 0%, transparent 62%, rgba(47,212,180,0.13) 78%, rgba(47,212,180,0.05) 90%, transparent 100%)",
+            }}
+          />
           <Suspense fallback={null}>
             <BackgroundGlobe />
           </Suspense>
@@ -302,7 +318,7 @@ export default function Home() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "linear-gradient(100deg, rgba(7,17,28,0.96) 0%, rgba(7,17,28,0.9) 34%, rgba(7,17,28,0.5) 58%, rgba(7,17,28,0.1) 100%)",
+            "linear-gradient(100deg, rgba(7,17,28,0.96) 0%, rgba(7,17,28,0.9) 34%, rgba(7,17,28,0.42) 58%, rgba(7,17,28,0.04) 100%)",
         }}
       />
 
