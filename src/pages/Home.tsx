@@ -30,7 +30,7 @@ import { dueCount } from "../lib/practice";
 import { flagUrl } from "../data/flags";
 import { cluesFor } from "../data/clues";
 import { capitalOf } from "../data/capitals";
-import { GLOBE_PLACEMENT } from "../lib/globePlacement";
+import { GLOBE_BOX } from "../lib/globePlacement";
 
 // Three.js is heavy — let the menu paint first, then fade the globe in behind it.
 const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
@@ -184,28 +184,18 @@ function WayToPlay({
     <Link
       onClick={playTap}
       to={to}
-      className="group flex items-center gap-3.5 rounded-2xl border border-white/10 bg-[#07111c]/70 px-4 py-3.5 backdrop-blur-sm transition-colors hover:border-white/25 hover:bg-[#07111c]/80"
+      className="group inline-flex items-center gap-2.5 rounded-xl border border-white/10 bg-[#07111c]/70 px-3.5 py-2 text-sm backdrop-blur-sm transition-colors hover:border-white/25 hover:bg-[#07111c]/80"
     >
       <span className="shrink-0 text-zinc-400 transition-colors group-hover:text-zinc-200">
         {icon}
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2">
-          <span className="font-medium text-zinc-100">{title}</span>
-          {badge && (
-            <span className="shrink-0 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-200">
-              {badge}
-            </span>
-          )}
+      <span className="font-medium text-zinc-100">{title}</span>
+      {badge && (
+        <span className="shrink-0 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-200">
+          {badge}
         </span>
-        <span className="block truncate text-sm text-zinc-400">{note}</span>
-      </span>
-      <span
-        aria-hidden="true"
-        className="shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-300"
-      >
-        ›
-      </span>
+      )}
+      <span className="hidden text-zinc-500 sm:inline">· {note}</span>
     </Link>
   );
 }
@@ -213,18 +203,18 @@ function WayToPlay({
 /** The icons on the cards — drawn, so they match at any size and any theme. */
 const icons = {
   practice: (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
       <path d="M5 20V10M12 20V4M19 20v-7" />
     </svg>
   ),
   together: (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="9" cy="8" r="3" />
       <path d="M3.5 19a5.5 5.5 0 0 1 11 0M17 11a2.6 2.6 0 1 0-2-4.3M17.5 19a5 5 0 0 0-3-4.6" />
     </svg>
   ),
   bigger: (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 20 20 4M4 14v6h6M20 10V4h-6" />
     </svg>
   ),
@@ -285,7 +275,7 @@ export default function Home() {
     ROUND_LENGTHS.find((r) => r.count === count)?.label ?? "10";
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#07111c]">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#07111c]">
       {backdropWanted && (
         <div className="pointer-events-none absolute inset-0 animate-fade-in">
           {/*
@@ -298,16 +288,17 @@ export default function Home() {
           <div
             className="absolute hidden md:block"
             style={{
-              ...GLOBE_PLACEMENT,
+              ...GLOBE_BOX,
               /*
-                Sized in vh and centred on the box, because the globe is too:
-                its canvas is as tall as the window and the lens is fixed, so
-                the sphere always comes out at about 54% of the window's height
-                across. That puts its rim at roughly two-thirds of this circle,
-                which is where the glow starts — outside the map, not over it.
+                Sized in vh and centred on the same box the globe is drawn in,
+                so it stays wrapped around the sphere instead of drifting off
+                it. The sphere comes out at about 54% of the window's height
+                across, which puts its rim at roughly 71% of this circle —
+                where the glow starts, just outside the land rather than over
+                it.
               */
               background:
-                "radial-gradient(circle 80vh at 50% 50%, transparent 0%, transparent 67%, rgba(53,219,224,0.10) 71%, rgba(56,130,214,0.10) 79%, rgba(56,130,214,0.035) 89%, transparent 100%)",
+                "radial-gradient(circle 76vh at 50% 50%, transparent 0%, transparent 70%, rgba(53,219,224,0.10) 74%, rgba(56,130,214,0.10) 82%, rgba(56,130,214,0.035) 91%, transparent 100%)",
             }}
           />
           <Suspense fallback={null}>
@@ -332,8 +323,8 @@ export default function Home() {
         }}
       />
 
-      <div className="relative mx-auto w-full max-w-6xl px-5 sm:px-8">
-        <header className="flex flex-wrap items-center gap-x-6 gap-y-3 py-5">
+      <div className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 sm:px-8">
+        <header className="relative z-10 flex flex-wrap items-center gap-x-6 gap-y-3 py-4">
           <span className="flex items-center gap-2.5">
             <svg
               aria-hidden="true"
@@ -416,21 +407,21 @@ export default function Home() {
           </div>
         </header>
 
-        <main className="pb-10">
-          <section className="pt-8 sm:pt-12">
+        <main className="flex flex-1 flex-col pb-[clamp(0.75rem,2.2vh,1.5rem)]">
+          <section className="pt-[clamp(0.5rem,2.6vh,2.25rem)]">
             <p className="text-xs uppercase tracking-[0.22em] text-teal-300/80">
               The world is your playground
             </p>
-            <h1 className="mt-4 max-w-lg text-4xl font-semibold leading-[1.08] tracking-tight text-zinc-50 sm:text-5xl">
+            <h1 className="mt-3 max-w-lg text-4xl font-semibold leading-[1.08] tracking-tight text-zinc-50 sm:text-[clamp(2.1rem,4.9vh,3rem)]">
               How well do you know your world?
             </h1>
-            <p className="mt-3 text-lg text-zinc-400">
+            <p className="mt-2.5 text-base text-zinc-400 sm:text-lg">
               Pick a challenge. Discover somewhere new.
             </p>
           </section>
 
           {/* Start a round: what kind, where, how long, go. */}
-          <section className="mt-7 max-w-xl">
+          <section className="mt-[clamp(0.75rem,2.6vh,1.75rem)] max-w-2xl">
             <div role="tablist" aria-label="Game type" className="flex flex-wrap gap-1.5">
               {[...shown, ...(openMore ? folded : [])].map((t) => (
                 <button
@@ -469,7 +460,7 @@ export default function Home() {
 
             {/* Stacked on a phone: side by side, "Countries only · 167" loses
                 its count to the ellipsis. */}
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-3.5 flex flex-col gap-3 sm:flex-row sm:items-end">
               <Picker
                 label="Map"
                 value={modeId}
@@ -495,19 +486,24 @@ export default function Home() {
                   </option>
                 ))}
               </Picker>
-            </div>
-
-            <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
               <button
                 onClick={() => {
                   playTap();
                   start();
                 }}
-                className="flex items-center gap-2 rounded-xl bg-teal-300 px-7 py-3 font-semibold text-[#07111c] transition-colors hover:bg-teal-200"
+                className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-teal-300 px-6 py-2.5 font-semibold text-[#07111c] transition-colors hover:bg-teal-200"
               >
                 Start playing
                 <span aria-hidden="true">→</span>
               </button>
+            </div>
+
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              <p className="text-sm text-zinc-500">
+                {rulesLabel} mode · {hints ? "Hints on" : "Hints off"} ·{" "}
+                {roundLabel === "Everything" ? "every country" : `${roundLabel} countries`}
+                {best && <> · your best {best}</>}
+              </p>
               <button
                 onClick={() => {
                   playTap();
@@ -519,12 +515,6 @@ export default function Home() {
                 Customize round
               </button>
             </div>
-
-            <p className="mt-3 text-sm text-zinc-500">
-              {rulesLabel} mode · {hints ? "Hints on" : "Hints off"} ·{" "}
-              {roundLabel === "Everything" ? "every country" : `${roundLabel} countries`}
-              {best && <> · your best {best}</>}
-            </p>
 
             {customising && (
               <Options
@@ -543,9 +533,9 @@ export default function Home() {
             )}
           </section>
 
-          <section className="mt-12">
+          <section className="mt-[clamp(0.75rem,3vh,2.5rem)]">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <h2 className="text-2xl font-semibold tracking-tight text-zinc-50">
+              <h2 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
                 Today's challenges
               </h2>
               <span className="flex items-center gap-3">
@@ -554,7 +544,7 @@ export default function Home() {
               </span>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <DailyCard
                 to="/daily"
                 icon="🗓️"
@@ -599,11 +589,11 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="mt-10">
-            <h2 className="text-2xl font-semibold tracking-tight text-zinc-50">
+          <section className="mt-[clamp(0.75rem,2.4vh,1.75rem)]">
+            <h2 className="text-xs uppercase tracking-[0.18em] text-zinc-500">
               More ways to play
             </h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="mt-2.5 flex flex-wrap gap-2">
               <WayToPlay
                 to="/practice"
                 title="Practice"
@@ -631,9 +621,14 @@ export default function Home() {
             </div>
           </section>
 
-          <AdSlot className="mt-10" />
+          <AdSlot className="mt-[clamp(0.75rem,2.4vh,1.75rem)]" />
 
-          <footer className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] pt-5 text-sm text-zinc-500">
+          {/* Eats whatever height is left over, so the footer sits on the
+              bottom of the window when the page fits and stays a normal gap
+              below the content when it does not. */}
+          <div aria-hidden="true" className="flex-1" />
+
+          <footer className="mt-[clamp(0.75rem,2.4vh,1.75rem)] flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] pt-3.5 text-sm text-zinc-500">
             <Link to="/records" className="transition-colors hover:text-zinc-300">
               Records
             </Link>

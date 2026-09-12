@@ -54,7 +54,7 @@ export default function DailyCard({
     <Link
       onClick={playTap}
       to={to}
-      className={`group relative flex flex-1 flex-col gap-1.5 rounded-2xl border bg-[#07111c]/75 px-4 py-4 backdrop-blur-sm transition-colors ${tone}`}
+      className={`group relative flex flex-1 flex-col gap-1 rounded-2xl border bg-[#07111c]/75 px-4 py-3.5 backdrop-blur-sm transition-colors ${tone}`}
     >
       <span className="flex items-center gap-2">
         <span
@@ -87,14 +87,14 @@ export default function DailyCard({
       </span>
 
       {pill && !done && (
-        <span className="mt-0.5 w-fit rounded-full border border-teal-300/30 bg-teal-300/10 px-2.5 py-0.5 text-xs font-medium text-teal-200">
+        <span className="w-fit rounded-full border border-teal-300/30 bg-teal-300/10 px-2.5 py-0.5 text-xs font-medium text-teal-200">
           {pill}
         </span>
       )}
 
       {action && (
         <span
-          className={`mt-auto pt-2 text-sm font-medium ${
+          className={`mt-auto pt-1.5 text-sm font-medium ${
             done ? "text-zinc-500" : "text-teal-300 group-hover:text-teal-200"
           }`}
         >

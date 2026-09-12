@@ -9,7 +9,7 @@ import {
   sunlitLights,
 } from "../lib/globeTerrain";
 import { type Geometry } from "../lib/geo";
-import { GLOBE_PLACEMENT, GLOBE_WIDTH } from "../lib/globePlacement";
+import { GLOBE_BOX, GLOBE_CANVAS } from "../lib/globePlacement";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
 
 type Feature = { properties: { name: string }; geometry: Geometry };
@@ -31,7 +31,7 @@ const ICE = new Set([
  * fifty degrees the continents nearest the middle bulge towards the viewer.
  */
 const FIELD_OF_VIEW = 20;
-const ALTITUDE_WIDE = 4.36;
+const ALTITUDE_WIDE = 4.93;
 const ALTITUDE_NARROW = 6.28;
 
 /**
@@ -209,13 +209,13 @@ export default function BackgroundGlobe() {
   return (
     <div
       className="absolute"
-      style={wide ? GLOBE_PLACEMENT : { inset: 0 }}
+      style={wide ? GLOBE_BOX : { inset: 0 }}
     >
       <Globe
         ref={globeRef}
         onGlobeReady={() => setReady(true)}
-        width={wide ? size.width * GLOBE_WIDTH : size.width}
-        height={size.height}
+        width={wide ? size.width * GLOBE_CANVAS.width : size.width}
+        height={wide ? size.height * GLOBE_CANVAS.height : size.height}
         rendererConfig={{
           antialias: true,
           alpha: true,
