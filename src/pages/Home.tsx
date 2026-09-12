@@ -302,13 +302,15 @@ export default function Home() {
               /*
                 Sized in vh and centred on the same box the globe is drawn in,
                 so it stays wrapped around the sphere instead of drifting off
-                it. The sphere's radius is 45% of the window's height, which
-                puts its rim at roughly 70% of this circle —
+                it. Sized the same way the canvas is — the smaller of a share
+                of the height and a share of the width — so the rim stays at
+                70% of this circle whichever of the two is pinning the globe,
+                which is where the glow starts —
                 where the glow starts, just outside the land rather than over
                 it.
               */
               background:
-                "radial-gradient(circle 64vh at 50% 50%, transparent 0%, transparent 70%, rgba(53,219,224,0.10) 74%, rgba(56,130,214,0.10) 82%, rgba(56,130,214,0.035) 91%, transparent 100%)",
+                "radial-gradient(circle min(69vh,39.5vw) at 50% 50%, transparent 0%, transparent 70%, rgba(53,219,224,0.10) 74%, rgba(56,130,214,0.10) 82%, rgba(56,130,214,0.035) 91%, transparent 100%)",
             }}
           />
           <Suspense fallback={null}>
