@@ -8,6 +8,7 @@
  */
 export const LOCAL_KEYS = [
   "worldguess.prefs.v1",
+  "worldguess.prefs.v2",
   "worldguess.consent.v1",
   "worldguess.records.v1",
   "worldguess.records.v2",

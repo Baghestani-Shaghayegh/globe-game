@@ -3,7 +3,8 @@
  * which are chosen per round. Kept apart from records so clearing one doesn't
  * take the other with it.
  */
-const KEY = "worldguess.prefs.v1";
+const KEY = "worldguess.prefs.v2";
+const KEY_V1 = "worldguess.prefs.v1";
 
 type Prefs = { hints: boolean; sound: boolean; globeTheme: string };
 
@@ -24,8 +25,45 @@ const DEFAULTS: Prefs = {
   globeTheme: NO_THEME_CHOSEN,
 };
 
+/**
+ * Carries v1 forward, once.
+ *
+ * v1 wrote the default palette into storage as a real value: `read()` handed
+ * back "atlantic" when nothing was stored, and every setter saved the whole
+ * object, so changing the sound setting silently recorded a palette choice
+ * nobody made. When the default changed, those players kept the old one — the
+ * menu showed the new palette and every globe in a round showed the old.
+ *
+ * Hints and sound are genuine choices and come across. The palette does not:
+ * at the time v1 was written Atlantic was the only one available at level one,
+ * so a stored "atlantic" cannot be a decision, only the default leaking in.
+ * Anyone who really wants it can pick it again from Levels.
+ */
+function migrate(): void {
+  try {
+    if (localStorage.getItem(KEY) !== null) return;
+    const raw = localStorage.getItem(KEY_V1);
+    if (!raw) return;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return;
+    const { hints, sound } = parsed as Partial<Prefs>;
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({
+        hints: typeof hints === "boolean" ? hints : DEFAULTS.hints,
+        sound: typeof sound === "boolean" ? sound : DEFAULTS.sound,
+        globeTheme: NO_THEME_CHOSEN,
+      })
+    );
+    localStorage.removeItem(KEY_V1);
+  } catch {
+    /* unreadable storage: the defaults are fine */
+  }
+}
+
 function read(): Prefs {
   try {
+    migrate();
     const raw = localStorage.getItem(KEY);
     if (!raw) return DEFAULTS;
     const parsed: unknown = JSON.parse(raw);
