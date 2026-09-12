@@ -18,7 +18,7 @@ import {
   type Ruleset,
 } from "../../data/modes";
 import { isCorrectGuess } from "../../lib/answerMatch";
-import { globeMaterial, theme } from "../../lib/globeTheme";
+import { globeMaterial, landShade, theme } from "../../lib/globeTheme";
 import { useGlobeTheme } from "./useGlobeTheme";
 import { hintsEnabled } from "../../lib/prefs";
 import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
@@ -407,7 +407,7 @@ export default function GlobeGame({
           if (summary) return theme.missed;
           if (selected && selected.properties.name === name)
             return theme.selected;
-          return theme.unfound;
+          return landShade(name);
         }}
         polygonSideColor={() => theme.sphere}
         polygonStrokeColor={() => theme.stroke}

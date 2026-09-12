@@ -212,6 +212,56 @@ export function backdropColor(): string {
   return mix(theme.sphere, theme.unfound, 0.45);
 }
 
+/**
+ * The shade of land a country is painted, when it is land and nothing more.
+ *
+ * One flat fill for every landmass made the continents read as a single
+ * cut-out shape rather than a map. Each country instead gets a fixed step
+ * along a narrow band around the land colour, so the map breaks into tones
+ * the way relief shading does and neighbours separate without the stroke
+ * having to do all the work.
+ *
+ * The step comes from the country's *name* and nothing else, so it is stable
+ * across reloads and cannot leak anything the player is being asked to work
+ * out. The band is kept tight and stays inside the land's own hue: `found`
+ * and `missed` are the two colours that carry meaning, and no shade of the
+ * map is allowed to drift towards either.
+ */
+export function landShade(name: string, base: string = theme.unfound): string {
+  const key = `${activeId}:${base}:${name}`;
+  const cached = shadeCache.get(key);
+  if (cached) return cached;
+
+  const step = hash(name) % SHADE_STEPS;
+  const shade = mix(
+    mix(base, theme.sphere, 0.3),
+    mix(base, theme.stroke, 0.22),
+    step / (SHADE_STEPS - 1)
+  );
+  shadeCache.set(key, shade);
+  return shade;
+}
+
+/**
+ * Few enough that the variation reads as deliberate rather than as noise, and
+ * enough that neighbours rarely draw the same one. Measured on the rendered
+ * page: seven steps put around forty channel values between the darkest and
+ * lightest land, which is visible without the map looking mottled.
+ */
+const SHADE_STEPS = 7;
+
+const shadeCache = new Map<string, string>();
+
+/** FNV-1a, for a stable shade per country without pulling in a dependency. */
+function hash(text: string): number {
+  let value = 0x811c9dc5;
+  for (let at = 0; at < text.length; at += 1) {
+    value ^= text.charCodeAt(at);
+    value = Math.imul(value, 0x01000193);
+  }
+  return value >>> 0;
+}
+
 /** Blends two #rrggbb colours, `amount` of the way from the first to the second. */
 function mix(from: string, to: string, amount: number): string {
   const channels = (hex: string) =>
@@ -235,6 +285,7 @@ export function setGlobeTheme(id: string) {
   const chosen = themeById(id);
   activeId = chosen.id;
   Object.assign(theme, chosen.palette);
+  shadeCache.clear();
   globeMaterial.color.set(chosen.palette.sphere);
   setGlobeThemeId(chosen.id);
   for (const listener of listeners) listener();

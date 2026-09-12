@@ -5,7 +5,7 @@ import { useGlobeClick } from "../globe-guess/useGlobeClick";
 import { getCountryMeta } from "../../data/countries";
 import { flagUrl } from "../../data/flags";
 import { cluesFor } from "../../data/clues";
-import { globeMaterial, theme } from "../../lib/globeTheme";
+import { globeMaterial, landShade, theme } from "../../lib/globeTheme";
 import { useGlobeTheme } from "../globe-guess/useGlobeTheme";
 import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
 import type { GameType } from "../../data/modes";
@@ -106,7 +106,7 @@ export default function MatchGlobe({
       if (name === rightName) return theme.found;
       // Revealed once the question closes, however it went.
       if (locked && name === target) return theme.found;
-      return theme.unfound;
+      return landShade(name);
     },
     [wrongName, rightName, locked, target]
   );

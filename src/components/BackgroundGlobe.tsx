@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
-import { globeMaterial, theme } from "../lib/globeTheme";
+import { globeMaterial, landShade, theme } from "../lib/globeTheme";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
 
 type Feature = { properties: { name: string } };
@@ -99,7 +99,9 @@ export default function BackgroundGlobe() {
         // sphere with a grid on it reads as a globe rather than a circle.
         showGraticules
         polygonsData={features}
-        polygonCapColor={() => theme.idle}
+        // Each country its own shade of the land colour, so the continents
+        // break up into tones rather than reading as one cut-out shape.
+        polygonCapColor={(d) => landShade((d as Feature).properties.name, theme.idle)}
         polygonSideColor={() => theme.sphere}
         polygonStrokeColor={() => theme.stroke}
         polygonAltitude={() => 0.012}

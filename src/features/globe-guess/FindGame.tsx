@@ -22,7 +22,7 @@ import { capitalOf } from "../../data/capitals";
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { HINT_COST } from "../../lib/scoring";
 import { hintsEnabled } from "../../lib/prefs";
-import { globeMaterial, theme } from "../../lib/globeTheme";
+import { globeMaterial, landShade, theme } from "../../lib/globeTheme";
 import { useGlobeTheme } from "./useGlobeTheme";
 import type { Continent } from "../../data/continents";
 import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
@@ -443,10 +443,10 @@ export default function FindGame({
       if (name === wrongName) return theme.missed;
       if (name === revealed) return theme.selected;
       if (foundNames.has(name)) return theme.found;
-      if (summary) return passedNames.has(name) ? theme.missed : theme.unfound;
+      if (summary) return passedNames.has(name) ? theme.missed : landShade(name);
       if (narrowedTo && !getCountryMeta(name).continents.includes(narrowedTo))
         return theme.sphere;
-      return theme.unfound;
+      return landShade(name);
     },
     [wrongName, revealed, foundNames, passedNames, summary, narrowedTo]
   );

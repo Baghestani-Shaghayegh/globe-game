@@ -13,7 +13,7 @@ import { useGlobeClick } from "../features/globe-guess/useGlobeClick";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
 import { getCountryMeta } from "../data/countries";
 import { resolveName } from "../lib/answerMatch";
-import { globeMaterial, theme } from "../lib/globeTheme";
+import { globeMaterial, landShade, theme } from "../lib/globeTheme";
 import { featureCentre, type Geometry } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
 import Celebrate from "../components/Celebrate";
@@ -180,7 +180,7 @@ export default function Mystery() {
       const { name } = (d as CountryFeature).properties;
       if (result?.solved && name === result.answer) return theme.found;
       const km = guessed.get(name);
-      return km === undefined ? theme.unfound : heatColor(km);
+      return km === undefined ? landShade(name) : heatColor(km);
     },
     [guessed, result]
   );
