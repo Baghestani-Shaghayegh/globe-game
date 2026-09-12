@@ -333,8 +333,16 @@ export default function Home() {
         }}
       />
 
-      <div className="relative flex w-full max-w-[1180px] flex-1 flex-col px-5 sm:px-8 lg:px-12">
-        <header className="relative z-10 flex flex-wrap items-center gap-x-6 gap-y-3 py-4 [text-shadow:0_1px_4px_rgba(7,17,28,0.85)]">
+      {/*
+        The masthead spans the window while everything under it is capped and
+        left-aligned: it is the frame of the page rather than part of the
+        column, so the account sits in the corner of the screen and not at the
+        end of a 1180px measure. Three grid tracks with the middle one `auto`
+        put the links on the centre line of the window, which a flex row with
+        two uneven sides cannot do.
+      */}
+      <header className="relative z-10 w-full px-5 py-4 [text-shadow:0_1px_4px_rgba(7,17,28,0.85)] sm:px-8 lg:px-12">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 md:grid md:grid-cols-[1fr_auto_1fr]">
           <span className="flex items-center gap-2.5">
             <svg
               aria-hidden="true"
@@ -353,7 +361,7 @@ export default function Home() {
             </span>
           </span>
 
-          <nav className="flex items-center gap-5 text-sm">
+          <nav className="flex items-center gap-5 text-sm md:justify-self-center">
             <span className="border-b-2 border-teal-300 pb-0.5 font-medium text-zinc-100">
               Play
             </span>
@@ -375,7 +383,7 @@ export default function Home() {
             </Link>
           </nav>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-3 md:ml-0 md:justify-self-end">
             <Link
               to="/settings"
               onClick={playTap}
@@ -415,8 +423,10 @@ export default function Home() {
               </Link>
             )}
           </div>
-        </header>
+        </div>
+      </header>
 
+      <div className="relative flex w-full max-w-[1180px] flex-1 flex-col px-5 sm:px-8 lg:px-12">
         <main className="flex flex-1 flex-col pb-[clamp(0.75rem,2.2vh,1.5rem)]">
           <div aria-hidden="true" className="grow-[0.45]" />
 
