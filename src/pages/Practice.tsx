@@ -99,6 +99,11 @@ export default function Practice() {
         fixedOrder={playing}
         onRoundEnd={finish}
         record={false}
+        // The whole world, with the ones being drilled raised out of it. On
+        // their own the eight were specks on an empty sphere, which is no way
+        // to learn where they are.
+        backdrop
+        showInPlay
       />
     );
   }

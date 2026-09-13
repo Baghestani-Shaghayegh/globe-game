@@ -24,7 +24,7 @@ import { isCorrectGuess } from "../../lib/answerMatch";
 import { HINT_COST } from "../../lib/scoring";
 import { missQuip } from "../../lib/quips";
 import { hintsEnabled } from "../../lib/prefs";
-import { landShade, theme } from "../../lib/globeTheme";
+import { backdropColor, landShade, theme } from "../../lib/globeTheme";
 import { landMaterial } from "../../lib/globeTerrain";
 import { useGlobeTheme } from "./useGlobeTheme";
 import { GLOBE_SURFACE, useGlobeLook } from "./useGlobeLook";
@@ -97,6 +97,17 @@ type Props = {
    * round still has a recognisable shape without this.
    */
   backdrop?: boolean;
+  /**
+   * Under `backdrop`, mark the countries actually in play: normal land, lifted
+   * off the sphere, with the rest of the world dropped back a shade.
+   *
+   * Only for practice, and deliberately not for the daily. There the ten are
+   * the answers — showing which they are would hand the round over. In
+   * practice you already know the list, it is printed on the page you came
+   * from, and seeing where those eight sit among everything else is the whole
+   * point of drilling them on a globe.
+   */
+  showInPlay?: boolean;
 };
 
 /**
@@ -117,6 +128,7 @@ export default function FindGame({
   count = null,
   pointsMultiplier = 1,
   backdrop = false,
+  showInPlay = false,
   fixedOrder,
 }: Props) {
   // Repaint when the player changes the globe palette.
@@ -440,6 +452,8 @@ export default function FindGame({
     setAsked(order);
   };
 
+  const inPlaySet = useMemo(() => new Set(inPlay), [inPlay]);
+
   const reported = useRef(false);
   useEffect(() => {
     if (!summary || reported.current) return;
@@ -497,9 +511,22 @@ export default function FindGame({
         return landMaterial(theme.missed, "answer");
       if (narrowedTo && !getCountryMeta(name).continents.includes(narrowedTo))
         return landMaterial(theme.sphere, "answer");
+      // The rest of the world, when the ones in play are being marked: there
+      // to navigate by, not to be read.
+      if (showInPlay && !inPlaySet.has(name))
+        return landMaterial(backdropColor());
       return landMaterial(landShade(name));
     },
-    [wrongName, revealed, foundNames, passedNames, summary, narrowedTo]
+    [
+      wrongName,
+      revealed,
+      foundNames,
+      passedNames,
+      summary,
+      narrowedTo,
+      showInPlay,
+      inPlaySet,
+    ]
   );
 
   if (loadError) {
@@ -535,9 +562,14 @@ export default function FindGame({
         {...GLOBE_SURFACE}
         polygonsData={features}
         polygonCapMaterial={capColor}
-        polygonAltitude={(d) =>
-          (d as CountryFeature).properties.name === revealed ? 0.06 : 0.012
-        }
+        polygonAltitude={(d) => {
+          const { name } = (d as CountryFeature).properties;
+          if (name === revealed) return 0.06;
+          // Lifted, so the ones being drilled stand off the sphere and read
+          // as raised even where the colour alone would not carry.
+          if (showInPlay && inPlaySet.has(name)) return 0.035;
+          return 0.008;
+        }}
         polygonsTransitionDuration={200}
         onPolygonHover={(polygon) =>
           globeClick.setHovered(polygon as CountryFeature | null)
