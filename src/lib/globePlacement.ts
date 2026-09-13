@@ -13,8 +13,9 @@
  * to it. The sphere is allowed to run up behind the masthead, which has no
  * background of its own; what it must not do is leave the window.
  *
- * Size. The sphere's radius is 48.5% of the canvas height, so a canvas the
- * height of the window fills it very nearly top to bottom. But the globe sits
+ * Size. The sphere's radius is 49.5% of the canvas height, so a canvas the
+ * height of the window all but fills it top to bottom — 50% is the ceiling,
+ * where the sphere would touch both edges at once. But the globe sits
  * to the right, and on a window that is wide-but-short the right-hand limb
  * reaches the edge of the screen long before the top and bottom do — hence
  * the width term: the canvas is the smaller of the window's height and
@@ -29,9 +30,9 @@ const WIDTH = 1.02;
  * The canvas height as a fraction of the window's width, used when the window
  * is wide and short. Derived, not guessed: the sphere's centre lands at
  * (LEFT + WIDTH / 2) of the width, so its radius can be at most the
- * (1 − that) remaining, and radius is 0.485 of the canvas height.
+ * (1 − that) remaining, and radius is 0.495 of the canvas height.
  */
-const WIDEST = 0.57;
+const WIDEST = 0.565;
 
 /** The canvas in pixels, for the globe. */
 export function globeCanvas(window: { width: number; height: number }): {

@@ -30,7 +30,6 @@ import { dueCount } from "../lib/practice";
 import { flagUrl } from "../data/flags";
 import { cluesFor } from "../data/clues";
 import { capitalOf } from "../data/capitals";
-import { GLOBE_BOX } from "../lib/globePlacement";
 
 // Three.js is heavy — let the menu paint first, then fade the globe in behind it.
 const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
@@ -288,31 +287,6 @@ export default function Home() {
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#07111c]">
       {backdropWanted && (
         <div className="pointer-events-none absolute inset-0 animate-fade-in">
-          {/*
-            The bloom around the globe. three's atmosphere draws the rim but
-            stops at the sphere's edge; this is the light spilling past it.
-            Transparent through the middle on purpose — a gradient that starts
-            bright at the centre tints the whole ocean green and the globe
-            stops looking like it is lit from behind.
-          */}
-          <div
-            className="absolute hidden md:block"
-            style={{
-              ...GLOBE_BOX,
-              /*
-                Sized in vh and centred on the same box the globe is drawn in,
-                so it stays wrapped around the sphere instead of drifting off
-                it. Sized the same way the canvas is — the smaller of a share
-                of the height and a share of the width — so the rim stays at
-                70% of this circle whichever of the two is pinning the globe,
-                which is where the glow starts —
-                where the glow starts, just outside the land rather than over
-                it.
-              */
-              background:
-                "radial-gradient(circle min(69vh,39.5vw) at 50% 50%, transparent 0%, transparent 70%, rgba(53,219,224,0.10) 74%, rgba(56,130,214,0.10) 82%, rgba(56,130,214,0.035) 91%, transparent 100%)",
-            }}
-          />
           <Suspense fallback={null}>
             <BackgroundGlobe />
           </Suspense>
@@ -429,7 +403,7 @@ export default function Home() {
       </header>
 
       <div className="relative flex w-full max-w-[1180px] flex-1 flex-col px-5 sm:px-8 lg:px-12">
-        <main className="flex flex-1 flex-col pb-[clamp(0.75rem,2.2vh,1.5rem)]">
+        <main className="flex flex-1 flex-col">
           <div aria-hidden="true" className="grow-[0.45]" />
 
           <section className="pt-[clamp(0.5rem,2.1vh,2.25rem)]">
@@ -650,28 +624,29 @@ export default function Home() {
               below the content when it does not. */}
           <div aria-hidden="true" className="flex-1" />
 
-          <footer className="mt-[clamp(0.6rem,1.2vh,1.75rem)] flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] pt-3.5 text-sm text-zinc-500">
-            <Link to="/records" className="transition-colors hover:text-zinc-300">
-              Records
-            </Link>
-            <Link to="/stats" className="transition-colors hover:text-zinc-300">
-              Stats
-            </Link>
-            <Link to="/achievements" className="transition-colors hover:text-zinc-300">
-              Badges
-            </Link>
-            <Link to="/levels" className="transition-colors hover:text-zinc-300">
-              Level &amp; themes
-            </Link>
-            <Link
-              to="/privacy"
-              className="ml-auto transition-colors hover:text-zinc-300"
-            >
-              Privacy
-            </Link>
-          </footer>
         </main>
       </div>
+
+        <footer className="relative z-10 mt-[clamp(0.6rem,1.2vh,1.75rem)] flex w-full flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] px-5 pb-[clamp(0.75rem,2.2vh,1.5rem)] pt-3.5 text-sm text-zinc-500 sm:px-8 lg:px-12">
+          <Link to="/records" className="transition-colors hover:text-zinc-300">
+            Records
+          </Link>
+          <Link to="/stats" className="transition-colors hover:text-zinc-300">
+            Stats
+          </Link>
+          <Link to="/achievements" className="transition-colors hover:text-zinc-300">
+            Badges
+          </Link>
+          <Link to="/levels" className="transition-colors hover:text-zinc-300">
+            Level &amp; themes
+          </Link>
+          <Link
+            to="/privacy"
+            className="ml-auto transition-colors hover:text-zinc-300"
+          >
+            Privacy
+          </Link>
+        </footer>
     </div>
   );
 }

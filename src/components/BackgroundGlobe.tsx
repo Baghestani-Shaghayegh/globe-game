@@ -31,7 +31,7 @@ const ICE = new Set([
  * fifty degrees the continents nearest the middle bulge towards the viewer.
  */
 const FIELD_OF_VIEW = 20;
-const ALTITUDE_WIDE = 4.93;
+const ALTITUDE_WIDE = 4.82;
 const ALTITUDE_NARROW = 6.28;
 
 /**
@@ -152,7 +152,9 @@ export default function BackgroundGlobe() {
       line.scale.setScalar(1.0015);
     });
 
-    // A fine cyan edge on the sphere, with the built-in atmosphere outside it.
+    // The glow: a single cyan ring on the edge of the sphere, and nothing
+    // else. The exponent is what makes it thin — the higher it is, the faster
+    // the light falls away from the limb.
     const rimGeometry = new THREE.SphereGeometry(100.4, 96, 64);
     const rimMaterial = new THREE.ShaderMaterial({
       uniforms: { rimColor: { value: new THREE.Color(theme.atmosphere) } },
@@ -168,8 +170,8 @@ export default function BackgroundGlobe() {
         varying vec3 vNormal;
         void main() {
           vec3 n = normalize(vNormal);
-          float rim = pow(1.0 - max(n.z, 0.0), 9.0);
-          gl_FragColor = vec4(rimColor, rim * 0.48);
+          float rim = pow(1.0 - max(n.z, 0.0), 22.0);
+          gl_FragColor = vec4(rimColor, rim * 0.85);
           #include <colorspace_fragment>
         }
       `,
@@ -224,11 +226,10 @@ export default function BackgroundGlobe() {
         }}
         backgroundColor="rgba(0,0,0,0)"
         globeMaterial={oceanMaterial}
-        atmosphereColor={theme.atmosphere}
-        // Narrow. The wide version read as fog around the globe rather than
-        // as a rim; the soft blue spread outside it is a CSS halo on the page,
-        // which can be a different colour from the rim itself.
-        atmosphereAltitude={0.045}
+        // Off. The rim below is the whole glow now: one colour, one ring.
+        // Stacked on the shader's rim this read as fog around the globe, and
+        // being a separate colour from it there was no one edge to look at.
+        showAtmosphere={false}
         // The meridians and parallels in the design. They cost nothing, and a
         // sphere with a grid on it reads as a globe rather than a circle.
         showGraticules
