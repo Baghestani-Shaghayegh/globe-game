@@ -37,6 +37,10 @@ without being asked — `main` is what deploys.
 
 ## Conventions
 
+- **Every commit message starts with a Conventional Commits prefix** — `feat:`,
+  `fix:`, `refactor:`, `perf:`, `test:`, `chore:`, `docs:`. The repo has used
+  them since the first commit; a stretch in the middle of September 2026 that
+  doesn't is a lapse, not a change of mind.
 - Every feature that stores anything guards `localStorage` in try/catch and
   starts fresh on a corrupt value.
 - Derived features (badges, XP, practice) read the history the game already
