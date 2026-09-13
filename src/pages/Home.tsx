@@ -534,17 +534,22 @@ export default function Home() {
               <h2 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
                 Today's challenges
               </h2>
+              {/* On the heading's own line, because it qualifies the whole
+                  section rather than any one card — and because a line of its
+                  own was a line this page cannot spare. The multiplier is set
+                  solid and the words are not, so the eye lands on the number
+                  and reads the rest only if it wants to. */}
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-teal-300/25 bg-teal-300/[0.07] py-1 pl-1 pr-2.5">
+                <span className="rounded-md bg-teal-300 px-1.5 py-0.5 text-[11px] font-bold leading-none text-[#07111c]">
+                  {DAILY_MULTIPLIER}×
+                </span>
+                <span className="text-xs text-teal-100/80">
+                  leaderboard points on daily challenges
+                </span>
+              </span>
               <span className="text-xs text-zinc-500">Resets at midnight UTC</span>
               {import.meta.env.DEV && <ReplayToday />}
             </div>
-
-            {/* Said once, above all three, because it is true of all three —
-                it used to be a pill on the first card, which read as though
-                that card alone was worth the extra. */}
-            <p className="mt-1.5 flex w-fit items-center gap-2 rounded-full border border-teal-300/30 bg-teal-300/10 px-3 py-0.5 text-xs font-medium text-teal-200">
-              <span aria-hidden="true">★</span>
-              All three score {DAILY_MULTIPLIER}× on the leaderboard
-            </p>
 
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <DailyCard
