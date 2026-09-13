@@ -25,6 +25,23 @@ export const DAILY_COUNTRIES = 10;
  */
 export const DAILY_MULTIPLIER = 2;
 
+/**
+ * How long a once-a-day puzzle took, in a shape the scores table will accept.
+ *
+ * The column is checked to be between a second and a day. A puzzle you open,
+ * leave, and come back to tomorrow would otherwise file a week — and one
+ * solved in a few seconds flat would file less than the floor. Both are
+ * clamped rather than rejected: the time is a detail on a board ranked by
+ * points, and losing the whole score over it would be the wrong trade.
+ */
+export const MIN_RUN_MS = 1_000;
+export const MAX_RUN_MS = 86_400_000;
+
+export function elapsedMs(startedAt: number | undefined, now = Date.now()): number {
+  if (!startedAt) return MIN_RUN_MS;
+  return Math.min(MAX_RUN_MS, Math.max(MIN_RUN_MS, now - startedAt));
+}
+
 /** The date key a challenge is identified by, in UTC so it turns over at once. */
 export function dayKey(now: Date = new Date()): string {
   return now.toISOString().slice(0, 10);

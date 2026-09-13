@@ -1,5 +1,6 @@
 import { BORDERS, neighboursOf } from "../data/borders";
-import { hash, mulberry32, dayNumber } from "./daily";
+import { DAILY_MULTIPLIER, hash, mulberry32, dayNumber, elapsedMs } from "./daily";
+import { postScore } from "./leaderboard";
 import { getCountryMeta } from "../data/countries";
 
 /**
@@ -120,6 +121,13 @@ export type ConnectResult = {
   solved: boolean;
   /** Names tried that didn't touch anything placed. */
   wrong: number;
+  /**
+   * When the puzzle was first opened, for the time filed with the score.
+   *
+   * Optional because rounds saved before scores were posted don't carry it;
+   * `loadConnect` fills it in on the way past.
+   */
+  startedAt?: number;
 };
 
 const KEY = "worldguess.connect.v1";
@@ -140,7 +148,8 @@ export function loadConnect(day: string): ConnectResult | null {
   try {
     const raw = localStorage.getItem(KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : null;
-    return isResult(parsed) && parsed.day === day ? parsed : null;
+    if (!isResult(parsed) || parsed.day !== day) return null;
+    return parsed.startedAt ? parsed : { ...parsed, startedAt: Date.now() };
   } catch {
     return null;
   }
@@ -159,4 +168,18 @@ export function scoreFor(result: ConnectResult): number {
   if (!result.solved) return 0;
   const over = Math.max(0, result.chain.length - result.par);
   return Math.max(100, 1000 - over * 100 - result.wrong * 50);
+}
+
+/** The bucket today's connect is filed under on the leaderboard. */
+export const CONNECT_BUCKET = "connect:daily";
+
+/** Files a solved connect on the leaderboard, at the daily multiplier. */
+export function postConnectScore(result: ConnectResult): Promise<boolean> {
+  if (!result.solved) return Promise.resolve(false);
+  return postScore(CONNECT_BUCKET, {
+    points: scoreFor(result) * DAILY_MULTIPLIER,
+    found: 1,
+    total: 1,
+    ms: elapsedMs(result.startedAt),
+  });
 }

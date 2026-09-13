@@ -1,7 +1,6 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import DailyCard from "../components/DailyCard";
-import Options from "../components/Options";
 import AdSlot from "../components/AdSlot";
 import { playTap } from "../lib/sound";
 import { replayTodaysDailies } from "../lib/localData";
@@ -10,17 +9,14 @@ import { getCountryMeta } from "../data/countries";
 import {
   GAME_TYPES,
   MODES,
-  ROUND_LENGTHS,
-  RULESETS,
   DEFAULT_ROUND_LENGTH,
   gamePath,
   recordKey,
   type GameType,
-  type Ruleset,
   type ModeId,
 } from "../data/modes";
 import { bestLabel } from "../lib/records";
-import { hintsEnabled, setHintsEnabled } from "../lib/prefs";
+import { hintsEnabled } from "../lib/prefs";
 import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled } from "../lib/supabase";
 import { DAILY_MULTIPLIER, dayKey, resultFor, streak } from "../lib/daily";
@@ -36,6 +32,18 @@ const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
 
 /** How many game types sit on the bar before the rest fold into "More". */
 const TABS_SHOWN = 3;
+
+/**
+ * What a round started from the menu is: ten countries, no clock, relaxed
+ * rules. These were three controls on this page; every one of them was
+ * answered the same way nearly every time, and the page is one screen now.
+ * The other shapes still exist — a room sets its own, and a link carries
+ * whatever it was made with — they just aren't a decision to make before
+ * every round.
+ */
+const ROUND_LENGTH = DEFAULT_ROUND_LENGTH;
+const CLOCK = null;
+const RULES = "relaxed" as const;
 
 /**
  * Whether the decorative globe behind the menu is worth its download.
@@ -101,57 +109,84 @@ function useModeCounts(type: GameType): Counts {
   return counts;
 }
 
-/** The best time or score for the settings currently chosen, or null. */
-function useBest(
-  type: GameType,
-  modeId: ModeId,
-  limit: number | null,
-  ruleset: Ruleset,
-  count: number | null
-): string | null {
+/** The best time or score for the round the menu would start, or null. */
+function useBest(type: GameType, modeId: ModeId): string | null {
   const [best, setBest] = useState<string | null>(null);
 
   // Read after mount — storage isn't available while rendering on every client.
   useEffect(() => {
-    setBest(bestLabel(recordKey(type, modeId, limit, ruleset, count)));
-  }, [type, modeId, limit, ruleset, count]);
+    setBest(
+      bestLabel(recordKey(type, modeId, CLOCK, RULES, ROUND_LENGTH))
+    );
+  }, [type, modeId]);
 
   return best;
 }
 
-const selectClass =
-  "w-full appearance-none rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2.5 text-sm text-zinc-100 outline-none transition-colors hover:border-white/30 focus:border-teal-300/60";
-
-/** A labelled dropdown. Native select: it is one tap on a phone and free. */
+/**
+ * A dropdown, built rather than borrowed.
+ *
+ * This was a native `<select>`, which on a Mac opens as a system menu: white,
+ * square, its own typeface, nothing to do with the page it was opened from.
+ * The list is short and fixed, so the menu is drawn here — closing on a click
+ * outside, on Escape, and on a choice.
+ */
 function Picker({
   label,
   value,
+  options,
   onChange,
-  children,
 }: {
   label: string;
   value: string;
+  options: { value: string; label: string; note?: string }[];
   onChange: (value: string) => void;
-  children: React.ReactNode;
 }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const chosen = options.find((o) => o.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const away = (event: MouseEvent) => {
+      if (!box.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", away);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("mousedown", away);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [open]);
+
   return (
-    <label className="block min-w-0 flex-1">
+    <div ref={box} className="relative min-w-0 flex-1">
       <span className="mb-1.5 block text-xs text-zinc-400">{label}</span>
-      <span className="relative block">
-        <select
-          value={value}
-          onChange={(e) => {
-            playTap();
-            onChange(e.target.value);
-          }}
-          className={selectClass}
-        >
-          {children}
-        </select>
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => {
+          playTap();
+          setOpen((o) => !o);
+        }}
+        className={`flex w-full items-center gap-2 rounded-xl border bg-white/[0.04] px-3.5 py-2.5 text-left text-sm text-zinc-100 transition-colors ${
+          open
+            ? "border-teal-300/60"
+            : "border-white/15 hover:border-white/30"
+        }`}
+      >
+        <span className="min-w-0 flex-1 truncate">{chosen?.label ?? value}</span>
+        {chosen?.note && (
+          <span className="shrink-0 text-xs text-zinc-500">{chosen.note}</span>
+        )}
         <svg
           aria-hidden="true"
           viewBox="0 0 24 24"
-          className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+          className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
@@ -160,8 +195,42 @@ function Picker({
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
-      </span>
-    </label>
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          className="absolute z-30 mt-1.5 max-h-72 w-full overflow-y-auto rounded-xl border border-white/15 bg-[#0b1622] p-1 shadow-2xl shadow-black/60"
+        >
+          {options.map((option) => (
+            <li key={option.value}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={option.value === value}
+                onClick={() => {
+                  playTap();
+                  onChange(option.value);
+                  setOpen(false);
+                }}
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                  option.value === value
+                    ? "bg-teal-300/15 text-teal-100"
+                    : "text-zinc-300 hover:bg-white/[0.06] hover:text-zinc-100"
+                }`}
+              >
+                <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                {option.note && (
+                  <span className="shrink-0 text-xs text-zinc-500">
+                    {option.note}
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -236,11 +305,7 @@ export default function Home() {
 
   const [gameType, setGameType] = useState<GameType>("name");
   const [modeId, setModeId] = useState<ModeId>("easy");
-  const [count, setCount] = useState<number | null>(DEFAULT_ROUND_LENGTH);
-  const [limit, setLimit] = useState<number | null>(null);
-  const [ruleset, setRuleset] = useState<Ruleset>("relaxed");
   const [hints, setHints] = useState(true);
-  const [customising, setCustomising] = useState(false);
   const [moreTypes, setMoreTypes] = useState(false);
 
   const [daily, setDaily] = useState<{ played: boolean; streak: number } | null>(
@@ -256,7 +321,7 @@ export default function Home() {
   const [duePractice, setDuePractice] = useState(0);
 
   const counts = useModeCounts(gameType);
-  const best = useBest(gameType, modeId, limit, ruleset, count);
+  const best = useBest(gameType, modeId);
 
   useEffect(() => {
     const today = dayKey();
@@ -276,12 +341,7 @@ export default function Home() {
   const openMore = moreTypes || folded.some((t) => t.id === gameType);
 
   const start = () =>
-    navigate(gamePath(gameType, modeId, limit, ruleset, count));
-
-  const rulesLabel =
-    RULESETS.find((r) => r.id === ruleset)?.label ?? "Relaxed";
-  const roundLabel =
-    ROUND_LENGTHS.find((r) => r.count === count)?.label ?? "10";
+    navigate(gamePath(gameType, modeId, CLOCK, RULES, ROUND_LENGTH));
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#07111c]">
@@ -456,34 +516,25 @@ export default function Home() {
               )}
             </div>
 
-            {/* Stacked on a phone: side by side, "Countries only · 167" loses
-                its count to the ellipsis. */}
+            {/*
+              Two decisions and a button: what kind of round, which map, go.
+              The round length and the clock used to live here too, behind a
+              "Customize round" control that opened a panel that then had to be
+              opened again. Rounds are ten countries counting up now, and hints
+              are a setting rather than a per-round choice — they were the same
+              answer every time, which is what a setting is for.
+            */}
             <div className="mt-3.5 flex flex-col gap-3 sm:flex-row sm:items-end">
               <Picker
                 label="Map"
                 value={modeId}
                 onChange={(v) => setModeId(v as ModeId)}
-              >
-                {MODES.map((mode) => (
-                  <option key={mode.id} value={mode.id}>
-                    {mode.name}
-                    {counts[mode.id] ? ` · ${counts[mode.id]}` : ""}
-                  </option>
-                ))}
-              </Picker>
-              <Picker
-                label="Round"
-                value={String(count ?? "all")}
-                onChange={(v) => setCount(v === "all" ? null : Number(v))}
-              >
-                {ROUND_LENGTHS.map((option) => (
-                  <option key={option.label} value={String(option.count ?? "all")}>
-                    {option.count === null
-                      ? "Everything"
-                      : `${option.count} countries`}
-                  </option>
-                ))}
-              </Picker>
+                options={MODES.map((mode) => ({
+                  value: mode.id,
+                  label: mode.name,
+                  note: counts[mode.id] ? String(counts[mode.id]) : undefined,
+                }))}
+              />
               <button
                 onClick={() => {
                   playTap();
@@ -496,39 +547,12 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-              <p className="text-sm text-zinc-500">
-                {rulesLabel} mode · {hints ? "Hints on" : "Hints off"} ·{" "}
-                {roundLabel === "Everything" ? "every country" : `${roundLabel} countries`}
-                {best && <> · your best {best}</>}
-              </p>
-              <button
-                onClick={() => {
-                  playTap();
-                  setCustomising((open) => !open);
-                }}
-                aria-expanded={customising}
-                className="text-sm text-zinc-300 underline underline-offset-4 transition-colors hover:text-zinc-100"
-              >
-                Customize round
-              </button>
-            </div>
+            <p className="mt-2.5 text-sm text-zinc-500">
+              {ROUND_LENGTH} countries · no clock ·{" "}
+              {hints ? "hints on" : "hints off"}
+              {best && <> · your best {best}</>}
+            </p>
 
-            {customising && (
-              <Options
-                count={count}
-                onCount={setCount}
-                limit={limit}
-                onLimit={setLimit}
-                ruleset={ruleset}
-                onRuleset={setRuleset}
-                hints={hints}
-                onHints={(on) => {
-                  setHints(on);
-                  setHintsEnabled(on);
-                }}
-              />
-            )}
           </section>
 
           <section className="mt-[clamp(0.75rem,2.4vh,2.5rem)]">
@@ -540,21 +564,28 @@ export default function Home() {
               {import.meta.env.DEV && <ReplayToday />}
             </div>
 
+            {/* Said once, above all three, because it is true of all three —
+                it used to be a pill on the first card, which read as though
+                that card alone was worth the extra. */}
+            <p className="mt-1.5 flex w-fit items-center gap-2 rounded-full border border-teal-300/30 bg-teal-300/10 px-3 py-0.5 text-xs font-medium text-teal-200">
+              <span aria-hidden="true">★</span>
+              All three score {DAILY_MULTIPLIER}× on the leaderboard
+            </p>
+
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <DailyCard
                 to="/daily"
-                icon="🗓️"
-                title="Daily challenge"
+                icon="🗺️"
+                title="Country hunt"
                 note={
                   doneToday.daily
                     ? "Played — see your result"
-                    : "10 countries. One shared challenge."
+                    : "Ten countries, the same ten for everyone."
                 }
                 accent="sky"
                 badge={daily && daily.streak > 1 ? `🔥 ${daily.streak}` : undefined}
                 done={doneToday.daily}
-                pill={`${DAILY_MULTIPLIER}× leaderboard points`}
-                action="Play daily"
+                action="Start the hunt"
               />
               <DailyCard
                 to="/mystery"

@@ -25,6 +25,7 @@ import {
   loadMystery,
   mysteryFor,
   mysteryNumber,
+  postMysteryScore,
   saveMystery,
   scoreFor,
   type MysteryResult,
@@ -96,6 +97,7 @@ export default function Mystery() {
         answer,
         guesses: [],
         solved: false,
+        startedAt: Date.now(),
       }
     );
   }, [day, answer]);
@@ -139,6 +141,9 @@ export default function Mystery() {
       );
 
       if (name === answer) {
+        // Not awaited: the summary should never wait on the network, and the
+        // result is already saved locally either way.
+        void postMysteryScore(next);
         playSolved();
         setBurst((n) => n + 1);
       } else {

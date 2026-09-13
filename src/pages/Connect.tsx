@@ -14,6 +14,7 @@ import {
   isConnected,
   loadConnect,
   puzzleFor,
+  postConnectScore,
   saveConnect,
   scoreFor,
   touchesChain,
@@ -68,6 +69,7 @@ export default function Connect() {
         chain: [],
         solved: false,
         wrong: 0,
+        startedAt: Date.now(),
       }
     );
   }, [day, puzzle]);
@@ -144,6 +146,8 @@ export default function Connect() {
       setNote(ordered ? null : `${display(name)} added.`);
 
       if (ordered) {
+        // Not awaited, for the same reason the mystery isn't.
+        void postConnectScore(next);
         playSolved();
         setBurst((n) => n + 1);
       } else {

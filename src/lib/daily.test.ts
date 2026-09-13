@@ -4,6 +4,9 @@ import {
   DAILY_COUNTRIES,
   challengeFor,
   DAILY_MULTIPLIER,
+  MAX_RUN_MS,
+  MIN_RUN_MS,
+  elapsedMs,
   dailyType,
   dayKey,
   dayNumber,
@@ -173,5 +176,30 @@ describe("the daily bonus", () => {
   it("is a whole number a player can hold in their head", () => {
     expect(Number.isInteger(DAILY_MULTIPLIER)).toBe(true);
     expect(DAILY_MULTIPLIER).toBeGreaterThan(1);
+  });
+});
+
+describe("elapsed time filed with a score", () => {
+  it("is the real gap when the puzzle was stamped", () => {
+    const started = 1_000_000;
+    expect(elapsedMs(started, started + 45_000)).toBe(45_000);
+  });
+
+  // The scores table checks this column, and a rejected row loses the whole
+  // score over a detail the board doesn't even rank on.
+  it("never falls below the floor the table accepts", () => {
+    const started = 1_000_000;
+    expect(elapsedMs(started, started + 10)).toBe(MIN_RUN_MS);
+    expect(elapsedMs(started, started)).toBe(MIN_RUN_MS);
+  });
+
+  it("never exceeds the ceiling, for a puzzle left open overnight", () => {
+    const started = 1_000_000;
+    expect(elapsedMs(started, started + 9 * 86_400_000)).toBe(MAX_RUN_MS);
+  });
+
+  // Rounds saved before scores were posted carry no stamp.
+  it("falls back to the floor when there is no stamp", () => {
+    expect(elapsedMs(undefined)).toBe(MIN_RUN_MS);
   });
 });

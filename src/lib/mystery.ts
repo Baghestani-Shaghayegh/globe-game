@@ -1,5 +1,6 @@
 import { hash, mulberry32 } from "./daily";
-import { dayNumber } from "./daily";
+import { DAILY_MULTIPLIER, dayNumber, elapsedMs } from "./daily";
+import { postScore } from "./leaderboard";
 
 /**
  * The mystery country: one hidden country a day, found by guessing and reading
@@ -126,6 +127,14 @@ export type MysteryResult = {
   answer: string;
   guesses: Guess[];
   solved: boolean;
+  /**
+   * When the puzzle was first opened, for the time filed with the score.
+   *
+   * Optional because rounds saved before scores were posted don't carry it;
+   * `loadMystery` fills it in on the way past, so one day's puzzles read as
+   * having started when they were reopened and every later one is exact.
+   */
+  startedAt?: number;
 };
 
 const KEY = "worldguess.mystery.v1";
@@ -146,7 +155,8 @@ export function loadMystery(day: string): MysteryResult | null {
   try {
     const raw = localStorage.getItem(KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : null;
-    return isResult(parsed) && parsed.day === day ? parsed : null;
+    if (!isResult(parsed) || parsed.day !== day) return null;
+    return parsed.startedAt ? parsed : { ...parsed, startedAt: Date.now() };
   } catch {
     return null;
   }
@@ -164,4 +174,26 @@ export function saveMystery(result: MysteryResult) {
 export function scoreFor(result: MysteryResult): number {
   if (!result.solved) return 0;
   return Math.max(100, 1000 - (result.guesses.length - 1) * 75);
+}
+
+/** The bucket today's mystery is filed under on the leaderboard. */
+export const MYSTERY_BUCKET = "mystery:daily";
+
+/**
+ * Files a solved mystery on the leaderboard, at the daily multiplier.
+ *
+ * The multiplier is applied here, once, on the way out — the same shape the
+ * ten-country daily uses. Only a solved puzzle is posted: an unsolved one
+ * scores nothing, and a row of zeroes would only dilute the "fewest runs wins
+ * the tie" rule on the board.
+ */
+export function postMysteryScore(result: MysteryResult): Promise<boolean> {
+  if (!result.solved) return Promise.resolve(false);
+  return postScore(MYSTERY_BUCKET, {
+    points: scoreFor(result) * DAILY_MULTIPLIER,
+    // One puzzle, solved. There is no partial credit to describe here.
+    found: 1,
+    total: 1,
+    ms: elapsedMs(result.startedAt),
+  });
 }

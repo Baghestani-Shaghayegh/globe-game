@@ -13,7 +13,6 @@ export default function DailyCard({
   accent,
   badge,
   done = false,
-  pill,
   action,
 }: {
   to: string;
@@ -33,8 +32,6 @@ export default function DailyCard({
    * two you have yet to play.
    */
   done?: boolean;
-  /** A standing fact about the puzzle, e.g. what its points are worth. */
-  pill?: string;
   /** The call to action at the foot of the card. */
   action?: string;
 }) {
@@ -85,12 +82,6 @@ export default function DailyCard({
       >
         {note}
       </span>
-
-      {pill && !done && (
-        <span className="w-fit rounded-full border border-teal-300/30 bg-teal-300/10 px-2.5 py-0.5 text-xs font-medium text-teal-200">
-          {pill}
-        </span>
-      )}
 
       {action && (
         <span

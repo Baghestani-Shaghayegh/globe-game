@@ -270,7 +270,18 @@ describe("the saved round", () => {
 
   it("comes back on the same day", () => {
     saveConnect(result);
-    expect(loadConnect("2026-09-10")).toEqual(result);
+    expect(loadConnect("2026-09-10")).toMatchObject(result);
+  });
+
+  it("is stamped on the way out if it was saved without one", () => {
+    saveConnect(result);
+    const before = Date.now();
+    expect(loadConnect("2026-09-10")?.startedAt).toBeGreaterThanOrEqual(before);
+  });
+
+  it("keeps the stamp it already had", () => {
+    saveConnect({ ...result, startedAt: 1_700_000_000_000 });
+    expect(loadConnect("2026-09-10")?.startedAt).toBe(1_700_000_000_000);
   });
 
   it("is ignored on a different day", () => {

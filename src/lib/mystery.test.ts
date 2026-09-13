@@ -229,7 +229,21 @@ describe("the saved round", () => {
 
   it("comes back on the same day", () => {
     saveMystery(result);
-    expect(loadMystery("2026-09-10")).toEqual(result);
+    expect(loadMystery("2026-09-10")).toMatchObject(result);
+  });
+
+  // A round saved before scores were posted carries no stamp, and the time
+  // filed with its score has to come from somewhere.
+  it("is stamped on the way out if it was saved without one", () => {
+    saveMystery(result);
+    const before = Date.now();
+    const loaded = loadMystery("2026-09-10");
+    expect(loaded?.startedAt).toBeGreaterThanOrEqual(before);
+  });
+
+  it("keeps the stamp it already had", () => {
+    saveMystery({ ...result, startedAt: 1_700_000_000_000 });
+    expect(loadMystery("2026-09-10")?.startedAt).toBe(1_700_000_000_000);
   });
 
   it("is ignored on a different day, so tomorrow starts clean", () => {
