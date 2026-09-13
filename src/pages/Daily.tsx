@@ -192,7 +192,7 @@ export default function Daily() {
     const days = streak(day);
     return (
       <div className="min-h-screen bg-[#07111c] px-5 py-12">
-        <main className="mx-auto w-full max-w-md">
+        <main className="w-full max-w-[1180px]">
           <Link
             to="/"
             className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"

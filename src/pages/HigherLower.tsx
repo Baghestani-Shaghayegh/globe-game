@@ -174,7 +174,7 @@ export default function HigherLower() {
   );
 
   return (
-    <div className="min-h-screen bg-[#07111c] px-5 py-10">
+    <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
       <main className="mx-auto flex w-full max-w-2xl flex-col">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <Link

@@ -24,8 +24,8 @@ function flagOptions(): { code: string; name: string }[] {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#07111c] px-5 py-10">
-      <main className="mx-auto w-full max-w-md">
+    <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
+      <main className="w-full max-w-[1180px]">
         <Link
           to="/"
           className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
