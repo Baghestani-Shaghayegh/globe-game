@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { GAME_TYPES } from "../data/modes";
 import {
   DAILY_COUNTRIES,
   challengeFor,
@@ -63,27 +62,15 @@ describe("the day's round", () => {
     expect(countries).toHaveLength(2);
   });
 
-  it("rotates through every game type, then starts again", () => {
-    // Derived from the list rather than hard-coded, so adding a fifth way to
-    // play doesn't quietly leave this asserting the old count.
-    const count = GAME_TYPES.length;
-    const days = Array.from({ length: count }, (_, i) =>
-      `2026-01-${String(i + 1).padStart(2, "0")}`
-    );
-    const types = days.map((d) => challengeFor(d, POOL).type);
-    expect(new Set(types).size).toBe(count);
-
-    const next = `2026-01-${String(count + 1).padStart(2, "0")}`;
-    expect(challengeFor(next, POOL).type).toBe(types[0]);
-  });
-
-  it("offers every game type over a long enough stretch", () => {
+  // One game every day, so that everybody's daily score is comparable with
+  // everybody else's — and so the card on the menu can say what it is.
+  it("is the same game every day: naming the country", () => {
     const seen = new Set(
       Array.from({ length: 30 }, (_, i) =>
         challengeFor(`2026-03-${String(i + 1).padStart(2, "0")}`, POOL).type
       )
     );
-    expect(seen.size).toBe(GAME_TYPES.length);
+    expect([...seen]).toEqual(["name"]);
   });
 });
 
@@ -159,13 +146,14 @@ describe("dailyType", () => {
     }
   });
 
-  it("works its way through every game type", () => {
-    const seen = new Set<string>();
+  // It used to rotate through all six by date, which meant the card on the
+  // menu could not say what you were about to play — and that card is called
+  // Country hunt, so on a flags day it was wrong.
+  it("is naming the country, every day", () => {
     for (let i = 0; i < 40; i++) {
       const day = new Date(Date.UTC(2026, 0, 1 + i)).toISOString().slice(0, 10);
-      seen.add(dailyType(day));
+      expect(dailyType(day)).toBe("name");
     }
-    expect(seen.size).toBe(GAME_TYPES.length);
   });
 });
 

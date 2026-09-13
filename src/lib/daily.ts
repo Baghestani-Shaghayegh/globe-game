@@ -1,4 +1,4 @@
-import { GAME_TYPES, type GameType } from "../data/modes";
+import { type GameType } from "../data/modes";
 
 /**
  * The daily challenge: one round, the same for everyone, changing at midnight
@@ -101,8 +101,6 @@ export type Challenge = {
  * types were being added, and a daily that silently never offers one of them
  * is the kind of bug nobody reports.
  */
-const TYPES: GameType[] = GAME_TYPES.map((t) => t.id);
-
 /**
  * Builds the round for a given day from a pool of eligible countries.
  *
@@ -111,12 +109,21 @@ const TYPES: GameType[] = GAME_TYPES.map((t) => t.id);
  * flag, a famous-for round needs a clue.
  */
 /**
- * Which game today's daily is played as. Derived from the date alone, so it
- * can be known without the country list — the leaderboard needs the day's
- * bucket key but has no use for the countries in it.
+ * Which game today's daily is played as.
+ *
+ * Always naming the country. It used to rotate through all six game types by
+ * date, which meant the card on the menu could not say what you were about to
+ * play — and the card is called Country hunt, so on a flags day it was simply
+ * wrong. One game, the same one every day, is also the only version of this
+ * that everybody's score is comparable across.
+ *
+ * Still a function of the day rather than a constant: the leaderboard builds
+ * the day's bucket key through here, and results saved on an earlier rotation
+ * still carry the type they were played as.
  */
-export function dailyType(day: string): GameType {
-  return TYPES[Math.abs(dayNumber(day)) % TYPES.length];
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function dailyType(_day: string): GameType {
+  return "name";
 }
 
 export function challengeFor(day: string, pool: string[]): Challenge {
