@@ -108,7 +108,9 @@ export const GLOBE_THEMES: GlobeTheme[] = [
       idle: "#6b5636",
       unfound: "#544428",
       found: "#8fae5d",
-      missed: "#b3684f",
+      // Rose rather than brick. The land here is brown and lit brown goes
+      // redder; a brick "missed" was 31 channels off the sunlit ground.
+      missed: "#c9556e",
       selected: "#e8b95c",
     },
   },
@@ -140,7 +142,9 @@ export const GLOBE_THEMES: GlobeTheme[] = [
       idle: "#7a3d2a",
       unfound: "#63301f",
       found: "#7fbe7a",
-      missed: "#d4574f",
+      // Same story, further along: this palette's ground *is* red-orange, so
+      // "missed" has to leave the hue altogether to stay readable on it.
+      missed: "#e8467f",
       selected: "#f6c453",
     },
   },

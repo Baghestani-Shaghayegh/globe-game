@@ -11,9 +11,11 @@ import type { GlobeMethods } from "react-globe.gl";
 import { Link } from "react-router-dom";
 import { useGlobeClick } from "../features/globe-guess/useGlobeClick";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
+import { GLOBE_SURFACE, useGlobeLook } from "../features/globe-guess/useGlobeLook";
 import { getCountryMeta } from "../data/countries";
 import { resolveName } from "../lib/answerMatch";
-import { globeMaterial, landShade, theme } from "../lib/globeTheme";
+import { landShade, theme } from "../lib/globeTheme";
+import { landMaterial } from "../lib/globeTerrain";
 import { featureCentre, type Geometry } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
 import Celebrate from "../components/Celebrate";
@@ -43,6 +45,10 @@ type CountryFeature = {
 export default function Mystery() {
   useGlobeTheme();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
+  // The scene does not exist until the globe says so, and the look is
+  // installed into the scene.
+  const [ready, setReady] = useState(false);
+  const ocean = useGlobeLook(globeRef, ready);
   const day = useMemo(dayKey, []);
   const [features, setFeatures] = useState<CountryFeature[]>([]);
   const [loadError, setLoadError] = useState(false);
@@ -183,9 +189,14 @@ export default function Mystery() {
   const capColor = useMemo(
     () => (d: object) => {
       const { name } = (d as CountryFeature).properties;
-      if (result?.solved && name === result.answer) return theme.found;
+      if (result?.solved && name === result.answer)
+        return landMaterial(theme.found, "answer");
       const km = guessed.get(name);
-      return km === undefined ? landShade(name) : heatColor(km);
+      // A guess reads as a temperature, so it must not also read as a time of
+      // day — the heat ramp is flat, like every other answer.
+      return km === undefined
+        ? landMaterial(landShade(name))
+        : landMaterial(heatColor(km), "answer");
     },
     [guessed, result]
   );
@@ -216,13 +227,11 @@ export default function Mystery() {
         ref={globeRef}
         rendererConfig={{ antialias: true, alpha: true, logarithmicDepthBuffer: true }}
         backgroundColor={theme.page}
-        globeMaterial={globeMaterial}
-        atmosphereColor={theme.atmosphere}
-        atmosphereAltitude={0.14}
+        globeMaterial={ocean}
+        onGlobeReady={() => setReady(true)}
+        {...GLOBE_SURFACE}
         polygonsData={features}
-        polygonCapColor={capColor}
-        polygonSideColor={() => theme.sphere}
-        polygonStrokeColor={() => theme.stroke}
+        polygonCapMaterial={capColor}
         polygonAltitude={(d) =>
           guessed.has((d as CountryFeature).properties.name) ? 0.03 : 0.012
         }

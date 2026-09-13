@@ -60,28 +60,67 @@ const fragmentShader = `
 
 const materials = new Map<string, THREE.ShaderMaterial>();
 
-export function landMaterial(color: string, ice = false): THREE.ShaderMaterial {
-  const key = `${color}:${ice}`;
-  const existing = materials.get(key);
-  if (existing) return existing;
+/**
+ * The three tones a colour is painted through as the light falls across it:
+ * the shadowed limb, the colour itself, and the sunlit side.
+ *
+ * Pulled out of the material so it can be tested. Every colour that means
+ * something in a round — found, missed, the one under the cursor — now goes
+ * through this on its way to the screen, and if lighting brought any of them
+ * near the land they sit on, a player would lose a round to it.
+ */
+export type Surface = "land" | "ice" | "answer";
+
+export function landTones(color: string, kind: Surface = "land") {
   const base = new THREE.Color(color);
   const reference = new THREE.Color("#23616a");
   const tint = (hex: string) => {
     const target = new THREE.Color(hex);
     return new THREE.Color().setRGB(
-      target.r * base.r / reference.r,
-      target.g * base.g / reference.g,
-      target.b * base.b / reference.b,
+      (target.r * base.r) / reference.r,
+      (target.g * base.g) / reference.g,
+      (target.b * base.b) / reference.b
     );
   };
+  if (kind === "answer") {
+    // Flat, on purpose. Found, missed and the country under the cursor are
+    // the colours a player reads the round from, and running them through the
+    // same ramp as the land put them within 21 channels of it on some
+    // palettes — a found country on the shadowed limb against sunlit land.
+    // The light falls on the map; it does not fall on the answers.
+    return { base, shadow: base, highlight: base };
+  }
+  return {
+    base,
+    shadow: kind === "ice" ? base.clone().multiplyScalar(0.24) : tint("#123d48"),
+    highlight: kind === "ice" ? base.clone().multiplyScalar(0.9) : tint("#43858a"),
+  };
+}
+
+export function landMaterial(
+  color: string,
+  kind: Surface = "land"
+): THREE.ShaderMaterial {
+  const key = `${color}:${kind}`;
+  const existing = materials.get(key);
+  if (existing) return existing;
+  const tones = landTones(color, kind);
   const material = new THREE.ShaderMaterial({
     uniforms: {
-      baseColor: { value: base },
-      shadowColor: { value: ice ? base.clone().multiplyScalar(0.24) : tint("#123d48") },
-      highlightColor: { value: ice ? base.clone().multiplyScalar(0.9) : tint("#43858a") },
+      baseColor: { value: tones.base },
+      shadowColor: { value: tones.shadow },
+      highlightColor: { value: tones.highlight },
     },
     vertexShader,
     fragmentShader,
+    // The country outlines are drawn on the same surface as these caps, at the
+    // same depth, so the two fought for it and the borders came out broken or
+    // missing — most of North America had none at all. Pushing the fill a hair
+    // further from the camera lets the lines win every time, which is what
+    // polygon offset is for.
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
   });
   materials.set(key, material);
   return material;

@@ -91,13 +91,15 @@ export default function RoundSummary({
             )}
           </p>
 
+          {/* Room around it. This is the best news on the card and it was
+              pressed up against the divider under the buttons. */}
           {isBest ? (
-            <p className="mt-3 text-xs uppercase tracking-wider text-emerald-300">
+            <p className="mb-1 mt-4 text-xs uppercase tracking-wider text-emerald-300">
               {completed ? "New best time" : "New best score"}
             </p>
           ) : (
             previousBest && (
-              <p className="mt-3 text-xs tabular-nums text-zinc-500">
+              <p className="mb-1 mt-4 text-xs tabular-nums text-zinc-500">
                 Your best {previousBest}
               </p>
             )

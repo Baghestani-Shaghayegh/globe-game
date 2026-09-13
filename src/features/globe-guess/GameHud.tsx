@@ -9,8 +9,6 @@ type Props = {
   ms: number;
   /** True when the clock counts down, so it can warn as it empties. */
   countdown: boolean;
-  modeLabel: string;
-  modeLevel: 1 | 2 | 3;
   points: number;
   streak: number;
   /** What the last correct answer paid, to float up off the score. */
@@ -18,8 +16,6 @@ type Props = {
   /** Ends the round. Null once it has already ended. */
   onFinish: (() => void) | null;
 };
-
-const BAR_HEIGHTS = ["h-1.5", "h-2.5", "h-3.5"];
 
 /**
  * The in-game status bar. Below `sm` the progress bar and mode label drop out —
@@ -32,8 +28,6 @@ export default function GameHud({
   total,
   ms,
   countdown,
-  modeLabel,
-  modeLevel,
   points,
   streak,
   gain,
@@ -124,25 +118,6 @@ export default function GameHud({
         role="timer"
       >
         {formatDuration(ms)}
-      </span>
-
-      <span
-        className="hidden h-4 w-px bg-white/10 sm:block"
-        aria-hidden="true"
-      />
-
-      <span className="hidden items-center gap-1.5 text-xs uppercase tracking-wider text-zinc-400 sm:flex">
-        <span aria-hidden="true" className="flex items-end gap-[3px]">
-          {BAR_HEIGHTS.map((height, i) => (
-            <span
-              key={height}
-              className={`w-[3px] rounded-full ${height} ${
-                i < modeLevel ? "bg-zinc-300" : "bg-white/15"
-              }`}
-            />
-          ))}
-        </span>
-        {modeLabel}
       </span>
 
       {onFinish && (

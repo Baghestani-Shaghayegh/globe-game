@@ -6,6 +6,7 @@ import GuessModal from "./GuessModal";
 import RoundSummary from "./RoundSummary";
 import GameHud from "./GameHud";
 import ExitConfirm from "./ExitConfirm";
+import ConfirmDialog from "./ConfirmDialog";
 import { useRound } from "./useRound";
 import { recordRound } from "../../lib/countryStats";
 import { useGlobeClick } from "./useGlobeClick";
@@ -18,8 +19,10 @@ import {
   type Ruleset,
 } from "../../data/modes";
 import { isCorrectGuess } from "../../lib/answerMatch";
-import { globeMaterial, landShade, theme } from "../../lib/globeTheme";
+import { landShade, theme } from "../../lib/globeTheme";
+import { landMaterial } from "../../lib/globeTerrain";
 import { useGlobeTheme } from "./useGlobeTheme";
+import { GLOBE_SURFACE, useGlobeLook } from "./useGlobeLook";
 import { hintsEnabled } from "../../lib/prefs";
 import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
 
@@ -62,6 +65,13 @@ export default function GlobeGame({
 
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
+  // The scene does not exist until the globe says so, and the look is
+  // installed into the scene.
+  // Finishing early ends the round for good, so it asks first — the same
+  // question the back button has always asked.
+  const [confirmingFinish, setConfirmingFinish] = useState(false);
+  const [ready, setReady] = useState(false);
+  const ocean = useGlobeLook(globeRef, ready);
   const wrongTimer = useRef<number | undefined>(undefined);
   const framed = useRef(false);
 
@@ -394,23 +404,21 @@ export default function GlobeGame({
           logarithmicDepthBuffer: true,
         }}
         backgroundColor={theme.page}
-        globeMaterial={globeMaterial}
-        atmosphereColor={theme.atmosphere}
-        atmosphereAltitude={0.14}
+        globeMaterial={ocean}
+        onGlobeReady={() => setReady(true)}
+        {...GLOBE_SURFACE}
         polygonsData={features}
-        polygonCapColor={(d) => {
+        polygonCapMaterial={(d) => {
           const { name } = (d as CountryFeature).properties;
-          if (foundNames.has(name)) return theme.found;
-          if (expired.has(name)) return theme.missed;
-          if (name === cursorName) return theme.selected;
+          if (foundNames.has(name)) return landMaterial(theme.found, "answer");
+          if (expired.has(name)) return landMaterial(theme.missed, "answer");
+          if (name === cursorName) return landMaterial(theme.selected, "answer");
           // Once the run is over, everything left is shown as missed.
-          if (summary) return theme.missed;
+          if (summary) return landMaterial(theme.missed, "answer");
           if (selected && selected.properties.name === name)
-            return theme.selected;
-          return landShade(name);
+            return landMaterial(theme.selected, "answer");
+          return landMaterial(landShade(name));
         }}
-        polygonSideColor={() => theme.sphere}
-        polygonStrokeColor={() => theme.stroke}
         polygonAltitude={() => 0.012}
         polygonsTransitionDuration={0}
         onPolygonHover={(polygon) =>
@@ -424,12 +432,10 @@ export default function GlobeGame({
         total={target}
         ms={round.displayMs}
         countdown={round.countdown}
-        modeLabel={mode.label}
-        modeLevel={mode.level}
         points={round.score.points}
         streak={round.score.streak}
         gain={round.gain}
-        onFinish={summary ? null : endRun}
+        onFinish={summary ? null : () => setConfirmingFinish(true)}
       />
 
       {/* Hidden until focused: a mouse player never sees it, a keyboard player
@@ -453,6 +459,25 @@ export default function GlobeGame({
             </p>
           )}
         </div>
+      )}
+
+      {confirmingFinish && (
+        <ConfirmDialog
+          title="Finish this round?"
+          body={
+            <>
+              You've found {foundNames.size} of {target}. Finishing ends the round
+              and saves it to your records.
+            </>
+          }
+          confirmLabel="Finish and see your score"
+          onConfirm={() => {
+            setConfirmingFinish(false);
+            endRun();
+          }}
+          cancelLabel="Keep playing"
+          onCancel={() => setConfirmingFinish(false)}
+        />
       )}
 
       {round.confirmingExit && (

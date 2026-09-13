@@ -5,8 +5,10 @@ import { useGlobeClick } from "../globe-guess/useGlobeClick";
 import { getCountryMeta } from "../../data/countries";
 import { flagUrl } from "../../data/flags";
 import { cluesFor } from "../../data/clues";
-import { globeMaterial, landShade, theme } from "../../lib/globeTheme";
+import { landShade, theme } from "../../lib/globeTheme";
+import { landMaterial } from "../../lib/globeTerrain";
 import { useGlobeTheme } from "../globe-guess/useGlobeTheme";
+import { GLOBE_SURFACE, useGlobeLook } from "../globe-guess/useGlobeLook";
 import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
 import type { GameType } from "../../data/modes";
 
@@ -48,6 +50,10 @@ export default function MatchGlobe({
   useGlobeTheme();
 
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
+  // The scene does not exist until the globe says so, and the look is
+  // installed into the scene.
+  const [ready, setReady] = useState(false);
+  const ocean = useGlobeLook(globeRef, ready);
   const flashTimer = useRef<number | undefined>(undefined);
   const [wrongName, setWrongName] = useState<string | null>(null);
   const [rightName, setRightName] = useState<string | null>(null);
@@ -102,11 +108,11 @@ export default function MatchGlobe({
   const capColor = useMemo(
     () => (d: object) => {
       const { name } = (d as CountryFeature).properties;
-      if (name === wrongName) return theme.missed;
-      if (name === rightName) return theme.found;
+      if (name === wrongName) return landMaterial(theme.missed, "answer");
+      if (name === rightName) return landMaterial(theme.found, "answer");
       // Revealed once the question closes, however it went.
-      if (locked && name === target) return theme.found;
-      return landShade(name);
+      if (locked && name === target) return landMaterial(theme.found, "answer");
+      return landMaterial(landShade(name));
     },
     [wrongName, rightName, locked, target]
   );
@@ -124,13 +130,11 @@ export default function MatchGlobe({
         ref={globeRef}
         rendererConfig={{ antialias: true, alpha: true, logarithmicDepthBuffer: true }}
         backgroundColor={theme.page}
-        globeMaterial={globeMaterial}
-        atmosphereColor={theme.atmosphere}
-        atmosphereAltitude={0.14}
+        globeMaterial={ocean}
+        onGlobeReady={() => setReady(true)}
+        {...GLOBE_SURFACE}
         polygonsData={features}
-        polygonCapColor={capColor}
-        polygonSideColor={() => theme.sphere}
-        polygonStrokeColor={() => theme.stroke}
+        polygonCapMaterial={capColor}
         polygonAltitude={(d) =>
           (d as CountryFeature).properties.name === target && locked
             ? 0.06

@@ -3,8 +3,10 @@ import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
 import { Link } from "react-router-dom";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
+import { GLOBE_SURFACE, useGlobeLook } from "../features/globe-guess/useGlobeLook";
 import { getCountryMeta } from "../data/countries";
-import { backdropColor, globeMaterial, theme } from "../lib/globeTheme";
+import { backdropColor, theme } from "../lib/globeTheme";
+import { landMaterial } from "../lib/globeTerrain";
 import { featureCentre, type Geometry } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
 import Celebrate from "../components/Celebrate";
@@ -32,6 +34,10 @@ const display = (name: string) => getCountryMeta(name).displayName;
 export default function Connect() {
   useGlobeTheme();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
+  // The scene does not exist until the globe says so, and the look is
+  // installed into the scene.
+  const [ready, setReady] = useState(false);
+  const ocean = useGlobeLook(globeRef, ready);
   const framed = useRef(false);
   const day = useMemo(dayKey, []);
   const puzzle = useMemo(() => puzzleFor(day), [day]);
@@ -182,13 +188,14 @@ export default function Connect() {
   const capColor = useMemo(
     () => (d: object) => {
       const { name } = (d as CountryFeature).properties;
-      if (!result) return backdropColor();
-      if (name === result.from || name === result.to) return theme.selected;
-      if (chainSet.has(name)) return theme.found;
+      if (!result) return landMaterial(backdropColor());
+      if (name === result.from || name === result.to)
+        return landMaterial(theme.selected, "answer");
+      if (chainSet.has(name)) return landMaterial(theme.found, "answer");
       // Everything else: land you can see the shape of and nothing more. Its
       // border is hidden too, so a continent reads as one mass rather than a
       // set of countries to count along.
-      return backdropColor();
+      return landMaterial(backdropColor());
     },
     [result, chainSet]
   );
@@ -216,16 +223,18 @@ export default function Connect() {
         ref={globeRef}
         rendererConfig={{ antialias: true, alpha: true, logarithmicDepthBuffer: true }}
         backgroundColor={theme.page}
-        globeMaterial={globeMaterial}
-        atmosphereColor={theme.atmosphere}
-        atmosphereAltitude={0.14}
+        globeMaterial={ocean}
+        onGlobeReady={() => setReady(true)}
+        {...GLOBE_SURFACE}
         polygonsData={features}
-        polygonCapColor={capColor}
-        polygonSideColor={() => theme.sphere}
+        polygonCapMaterial={capColor}
+        // No line at all off the board, rather than one painted the same as
+        // the land under it. That worked while the fill was flat; now the fill
+        // is lit and the stroke is not, so on the sunlit side the outlines
+        // came back as darker lines — handing over the borders this puzzle
+        // exists to hide. `null` means three-globe builds no stroke object.
         polygonStrokeColor={(d) =>
-          onBoard((d as CountryFeature).properties.name)
-            ? theme.stroke
-            : backdropColor()
+          onBoard((d as CountryFeature).properties.name) ? theme.stroke : null
         }
         polygonAltitude={(d) => {
           const { name } = (d as CountryFeature).properties;

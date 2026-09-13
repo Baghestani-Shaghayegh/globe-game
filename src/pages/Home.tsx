@@ -9,7 +9,6 @@ import { getCountryMeta } from "../data/countries";
 import {
   GAME_TYPES,
   MODES,
-  DEFAULT_ROUND_LENGTH,
   gamePath,
   type GameType,
   type ModeId,
@@ -31,14 +30,15 @@ const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
 const TABS_SHOWN = 3;
 
 /**
- * What a round started from the menu is: ten countries, no clock, relaxed
- * rules. These were three controls on this page; every one of them was
- * answered the same way nearly every time, and the page is one screen now.
- * The other shapes still exist — a room sets its own, and a link carries
- * whatever it was made with — they just aren't a decision to make before
- * every round.
+ * What a round started from the menu is: the whole map you chose, no clock,
+ * relaxed rules.
+ *
+ * It used to be ten countries of it, which is what the Round control was for.
+ * With that control gone, picking "Countries only · 167" and then being asked
+ * ten of them read as the page ignoring the choice — so the map you pick is
+ * now the round you get, and the number beside it is the number you play.
  */
-const ROUND_LENGTH = DEFAULT_ROUND_LENGTH;
+const ROUND_LENGTH = null;
 const CLOCK = null;
 const RULES = "relaxed" as const;
 
@@ -547,7 +547,6 @@ export default function Home() {
                   leaderboard points on daily challenges
                 </span>
               </span>
-              <span className="text-xs text-zinc-500">Resets at midnight UTC</span>
               {import.meta.env.DEV && <ReplayToday />}
             </div>
 

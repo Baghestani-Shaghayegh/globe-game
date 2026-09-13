@@ -3,14 +3,11 @@ import * as THREE from "three";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
 import { iceShade, theme } from "../lib/globeTheme";
-import {
-  forgetLandMaterials,
-  landMaterial,
-  sunlitLights,
-} from "../lib/globeTerrain";
+import { forgetLandMaterials, landMaterial } from "../lib/globeTerrain";
 import { type Geometry } from "../lib/geo";
 import { GLOBE_BOX, globeCanvas } from "../lib/globePlacement";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
+import { GLOBE_SURFACE, useGlobeLook } from "../features/globe-guess/useGlobeLook";
 
 type Feature = { properties: { name: string }; geometry: Geometry };
 
@@ -45,15 +42,6 @@ const ALTITUDE_NARROW = 6.28;
 export default function BackgroundGlobe() {
   // Repaint when the player changes the globe palette.
   const themeId = useGlobeTheme();
-  const oceanMaterial = useMemo(() => new THREE.MeshPhongMaterial({
-    color: themeId === "meridian" ? "#082b43" : theme.sphere,
-    emissive: themeId === "meridian" ? "#031322" : theme.sphere,
-    emissiveIntensity: 0.35,
-    shininess: 0,
-  }), [themeId]);
-
-  useEffect(() => () => oceanMaterial.dispose(), [oceanMaterial]);
-
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const [ready, setReady] = useState(false);
   const [features, setFeatures] = useState<Feature[]>([]);
@@ -61,6 +49,7 @@ export default function BackgroundGlobe() {
     width: window.innerWidth,
     height: window.innerHeight,
   });
+  const ocean = useGlobeLook(globeRef, ready);
 
   useEffect(() => {
     let cancelled = false;
@@ -126,78 +115,14 @@ export default function BackgroundGlobe() {
       0
     );
 
-    const { lights, aim } = sunlitLights();
-    globe.lights(lights);
-
-    // Keep ocean illumination aligned when the viewport changes.
-    aim(camera);
-    const follow = () => aim(camera);
-    controls.addEventListener("change", follow);
-
-    // three-globe hard-codes the graticules to light grey. There is no
-    // accessor for them, so reach in and find the one object that matches what
-    // it builds — the country outlines are separate objects with their own
-    // colour, and are left alone.
-    globe.scene().traverse((object) => {
-      const line = object as THREE.LineSegments;
-      if (!line.isLineSegments) return;
-      const material = line.material as THREE.LineBasicMaterial;
-      if (!material?.color) return;
-      if (!line.userData.isGraticule &&
-          (material.color.getHexString() !== "d3d3d3" || material.opacity > 0.2)) return;
-      line.userData.isGraticule = true;
-      material.color.set("#2c7198");
-      material.opacity = 0.38;
-      // Lift the grid clear of the ocean so curved segments stay continuous.
-      line.scale.setScalar(1.0015);
-    });
-
-    // The glow: a single cyan ring on the edge of the sphere, and nothing
-    // else. The exponent is what makes it thin — the higher it is, the faster
-    // the light falls away from the limb.
-    const rimGeometry = new THREE.SphereGeometry(100.4, 96, 64);
-    const rimMaterial = new THREE.ShaderMaterial({
-      uniforms: { rimColor: { value: new THREE.Color(theme.atmosphere) } },
-      vertexShader: `
-        varying vec3 vNormal;
-        void main() {
-          vNormal = normalize(normalMatrix * normal);
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 rimColor;
-        varying vec3 vNormal;
-        void main() {
-          vec3 n = normalize(vNormal);
-          float rim = pow(1.0 - max(n.z, 0.0), 22.0);
-          gl_FragColor = vec4(rimColor, rim * 0.85);
-          #include <colorspace_fragment>
-        }
-      `,
-      transparent: true,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      depthTest: false,
-    });
-    const rim = new THREE.Mesh(rimGeometry, rimMaterial);
-    rim.renderOrder = 2;
-    globe.scene().add(rim);
-
-    return () => {
-      controls.removeEventListener("change", follow);
-      globe.scene().remove(rim);
-      rimGeometry.dispose();
-      rimMaterial.dispose();
-    };
-  }, [features, size.width, themeId, ready]);
+  }, [features, size.width]);
 
   const capMaterial = useMemo(() => {
     forgetLandMaterials();
     return (d: object) => {
       const { name } = (d as Feature).properties;
       const colour = ICE.has(name) ? iceShade() : theme.idle;
-      return landMaterial(colour, ICE.has(name));
+      return landMaterial(colour, ICE.has(name) ? "ice" : "land");
     };
     // themeId is not read here — the colours come from the live `theme` — but
     // a palette change makes every cached material the wrong colour.
@@ -225,23 +150,12 @@ export default function BackgroundGlobe() {
           logarithmicDepthBuffer: true,
         }}
         backgroundColor="rgba(0,0,0,0)"
-        globeMaterial={oceanMaterial}
-        // Off. The rim below is the whole glow now: one colour, one ring.
-        // Stacked on the shader's rim this read as fog around the globe, and
-        // being a separate colour from it there was no one edge to look at.
-        showAtmosphere={false}
-        // The meridians and parallels in the design. They cost nothing, and a
-        // sphere with a grid on it reads as a globe rather than a circle.
-        showGraticules
+        globeMaterial={ocean}
+        {...GLOBE_SURFACE}
         polygonsData={features}
-        // A lit material rather than a flat colour. This is what puts the sun
-        // on the upper left and lets the lower hemisphere fall into shadow;
-        // the shade and the texture only vary the ground underneath it.
+        // A lit material rather than a flat colour: this is what puts the sun
+        // on the upper left and lets the lower hemisphere fall into shadow.
         polygonCapMaterial={capMaterial}
-        polygonSideColor={() => theme.sphere}
-        polygonStrokeColor={() => new THREE.Color(theme.stroke).multiplyScalar(0.62).getStyle()}
-        polygonAltitude={() => 0.003}
-        polygonCapCurvatureResolution={1}
         polygonsTransitionDuration={0}
       />
     </div>

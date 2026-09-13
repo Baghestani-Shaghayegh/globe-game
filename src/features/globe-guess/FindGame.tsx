@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import RoundSummary from "./RoundSummary";
 import GameHud from "./GameHud";
 import ExitConfirm from "./ExitConfirm";
+import ConfirmDialog from "./ConfirmDialog";
 import { useRound } from "./useRound";
 import { recordRound } from "../../lib/countryStats";
 import { useGlobeClick } from "./useGlobeClick";
@@ -22,8 +23,10 @@ import { capitalOf } from "../../data/capitals";
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { HINT_COST } from "../../lib/scoring";
 import { hintsEnabled } from "../../lib/prefs";
-import { globeMaterial, landShade, theme } from "../../lib/globeTheme";
+import { landShade, theme } from "../../lib/globeTheme";
+import { landMaterial } from "../../lib/globeTerrain";
 import { useGlobeTheme } from "./useGlobeTheme";
+import { GLOBE_SURFACE, useGlobeLook } from "./useGlobeLook";
 import type { Continent } from "../../data/continents";
 import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
 import { VIEW, outlinePath } from "../../lib/outline";
@@ -117,6 +120,13 @@ export default function FindGame({
 
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
+  // The scene does not exist until the globe says so, and the look is
+  // installed into the scene.
+  // Finishing early ends the round for good, so it asks first — the same
+  // question the back button has always asked.
+  const [confirmingFinish, setConfirmingFinish] = useState(false);
+  const [ready, setReady] = useState(false);
+  const ocean = useGlobeLook(globeRef, ready);
   const wrongTimer = useRef<number | undefined>(undefined);
   const framed = useRef(false);
 
@@ -440,13 +450,14 @@ export default function FindGame({
   const capColor = useMemo(
     () => (d: object) => {
       const { name } = (d as CountryFeature).properties;
-      if (name === wrongName) return theme.missed;
-      if (name === revealed) return theme.selected;
-      if (foundNames.has(name)) return theme.found;
-      if (summary) return passedNames.has(name) ? theme.missed : landShade(name);
+      if (name === wrongName) return landMaterial(theme.missed, "answer");
+      if (name === revealed) return landMaterial(theme.selected, "answer");
+      if (foundNames.has(name)) return landMaterial(theme.found, "answer");
+      if (summary && passedNames.has(name))
+        return landMaterial(theme.missed, "answer");
       if (narrowedTo && !getCountryMeta(name).continents.includes(narrowedTo))
-        return theme.sphere;
-      return landShade(name);
+        return landMaterial(theme.sphere, "answer");
+      return landMaterial(landShade(name));
     },
     [wrongName, revealed, foundNames, passedNames, summary, narrowedTo]
   );
@@ -479,13 +490,11 @@ export default function FindGame({
           logarithmicDepthBuffer: true,
         }}
         backgroundColor={theme.page}
-        globeMaterial={globeMaterial}
-        atmosphereColor={theme.atmosphere}
-        atmosphereAltitude={0.14}
+        globeMaterial={ocean}
+        onGlobeReady={() => setReady(true)}
+        {...GLOBE_SURFACE}
         polygonsData={features}
-        polygonCapColor={capColor}
-        polygonSideColor={() => theme.sphere}
-        polygonStrokeColor={() => theme.stroke}
+        polygonCapMaterial={capColor}
         polygonAltitude={(d) =>
           (d as CountryFeature).properties.name === revealed ? 0.06 : 0.012
         }
@@ -501,12 +510,10 @@ export default function FindGame({
         total={asked.length}
         ms={round.displayMs}
         countdown={round.countdown}
-        modeLabel={mode.label}
-        modeLevel={mode.level}
         points={round.score.points}
         streak={round.score.streak}
         gain={round.gain}
-        onFinish={summary ? null : endRound}
+        onFinish={summary ? null : () => setConfirmingFinish(true)}
       />
 
       {!summary && target && (
@@ -660,6 +667,25 @@ export default function FindGame({
             </button>
           </div>
         </div>
+      )}
+
+      {confirmingFinish && (
+        <ConfirmDialog
+          title="Finish this round?"
+          body={
+            <>
+              You've found {foundNames.size} of {asked.length}. Finishing ends the round
+              and saves it to your records.
+            </>
+          }
+          confirmLabel="Finish and see your score"
+          onConfirm={() => {
+            setConfirmingFinish(false);
+            endRound();
+          }}
+          cancelLabel="Keep playing"
+          onCancel={() => setConfirmingFinish(false)}
+        />
       )}
 
       {round.confirmingExit && (
