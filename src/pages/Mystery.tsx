@@ -183,9 +183,12 @@ export default function Mystery() {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!result || result.solved) return;
+    // An empty box is not a wrong guess — it is no guess. Submitting one used
+    // to answer "No country called """, which is a sentence about nothing.
+    if (!typed.trim()) return;
     const name = resolveName(typed, playable);
     if (!name) {
-      setFlash(`No country called "${typed.trim()}".`);
+      setFlash("No country called");
       playWrong();
       return;
     }
