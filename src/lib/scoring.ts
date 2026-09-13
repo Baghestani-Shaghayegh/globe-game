@@ -11,6 +11,17 @@ export const POINTS_PER_COUNTRY = 100;
 export const STREAK_BONUS = 25;
 export const MAX_STREAK_BONUS = 250;
 
+/**
+ * What a wrong answer costs.
+ *
+ * It used to cost nothing but the streak, on the reasoning that the run was
+ * punishment enough. That made clicking around the map free: with no price on
+ * a guess, sweeping the continent always beat thinking. It is deliberately
+ * less than the cheapest hint, so buying a nudge stays the better deal than
+ * guessing blind.
+ */
+export const WRONG_COST = 25;
+
 export type HintKind = "letter" | "continent" | "region" | "answer";
 
 /** What each hint costs. Showing the answer outright costs the most. */
@@ -65,9 +76,13 @@ export function scoreCorrect(score: Score): Score {
   };
 }
 
-/** A wrong answer costs nothing but the streak — the run is punishment enough. */
+/** A wrong answer breaks the streak and costs points, never below zero. */
 export function scoreWrong(score: Score): Score {
-  return { ...score, streak: 0 };
+  return {
+    ...score,
+    points: Math.max(0, score.points - WRONG_COST),
+    streak: 0,
+  };
 }
 
 /** Hints are deducted, but a round's score never goes below zero. */

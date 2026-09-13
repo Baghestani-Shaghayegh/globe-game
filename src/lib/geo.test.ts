@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { altitudeFor, featureCentre, type Geometry } from "./geo";
+import { altitudeFor, featureCentre, type Geometry, ROUND_FOV, worldAltitude } from "./geo";
 
 type Feature = { properties: { name: string }; geometry: Geometry };
 
@@ -67,5 +67,37 @@ describe("altitudeFor", () => {
   // A fixed altitude left Luxembourg as roughly fifty pixels of colour.
   it("comes in close for a tiny country", () => {
     expect(altitudeFor(centreOf("Luxembourg").span)).toBeLessThan(0.5);
+  });
+});
+
+describe("how far back a round sits to show the world", () => {
+  // The sphere's diameter, as a fraction of the window's shorter edge.
+  const fill = (width: number, height: number) => {
+    const a = worldAltitude(width, height);
+    const spread = Math.tan((ROUND_FOV / 2) * (Math.PI / 180));
+    const radius = (height / 2) * (1 / Math.sqrt((1 + a) ** 2 - 1)) / spread;
+    return (radius * 2) / Math.min(width, height);
+  };
+
+  it("fills most of the shorter edge, whichever edge that is", () => {
+    for (const [w, h] of [[1600, 1000], [1440, 900], [1366, 768], [2000, 1131]]) {
+      expect(fill(w, h)).toBeCloseTo(0.88, 2);
+    }
+  });
+
+  // A phone held upright: the width runs out long before the height does.
+  it("stays inside a tall narrow window", () => {
+    expect(fill(400, 820)).toBeCloseTo(0.88, 2);
+    expect(fill(400, 820)).toBeLessThan(1);
+  });
+
+  it("brings the camera closer than the 2.1 every globe used to carry", () => {
+    expect(worldAltitude(1600, 1000)).toBeLessThan(2.1);
+  });
+
+  it("never gets so close that the camera ends up inside the globe", () => {
+    for (const [w, h] of [[100, 4000], [4000, 100], [1, 1]]) {
+      expect(worldAltitude(w, h)).toBeGreaterThanOrEqual(0.6);
+    }
   });
 });

@@ -16,7 +16,7 @@ import { getCountryMeta } from "../data/countries";
 import { resolveName } from "../lib/answerMatch";
 import { landShade, theme } from "../lib/globeTheme";
 import { landMaterial } from "../lib/globeTerrain";
-import { featureCentre, type Geometry } from "../lib/geo";
+import { featureCentre, type Geometry, worldAltitude } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
 import Celebrate from "../components/Celebrate";
 import { playSolved, playWarm, playWrong } from "../lib/sound";
@@ -41,6 +41,9 @@ type CountryFeature = {
   properties: { name: string };
   geometry: Geometry;
 };
+
+/** The whole-world view, sized to this window. Shared by every game. */
+const worldView = () => worldAltitude(window.innerWidth, window.innerHeight);
 
 export default function Mystery() {
   useGlobeTheme();
@@ -113,6 +116,14 @@ export default function Mystery() {
     [result]
   );
 
+  // The opening view. Mystery never set one, so it took react-globe.gl's
+  // default and came out a different size from every other game — and wide
+  // enough to run off both edges of a phone.
+  useEffect(() => {
+    if (!ready) return;
+    globeRef.current?.pointOfView({ lat: 12, lng: 20, altitude: worldView() }, 0);
+  }, [ready]);
+
   const [burst, setBurst] = useState(0);
 
   const guess = useCallback(
@@ -142,7 +153,7 @@ export default function Mystery() {
       // stayed on screen, and the answer to "how warm was that?" was behind
       // the planet. Closer in once it is the right one.
       globeRef.current?.pointOfView(
-        { ...from, altitude: name === answer ? 1.6 : 2.1 },
+        { ...from, altitude: name === answer ? 1.6 : worldView() },
         name === answer ? 900 : 700
       );
 

@@ -68,3 +68,30 @@ export function altitudeFor(span: number): number {
   return Math.min(2.2, Math.max(0.38, 0.25 + span / 22));
 }
 
+
+/**
+ * How far back the camera sits to show the whole world in a round.
+ *
+ * One number for every game, worked out rather than picked: the globes each
+ * carried their own 2.1, which was uniform by luck and left the sphere small
+ * in the middle of a lot of empty screen.
+ *
+ * The lens is vertical, so the sphere's size follows the window's height —
+ * but on a window taller than it is wide, the *width* is what runs out first.
+ * Hence the `min`: the globe is sized against whichever edge it would reach
+ * soonest, which is what keeps it inside the view on a phone held upright
+ * without shrinking it on a desktop.
+ */
+export const ROUND_FOV = 50;
+
+/** How much of the shorter edge the sphere's diameter is allowed to take. */
+const FILL = 0.88;
+
+export function worldAltitude(width: number, height: number): number {
+  if (!width || !height) return 2.1;
+  const wanted = (FILL * Math.min(width, height)) / height;
+  const spread = Math.tan((ROUND_FOV / 2) * (Math.PI / 180));
+  // Invert the projection: radius = (height / 2) * (1 / sqrt((1+a)^2 - 1)) / tan(fov/2)
+  const reach = 1 / (wanted * spread);
+  return Math.max(0.6, Math.sqrt(1 + reach * reach) - 1);
+}

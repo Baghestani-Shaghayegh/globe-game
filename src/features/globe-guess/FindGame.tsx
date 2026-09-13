@@ -22,13 +22,14 @@ import { cluesFor } from "../../data/clues";
 import { capitalOf } from "../../data/capitals";
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { HINT_COST } from "../../lib/scoring";
+import { missQuip } from "../../lib/quips";
 import { hintsEnabled } from "../../lib/prefs";
 import { landShade, theme } from "../../lib/globeTheme";
 import { landMaterial } from "../../lib/globeTerrain";
 import { useGlobeTheme } from "./useGlobeTheme";
 import { GLOBE_SURFACE, useGlobeLook } from "./useGlobeLook";
 import type { Continent } from "../../data/continents";
-import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
+import { altitudeFor, featureCentre, type Geometry, worldAltitude } from "../../lib/geo";
 import { VIEW, outlinePath } from "../../lib/outline";
 
 type CountryFeature = {
@@ -103,6 +104,9 @@ type Props = {
  * something it is famous for — and the player clicks it on the globe. Only the
  * prompt differs between the three; everything else is one game.
  */
+/** The whole-world view, sized to this window. Shared by every game. */
+const worldView = () => worldAltitude(window.innerWidth, window.innerHeight);
+
 export default function FindGame({
   mode,
   limitMs,
@@ -150,6 +154,8 @@ export default function FindGame({
   const [fumbled, setFumbled] = useState<Set<string>>(new Set());
   /** The country just clicked in error, flashed red for a moment. */
   const [wrongName, setWrongName] = useState<string | null>(null);
+  /** What to say about it, chosen from where the miss landed. */
+  const [missNote, setMissNote] = useState<string | null>(null);
   /** The answer, revealed after a pass. */
   const [revealed, setRevealed] = useState<string | null>(null);
   /** Seconds left on this country under blitz rules. */
@@ -237,7 +243,7 @@ export default function FindGame({
   useEffect(() => {
     if (!features.length || framed.current) return;
     globeRef.current?.pointOfView(
-      mode.view ?? { lat: 12, lng: 20, altitude: 2.1 },
+      mode.view ?? { lat: 12, lng: 20, altitude: worldView() },
       0
     );
     framed.current = true;
@@ -350,14 +356,22 @@ export default function FindGame({
       return;
     }
 
-    // Wrong country — flash it, and leave the same target in place to retry.
+    // Wrong country — flash it, say something about where it landed, and
+    // leave the same target in place to retry.
     setFumbled((prev) => new Set(prev).add(target));
     wrong();
     setWrongName(name);
+    setMissNote(missQuip(name, target, kmBetween(name, target)));
     window.clearTimeout(wrongTimer.current);
     wrongTimer.current = window.setTimeout(
-      ruleset === "sudden" ? endRound : () => setWrongName(null),
-      ruleset === "sudden" ? 700 : 600
+      ruleset === "sudden"
+        ? endRound
+        : () => {
+            setWrongName(null);
+            setMissNote(null);
+          },
+      // Long enough to read the line, which is the point of having one.
+      ruleset === "sudden" ? 700 : 1600
     );
   };
 
@@ -446,6 +460,32 @@ export default function FindGame({
       missed: asked.filter((name) => !foundNames.has(name)),
     });
   }, [summary, onRoundEnd, foundNames, fumbled, attempted, passedNames, asked]);
+
+  /**
+   * Roughly how far apart two countries are, for deciding how hard to laugh.
+   * Centre to centre is plenty: this picks a sentence, it does not score.
+   */
+  const kmBetween = useCallback(
+    (a: string, b: string): number | null => {
+      const centre = (of: string) => {
+        const feature = features.find((f) => f.properties.name === of);
+        return feature ? featureCentre(feature.geometry) : null;
+      };
+      const from = centre(a);
+      const to = centre(b);
+      if (!from || !to) return null;
+      const toRad = (d: number) => (d * Math.PI) / 180;
+      const dLat = toRad(to.lat - from.lat);
+      const dLng = toRad(to.lng - from.lng);
+      const h =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(from.lat)) *
+          Math.cos(toRad(to.lat)) *
+          Math.sin(dLng / 2) ** 2;
+      return 6371 * 2 * Math.asin(Math.min(1, Math.sqrt(h)));
+    },
+    [features]
+  );
 
   const capColor = useMemo(
     () => (d: object) => {
@@ -540,6 +580,10 @@ export default function FindGame({
             >
               {secondsLeft}s
             </p>
+          )}
+
+          {missNote && (
+            <p className="text-xs font-medium text-rose-300">{missNote}</p>
           )}
 
           {/* The prompt itself — the only part that differs between the modes. */}

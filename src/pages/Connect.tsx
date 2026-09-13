@@ -7,7 +7,7 @@ import { GLOBE_SURFACE, useGlobeLook } from "../features/globe-guess/useGlobeLoo
 import { getCountryMeta } from "../data/countries";
 import { backdropColor, theme } from "../lib/globeTheme";
 import { landMaterial } from "../lib/globeTerrain";
-import { featureCentre, type Geometry } from "../lib/geo";
+import { featureCentre, type Geometry, worldAltitude } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
 import Celebrate from "../components/Celebrate";
 import { playSolved, playStep, playWrong } from "../lib/sound";
@@ -30,6 +30,9 @@ type CountryFeature = {
 };
 
 const display = (name: string) => getCountryMeta(name).displayName;
+
+/** The whole-world view, sized to this window. Shared by every game. */
+const worldView = () => worldAltitude(window.innerWidth, window.innerHeight);
 
 export default function Connect() {
   useGlobeTheme();
@@ -97,7 +100,11 @@ export default function Connect() {
     if (!a || !b) return;
     framed.current = true;
     globeRef.current.pointOfView(
-      { lat: (a.lat + b.lat) / 2, lng: (a.lng + b.lng) / 2, altitude: 2.1 },
+      {
+        lat: (a.lat + b.lat) / 2,
+        lng: (a.lng + b.lng) / 2,
+        altitude: worldView(),
+      },
       900
     );
   }, [result, centres]);

@@ -9,6 +9,7 @@ import {
   scoreCorrect,
   scoreHint,
   scoreWrong,
+  WRONG_COST,
   type Score,
 } from "./scoring";
 
@@ -34,9 +35,24 @@ describe("scoring a round", () => {
     expect(score).toEqual({ points: 375, streak: 3, bestStreak: 3 });
   });
 
-  it("breaks the streak on a wrong answer but keeps the points", () => {
+  it("breaks the streak on a wrong answer, and charges for it", () => {
     const after = scoreWrong(run(emptyScore, 3));
-    expect(after).toMatchObject({ points: 375, streak: 0, bestStreak: 3 });
+    expect(after).toMatchObject({
+      points: 375 - WRONG_COST,
+      streak: 0,
+      bestStreak: 3,
+    });
+  });
+
+  // Sweeping the continent used to be free. It costs something now, but never
+  // enough to put a player in the red — a round's score has a floor.
+  it("never charges a wrong answer below zero", () => {
+    expect(scoreWrong(emptyScore).points).toBe(0);
+    expect(scoreWrong(scoreWrong(emptyScore)).points).toBe(0);
+  });
+
+  it("costs less than the cheapest hint, so a nudge stays the better deal", () => {
+    expect(WRONG_COST).toBeLessThan(Math.min(...Object.values(HINT_COST)));
   });
 
   it("remembers the best streak across breaks", () => {

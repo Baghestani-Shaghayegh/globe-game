@@ -24,7 +24,7 @@ import { landMaterial } from "../../lib/globeTerrain";
 import { useGlobeTheme } from "./useGlobeTheme";
 import { GLOBE_SURFACE, useGlobeLook } from "./useGlobeLook";
 import { hintsEnabled } from "../../lib/prefs";
-import { altitudeFor, featureCentre, type Geometry } from "../../lib/geo";
+import { altitudeFor, featureCentre, type Geometry, worldAltitude } from "../../lib/geo";
 
 
 type CountryFeature = {
@@ -50,6 +50,9 @@ type Props = {
   /** False for practice: a drill shouldn't land in records or on a board. */
   record?: boolean;
 };
+
+/** The whole-world view, sized to this window. Shared by every game. */
+const worldView = () => worldAltitude(window.innerWidth, window.innerHeight);
 
 export default function GlobeGame({
   mode,
@@ -153,7 +156,7 @@ export default function GlobeGame({
   useEffect(() => {
     if (!features.length || framed.current) return;
     globeRef.current?.pointOfView(
-      mode.view ?? { lat: 12, lng: 20, altitude: 2.1 },
+      mode.view ?? { lat: 12, lng: 20, altitude: worldView() },
       0
     );
     framed.current = true;

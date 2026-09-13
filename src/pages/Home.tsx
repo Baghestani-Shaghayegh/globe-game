@@ -26,9 +26,6 @@ import { capitalOf } from "../data/capitals";
 // Three.js is heavy — let the menu paint first, then fade the globe in behind it.
 const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
 
-/** How many game types sit on the bar before the rest fold into "More". */
-const TABS_SHOWN = 3;
-
 /**
  * What a round started from the menu is: the whole map you chose, no clock,
  * relaxed rules.
@@ -119,11 +116,13 @@ function Picker({
   value,
   options,
   onChange,
+  className = "",
 }: {
   label: string;
   value: string;
   options: { value: string; label: string; note?: string }[];
   onChange: (value: string) => void;
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
@@ -146,7 +145,7 @@ function Picker({
   }, [open]);
 
   return (
-    <div ref={box} className="relative min-w-0 flex-1">
+    <div ref={box} className={`relative min-w-0 flex-1 ${className}`}>
       <span className="mb-1.5 block text-xs text-zinc-400">{label}</span>
       <button
         type="button"
@@ -288,7 +287,6 @@ export default function Home() {
 
   const [gameType, setGameType] = useState<GameType>("name");
   const [modeId, setModeId] = useState<ModeId>("easy");
-  const [moreTypes, setMoreTypes] = useState(false);
 
   const [daily, setDaily] = useState<{ played: boolean; streak: number } | null>(
     null
@@ -315,10 +313,6 @@ export default function Home() {
     setDuePractice(dueCount());
   }, []);
 
-  const shown = GAME_TYPES.slice(0, TABS_SHOWN);
-  const folded = GAME_TYPES.slice(TABS_SHOWN);
-  // The chosen type always has a tab, even when it lives under "More".
-  const openMore = moreTypes || folded.some((t) => t.id === gameType);
 
   const start = () =>
     navigate(gamePath(gameType, modeId, CLOCK, RULES, ROUND_LENGTH));
@@ -460,40 +454,36 @@ export default function Home() {
 
           {/* Start a round: what kind, where, how long, go. */}
           <section className="mt-[clamp(0.75rem,2.1vh,1.75rem)] max-w-2xl">
-            <div role="tablist" aria-label="Game type" className="flex flex-wrap gap-1.5">
-              {[...shown, ...(openMore ? folded : [])].map((t) => (
+            {/*
+              All six, always. Three of them used to fold behind a "More"
+              chevron, which hid half the game behind a control that told you
+              nothing about what was under it — and the ones it hid are the
+              ones a returning player is most likely to want.
+            */}
+            <div
+              role="tablist"
+              aria-label="Game type"
+              className="flex flex-wrap gap-1.5"
+            >
+              {GAME_TYPES.map((t) => (
                 <button
                   key={t.id}
                   role="tab"
                   aria-selected={gameType === t.id}
+                  title={t.blurb}
                   onClick={() => {
                     playTap();
                     setGameType(t.id);
                   }}
-                  className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+                  className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors ${
                     gameType === t.id
                       ? "bg-teal-300 text-[#07111c]"
-                      : "border border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/25 hover:text-zinc-100"
+                      : "border border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/25 hover:bg-white/[0.06] hover:text-zinc-100"
                   }`}
                 >
                   {t.label}
                 </button>
               ))}
-              {!openMore && (
-                <button
-                  onClick={() => {
-                    playTap();
-                    setMoreTypes(true);
-                  }}
-                  aria-expanded={false}
-                  className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-white/25 hover:text-zinc-100"
-                >
-                  More
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </button>
-              )}
             </div>
 
             {/*
@@ -504,8 +494,9 @@ export default function Home() {
               are a setting rather than a per-round choice — they were the same
               answer every time, which is what a setting is for.
             */}
-            <div className="mt-3.5 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
               <Picker
+                className="sm:max-w-[17rem]"
                 label="Map"
                 value={modeId}
                 onChange={(v) => setModeId(v as ModeId)}
@@ -529,28 +520,26 @@ export default function Home() {
 
           </section>
 
-          <section className="mt-[clamp(0.75rem,2.4vh,2.5rem)]">
+          <section className="mt-[clamp(0.75rem,2.4vh,2.5rem)] flex min-h-0 flex-[3] flex-col">
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <h2 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
                 Today's challenges
               </h2>
-              {/* On the heading's own line, because it qualifies the whole
-                  section rather than any one card — and because a line of its
-                  own was a line this page cannot spare. The multiplier is set
-                  solid and the words are not, so the eye lands on the number
-                  and reads the rest only if it wants to. */}
-              <span className="inline-flex items-center gap-1.5 rounded-lg border border-teal-300/25 bg-teal-300/[0.07] py-1 pl-1 pr-2.5">
-                <span className="rounded-md bg-teal-300 px-1.5 py-0.5 text-[11px] font-bold leading-none text-[#07111c]">
-                  {DAILY_MULTIPLIER}×
-                </span>
-                <span className="text-xs text-teal-100/80">
-                  leaderboard points on daily challenges
-                </span>
-              </span>
               {import.meta.env.DEV && <ReplayToday />}
             </div>
 
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            {/* Under the title rather than beside it: it is a sentence about
+                the section, and on the heading line it read as part of the
+                heading. */}
+            <p className="mt-1 text-sm text-zinc-400">
+              Get{" "}
+              <span className="font-semibold text-teal-300">
+                {DAILY_MULTIPLIER}× more points
+              </span>{" "}
+              by doing daily challenges
+            </p>
+
+            <div className="mt-3 grid min-h-0 flex-1 gap-3 sm:grid-cols-3">
               <DailyCard
                 to="/daily"
                 icon="🗺️"
@@ -594,11 +583,11 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="mt-[clamp(0.75rem,2.4vh,1.75rem)]">
+          <section className="mt-[clamp(0.75rem,2.4vh,1.75rem)] flex min-h-0 flex-[2] flex-col">
             <h2 className="text-xs uppercase tracking-[0.18em] text-zinc-500">
               More ways to play
             </h2>
-            <div className="mt-2.5 grid gap-3 sm:grid-cols-3">
+            <div className="mt-2.5 grid min-h-0 flex-1 gap-3 sm:grid-cols-3">
               <WayToPlay
                 to="/practice"
                 title="Practice"
@@ -628,10 +617,6 @@ export default function Home() {
 
           <AdSlot className="mt-[clamp(0.75rem,2.4vh,1.75rem)]" />
 
-          {/* Eats whatever height is left over, so the footer sits on the
-              bottom of the window when the page fits and stays a normal gap
-              below the content when it does not. */}
-          <div aria-hidden="true" className="flex-1" />
 
         </main>
       </div>
