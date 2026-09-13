@@ -257,3 +257,30 @@ describe("the saved round", () => {
   });
 });
 
+
+describe("giving up", () => {
+  const base: MysteryResult = {
+    day: "2026-09-10",
+    number: 252,
+    answer: "Chad",
+    guesses: [{ name: "Mali", km: 1800 }],
+    solved: false,
+  };
+
+  // A round handed over is over, but it is not a win, and the two must not be
+  // confused: one posts a score and the other posts nothing.
+  it("scores nothing", () => {
+    expect(scoreFor({ ...base, gaveUp: true })).toBe(0);
+  });
+
+  it("is not the same as solving it", () => {
+    const gaveUp = { ...base, gaveUp: true };
+    expect(gaveUp.solved).toBe(false);
+    expect(scoreFor({ ...base, solved: true })).toBeGreaterThan(0);
+  });
+
+  it("survives a reload", () => {
+    saveMystery({ ...base, gaveUp: true });
+    expect(loadMystery("2026-09-10")?.gaveUp).toBe(true);
+  });
+});

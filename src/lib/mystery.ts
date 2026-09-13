@@ -128,6 +128,12 @@ export type MysteryResult = {
   guesses: Guess[];
   solved: boolean;
   /**
+   * Given up on. The answer is shown and the round is over, but it is not a
+   * win: it scores nothing and posts nothing, and it is kept separate from
+   * `solved` so the summary can say which of the two happened.
+   */
+  gaveUp?: boolean;
+  /**
    * When the puzzle was first opened, for the time filed with the score.
    *
    * Optional because rounds saved before scores were posted don't carry it;

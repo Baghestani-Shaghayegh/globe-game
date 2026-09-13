@@ -19,7 +19,7 @@ import { landMaterial } from "../lib/globeTerrain";
 import { featureCentre, type Geometry, worldAltitude } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
 import Celebrate from "../components/Celebrate";
-import { playSolved, playWarm, playWrong } from "../lib/sound";
+import { playSolved, playWarm, playWrong, playLose } from "../lib/sound";
 import {
   closeness,
   distanceKm,
@@ -180,6 +180,22 @@ export default function Mystery() {
     [features]
   );
 
+  /**
+   * Gives up: shows the answer, turns the globe to it, and closes the round.
+   * Scores nothing — `postMysteryScore` only files a solved one — and is
+   * saved, so it stays given up rather than reopening on a reload.
+   */
+  const giveUp = () => {
+    if (!result || result.solved || result.gaveUp || !answer) return;
+    const next: MysteryResult = { ...result, gaveUp: true };
+    saveMystery(next);
+    setResult(next);
+    setFlash(null);
+    playLose();
+    const to = centres.get(answer);
+    if (to) globeRef.current?.pointOfView({ ...to, altitude: 1.6 }, 900);
+  };
+
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (!result || result.solved) return;
@@ -203,8 +219,14 @@ export default function Mystery() {
   const capColor = useMemo(
     () => (d: object) => {
       const { name } = (d as CountryFeature).properties;
-      if (result?.solved && name === result.answer)
-        return landMaterial(theme.found, "answer");
+      const over = result?.solved || result?.gaveUp;
+      if (over && name === result?.answer)
+        // Green when it was found, amber when it was handed over — the same
+        // colour a revealed answer takes everywhere else in the game.
+        return landMaterial(
+          result?.solved ? theme.found : theme.selected,
+          "answer"
+        );
       const km = guessed.get(name);
       // A guess reads as a temperature, so it must not also read as a time of
       // day — the heat ramp is flat, like every other answer.
@@ -274,10 +296,14 @@ export default function Mystery() {
 
       {/* The prompt sits over the globe but never eats a click meant for it. */}
       <div className="pointer-events-none absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-[#141b23]/90 px-5 py-3 text-center backdrop-blur">
-        {result?.solved ? (
+        {result?.solved || result?.gaveUp ? (
           <>
-            <p className="text-xs uppercase tracking-wider text-emerald-400/70">
-              Found it
+            <p
+              className={`text-xs uppercase tracking-wider ${
+                result?.solved ? "text-emerald-400/70" : "text-amber-400/70"
+              }`}
+            >
+              {result?.solved ? "Found it" : "It was"}
             </p>
             <p className="text-xl font-medium text-zinc-50 sm:text-2xl">
               {getCountryMeta(result.answer).displayName}
@@ -346,6 +372,14 @@ export default function Mystery() {
               </button>
             </form>
             {flash && <p className="text-xs text-amber-300/80">{flash}</p>}
+            {/* Played down, and last: a way out of a puzzle you cannot get,
+                not a button to reach for. */}
+            <button
+              onClick={giveUp}
+              className="pointer-events-auto mt-0.5 text-xs text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+            >
+              Give up and show me
+            </button>
           </>
         )}
       </div>

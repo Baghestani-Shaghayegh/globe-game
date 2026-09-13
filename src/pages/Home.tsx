@@ -307,7 +307,10 @@ export default function Home() {
     setDaily({ played: resultFor(today) !== null, streak: streak(today) });
     setDoneToday({
       daily: resultFor(today) !== null,
-      mystery: loadMystery(today)?.solved === true,
+      mystery: (() => {
+        const saved = loadMystery(today);
+        return saved?.solved === true || saved?.gaveUp === true;
+      })(),
       connect: loadConnect(today)?.solved === true,
     });
     setDuePractice(dueCount());
