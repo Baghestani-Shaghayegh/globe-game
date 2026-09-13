@@ -11,12 +11,9 @@ import {
   MODES,
   DEFAULT_ROUND_LENGTH,
   gamePath,
-  recordKey,
   type GameType,
   type ModeId,
 } from "../data/modes";
-import { bestLabel } from "../lib/records";
-import { hintsEnabled } from "../lib/prefs";
 import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled } from "../lib/supabase";
 import { DAILY_MULTIPLIER, dayKey, resultFor, streak } from "../lib/daily";
@@ -107,20 +104,6 @@ function useModeCounts(type: GameType): Counts {
   }, [type]);
 
   return counts;
-}
-
-/** The best time or score for the round the menu would start, or null. */
-function useBest(type: GameType, modeId: ModeId): string | null {
-  const [best, setBest] = useState<string | null>(null);
-
-  // Read after mount — storage isn't available while rendering on every client.
-  useEffect(() => {
-    setBest(
-      bestLabel(recordKey(type, modeId, CLOCK, RULES, ROUND_LENGTH))
-    );
-  }, [type, modeId]);
-
-  return best;
 }
 
 /**
@@ -305,7 +288,6 @@ export default function Home() {
 
   const [gameType, setGameType] = useState<GameType>("name");
   const [modeId, setModeId] = useState<ModeId>("easy");
-  const [hints, setHints] = useState(true);
   const [moreTypes, setMoreTypes] = useState(false);
 
   const [daily, setDaily] = useState<{ played: boolean; streak: number } | null>(
@@ -321,7 +303,6 @@ export default function Home() {
   const [duePractice, setDuePractice] = useState(0);
 
   const counts = useModeCounts(gameType);
-  const best = useBest(gameType, modeId);
 
   useEffect(() => {
     const today = dayKey();
@@ -332,7 +313,6 @@ export default function Home() {
       connect: loadConnect(today)?.solved === true,
     });
     setDuePractice(dueCount());
-    setHints(hintsEnabled());
   }, []);
 
   const shown = GAME_TYPES.slice(0, TABS_SHOWN);
@@ -546,12 +526,6 @@ export default function Home() {
                 <span aria-hidden="true">→</span>
               </button>
             </div>
-
-            <p className="mt-2.5 text-sm text-zinc-500">
-              {ROUND_LENGTH} countries · no clock ·{" "}
-              {hints ? "hints on" : "hints off"}
-              {best && <> · your best {best}</>}
-            </p>
 
           </section>
 
