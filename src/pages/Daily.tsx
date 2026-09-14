@@ -197,7 +197,7 @@ export default function Daily() {
     const days = streak(day);
     return (
       <div className="min-h-screen bg-[#07111c] px-5 py-12">
-        <main className="w-full max-w-[1180px]">
+        <main className="mx-auto w-full max-w-[1180px]">
           <Link
             to="/"
             className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
@@ -272,7 +272,17 @@ export default function Daily() {
   };
 
   return challenge.type === "name" ? (
-    <GlobeGame {...shared} onRoundEnd={finish} />
+    <GlobeGame
+      {...shared}
+      // The day's ten are scattered at random across the world, so on their
+      // own they are ten specks on an empty sphere. The whole map is drawn
+      // behind them to navigate by, with the ten raised out of it — in this
+      // game that marking gives nothing away, because the ten are the
+      // questions and the answers are their names.
+      backdrop
+      showInPlay
+      onRoundEnd={finish}
+    />
   ) : (
     <FindGame
       {...shared}

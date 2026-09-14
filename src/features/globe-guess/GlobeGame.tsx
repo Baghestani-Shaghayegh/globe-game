@@ -20,7 +20,7 @@ import {
 } from "../../data/modes";
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { canAfford } from "../../lib/scoring";
-import { landShade, theme } from "../../lib/globeTheme";
+import { backdropColor, landShade, theme } from "../../lib/globeTheme";
 import { landMaterial } from "../../lib/globeTerrain";
 import { useGlobeTheme } from "./useGlobeTheme";
 import { GLOBE_SURFACE, useGlobeLook } from "./useGlobeLook";
@@ -50,6 +50,25 @@ type Props = {
   onRoundEnd?: (outcome: RoundOutcome) => void;
   /** False for practice: a drill shouldn't land in records or on a board. */
   record?: boolean;
+  /**
+   * Draw the rest of the world behind the countries in play, as scenery.
+   *
+   * The daily's ten are scattered at random across the globe, so drawn alone
+   * they are ten specks on an empty sphere with nothing to place them by. The
+   * backdrop is not playable — it is there to be navigated by.
+   */
+  backdrop?: boolean;
+  /**
+   * Under `backdrop`, mark the countries in play: normal land, lifted off the
+   * sphere, with the rest of the world dropped back a shade.
+   *
+   * In this game it is not optional the way it is in Find it. Here the player
+   * chooses what to answer, so on a full globe with nothing marked they would
+   * be hunting for ten countries among two hundred with no way to tell which
+   * are which. And it gives nothing away: the ten are the *questions*, not the
+   * answers — knowing a country is in play does not tell you its name.
+   */
+  showInPlay?: boolean;
 };
 
 /** The whole-world view, sized to this window. Shared by every game. */
@@ -63,6 +82,8 @@ export default function GlobeGame({
   record = true,
   count = null,
   pointsMultiplier = 1,
+  backdrop = false,
+  showInPlay = false,
 }: Props) {
   // Repaint when the player changes the globe palette.
   useGlobeTheme();
@@ -80,6 +101,14 @@ export default function GlobeGame({
   const framed = useRef(false);
 
   const [features, setFeatures] = useState<CountryFeature[]>([]);
+  /**
+   * Every country on the map, for the backdrop. Kept apart from `features` on
+   * purpose: `features` is what the round is *about* — its size is the round's
+   * size, its members are what can be clicked, what is left counts as missed —
+   * and folding the scenery into it would quietly make the daily a 200-country
+   * round that can never be finished.
+   */
+  const [world, setWorld] = useState<CountryFeature[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [selected, setSelected] = useState<CountryFeature | null>(null);
   const [guess, setGuess] = useState("");
@@ -136,6 +165,7 @@ export default function GlobeGame({
       })
       .then((data: { features: CountryFeature[] }) => {
         if (cancelled) return;
+        setWorld(data.features);
         setFeatures(
           data.features.filter((f) =>
             mode.includes(getCountryMeta(f.properties.name))
@@ -178,6 +208,12 @@ export default function GlobeGame({
       features
         .map((f) => getCountryMeta(f.properties.name).displayName)
         .sort((a, b) => a.localeCompare(b)),
+    [features]
+  );
+
+  /** The countries the round is actually about, by name. */
+  const inPlaySet = useMemo(
+    () => new Set(features.map((f) => f.properties.name)),
     [features]
   );
 
@@ -383,9 +419,13 @@ export default function GlobeGame({
     (feature: CountryFeature) => {
       const { name } = feature.properties;
       if (summary || foundNames.has(name) || expired.has(name)) return;
+      // The backdrop is scenery. Clicking it opens nothing rather than opening
+      // a country that cannot be scored — a modal you can type into but never
+      // get credit for would read as the game being broken.
+      if (backdrop && !inPlaySet.has(name)) return;
       setSelected(feature);
     },
-    [summary, foundNames, expired]
+    [summary, foundNames, expired, backdrop, inPlaySet]
   );
   const globeClick = useGlobeClick<CountryFeature>(selectCountry);
 
@@ -428,9 +468,14 @@ export default function GlobeGame({
         globeMaterial={ocean}
         onGlobeReady={() => setReady(true)}
         {...GLOBE_SURFACE}
-        polygonsData={features}
+        polygonsData={backdrop ? world : features}
         polygonCapMaterial={(d) => {
           const { name } = (d as CountryFeature).properties;
+          // Scenery first, ahead of every other rule — including the one that
+          // paints the whole board "missed" once the round is over, which
+          // would otherwise turn the entire world red at the end of a daily.
+          if (backdrop && !inPlaySet.has(name))
+            return landMaterial(backdropColor());
           if (foundNames.has(name)) return landMaterial(theme.found, "answer");
           if (expired.has(name)) return landMaterial(theme.missed, "answer");
           if (name === cursorName) return landMaterial(theme.selected, "answer");
@@ -440,11 +485,24 @@ export default function GlobeGame({
             return landMaterial(theme.selected, "answer");
           return landMaterial(landShade(name));
         }}
-        polygonAltitude={() => 0.012}
+        polygonAltitude={(d) => {
+          const { name } = (d as CountryFeature).properties;
+          // Lifted, so the ones in play stand off the sphere and read as
+          // raised even where the colour alone would not carry.
+          if (showInPlay && inPlaySet.has(name)) return 0.035;
+          if (backdrop && !inPlaySet.has(name)) return 0.008;
+          return 0.012;
+        }}
         polygonsTransitionDuration={0}
-        onPolygonHover={(polygon) =>
-          globeClick.setHovered(polygon as CountryFeature | null)
-        }
+        onPolygonHover={(polygon) => {
+          const feature = polygon as CountryFeature | null;
+          const name = feature?.properties.name;
+          // No pointer over the scenery. The cursor is the only thing that
+          // says "this one isn't yours to click" before you try it.
+          const playable =
+            !feature || !backdrop || (name !== undefined && inPlaySet.has(name));
+          globeClick.setHovered(playable ? feature : null);
+        }}
       />
 
       <GameHud

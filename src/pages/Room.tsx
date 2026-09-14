@@ -262,7 +262,7 @@ export default function Room() {
   if (room.status === "lobby") {
     return (
       <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
-        <main className="w-full max-w-[1180px]">
+        <main className="mx-auto w-full max-w-[1180px]">
           <button
             onClick={quit}
             className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
@@ -346,7 +346,7 @@ export default function Room() {
     const drawn = table.filter((p) => p.rank === 1).length > 1;
     return (
       <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
-        <main className="w-full max-w-[1180px]">
+        <main className="mx-auto w-full max-w-[1180px]">
           <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
             {drawn
               ? "A draw"
