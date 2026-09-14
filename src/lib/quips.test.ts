@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { OCEAN_MISS, VERY_FAR_KM, missQuip } from "./quips";
+import { OCEAN_MISS, VERY_FAR_KM, missQuip, wrongNameQuip } from "./quips";
 
 /** Always take the first line of whichever pool was chosen. */
 const first = () => 0;
@@ -54,5 +54,22 @@ describe("what the game says when you miss", () => {
   it("has something to say about the sea", () => {
     expect(OCEAN_MISS.length).toBeGreaterThan(1);
     for (const line of OCEAN_MISS) expect(line.length).toBeGreaterThan(8);
+  });
+});
+
+describe("what it says about a wrong name", () => {
+  it("is short enough to read while still typing", () => {
+    for (let i = 0; i < 8; i += 1) {
+      const said = wrongNameQuip(() => i);
+      expect(said.length).toBeLessThanOrEqual(30);
+      expect(said.length).toBeGreaterThan(2);
+    }
+  });
+
+  it("has more than one thing to say", () => {
+    const seen = new Set(
+      Array.from({ length: 8 }, (_, i) => wrongNameQuip(() => i))
+    );
+    expect(seen.size).toBeGreaterThan(4);
   });
 });

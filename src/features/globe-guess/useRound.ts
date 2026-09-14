@@ -7,6 +7,7 @@ import {
   pointsFor,
   scoreCorrect,
   scoreHint,
+  scorePass,
   scoreWrong,
   type HintKind,
   type Score,
@@ -14,6 +15,7 @@ import {
 import {
   playCorrect,
   playHint,
+  playOther,
   playRecord,
   playRoundEnd,
   playTick,
@@ -235,6 +237,11 @@ export function useRound(
     wrong: useCallback(() => {
       playWrong();
       applyScore(scoreWrong);
+    }, [applyScore]),
+    /** Moves past a country without answering it, and without a charge. */
+    pass: useCallback(() => {
+      playOther();
+      applyScore(scorePass);
     }, [applyScore]),
     /** Charges for a hint. */
     spendHint: useCallback(

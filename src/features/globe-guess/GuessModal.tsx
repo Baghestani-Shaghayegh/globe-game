@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { normalizeAnswer } from "../../lib/answerMatch";
 import { HINT_COST } from "../../lib/scoring";
+import { wrongNameQuip } from "../../lib/quips";
 
 type Props = {
   open: boolean;
@@ -10,6 +11,8 @@ type Props = {
   secondsLeft: number | null;
   /** Buys the first letter. Null when the player has hints turned off. */
   onHint: (() => void) | null;
+  /** False when the round has not earned the hint\u0027s price yet. */
+  canAffordHint?: boolean;
   /** Country names offered as autocomplete suggestions */
   names: string[];
   value: string;
@@ -26,6 +29,7 @@ export default function GuessModal({
   hintLetter,
   secondsLeft,
   onHint,
+  canAffordHint = true,
   names,
   value,
   isWrong,
@@ -34,6 +38,9 @@ export default function GuessModal({
   onClose,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
+  // Re-rolled when a wrong answer lands, not on every keystroke: the line has
+  // to sit still while you type the next attempt.
+  const jab = useMemo(() => (isWrong ? wrongNameQuip() : ""), [isWrong]);
   const [highlighted, setHighlighted] = useState(-1);
 
   const matches = useMemo(() => {
@@ -133,9 +140,7 @@ export default function GuessModal({
           }`}
         />
 
-        {isWrong && (
-          <p className="mt-2 text-sm text-red-400">Not quite — try again.</p>
-        )}
+        {isWrong && <p className="mt-2 text-sm text-red-400">{jab}</p>}
 
         {matches.length > 0 && (
           <ul className="mt-2 overflow-hidden rounded-lg border border-white/10">
@@ -165,7 +170,9 @@ export default function GuessModal({
             ) : (
               <button
                 onClick={onHint ?? undefined}
-                className="rounded-md border border-white/10 px-2 py-1 text-zinc-400 transition-colors hover:border-white/25 hover:text-zinc-100"
+                disabled={!canAffordHint}
+                title={canAffordHint ? undefined : "Not enough points yet"}
+                className="rounded-md border border-white/10 px-2 py-1 text-zinc-400 transition-colors hover:border-white/25 hover:text-zinc-100 disabled:opacity-40 disabled:hover:border-white/10 disabled:hover:text-zinc-400"
               >
                 First letter{" "}
                 <span className="text-zinc-600">−{HINT_COST.letter}</span>

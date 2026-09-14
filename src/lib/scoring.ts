@@ -85,7 +85,35 @@ export function scoreWrong(score: Score): Score {
   };
 }
 
+/**
+ * Passing on a country: the streak goes, the points stay.
+ *
+ * Between a wrong answer, which costs 25, and buying the answer, which costs
+ * 120, there was nothing for "I don't know this one and I don't want to pay
+ * to find out". This is that. It is not free — a streak is worth up to 250 on
+ * the next correct answer — it just isn't charged for.
+ */
+export function scorePass(score: Score): Score {
+  return { ...score, streak: 0 };
+}
+
 /** Hints are deducted, but a round's score never goes below zero. */
 export function scoreHint(score: Score, hint: HintKind): Score {
   return { ...score, points: Math.max(0, score.points - HINT_COST[hint]) };
+}
+
+/**
+ * Whether a hint can be paid for out of what has been earned so far.
+ *
+ * The floor in `scoreHint` meant a hint cost nothing at zero points, so every
+ * hint was free at the start of every round — free exactly when it is worth
+ * the most. Offering one that cannot be paid for is the thing to stop, not
+ * the deduction.
+ *
+ * Deliberately not applied to "show me the answer": that is the way past a
+ * country you cannot find rather than an advantage, and a player with no
+ * points and no way forward is stuck. It still charges what it can.
+ */
+export function canAfford(score: Score, hint: HintKind): boolean {
+  return score.points >= HINT_COST[hint];
 }

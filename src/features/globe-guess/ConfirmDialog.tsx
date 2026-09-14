@@ -3,6 +3,9 @@
  *
  * One shell for both of them — leaving and finishing — because they are the
  * same moment from two directions, and two copies of a dialog drift apart.
+ *
+ * Two ways out, never three. A played-down third button that threw the run
+ * away is the kind of thing pressed once by accident and regretted.
  */
 export default function ConfirmDialog({
   title,
@@ -11,8 +14,6 @@ export default function ConfirmDialog({
   onConfirm,
   cancelLabel,
   onCancel,
-  quietLabel,
-  onQuiet,
 }: {
   title: string;
   body: React.ReactNode;
@@ -20,9 +21,6 @@ export default function ConfirmDialog({
   onConfirm: () => void;
   cancelLabel: string;
   onCancel: () => void;
-  /** A third way out, played down: discarding the run. */
-  quietLabel?: string;
-  onQuiet?: () => void;
 }) {
   return (
     <div
@@ -48,14 +46,6 @@ export default function ConfirmDialog({
           >
             {cancelLabel}
           </button>
-          {quietLabel && onQuiet && (
-            <button
-              onClick={onQuiet}
-              className="px-4 py-1 text-xs text-zinc-500 transition-colors hover:text-zinc-300"
-            >
-              {quietLabel}
-            </button>
-          )}
         </div>
       </div>
     </div>

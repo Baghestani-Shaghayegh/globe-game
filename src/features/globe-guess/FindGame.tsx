@@ -21,7 +21,7 @@ import { flagUrl } from "../../data/flags";
 import { cluesFor } from "../../data/clues";
 import { capitalOf } from "../../data/capitals";
 import { isCorrectGuess } from "../../lib/answerMatch";
-import { HINT_COST } from "../../lib/scoring";
+import { HINT_COST, canAfford, type HintKind } from "../../lib/scoring";
 import { missQuip } from "../../lib/quips";
 import { hintsEnabled } from "../../lib/prefs";
 import { backdropColor, landShade, theme } from "../../lib/globeTheme";
@@ -193,7 +193,7 @@ export default function FindGame({
     limitMs,
     { record, pointsMultiplier }
   );
-  const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
+  const { begin, reset, tick, end, summary, correct, wrong, spendHint, pass } =
     round;
 
   useEffect(() => {
@@ -343,9 +343,13 @@ export default function FindGame({
   };
 
   /** Buys the next clue for this country, while there is one left. */
+  /** Whether the round has earned enough to pay for a hint yet. */
+  const afford = (hint: HintKind) => canAfford(round.score, hint);
+
   const handleAnotherClue = () => {
     if (!target || revealed) return;
     if (cluesShown >= cluesFor(target).length) return;
+    if (!afford("letter")) return;
     spendHint("letter");
     setCluesShown((shown) => shown + 1);
   };
@@ -353,6 +357,7 @@ export default function FindGame({
   /** Narrows the search to the target's continent, for a price. */
   const handleNarrow = () => {
     if (!target || narrowedTo || revealed) return;
+    if (!afford("region")) return;
     spendHint("region");
     setNarrowedTo(getCountryMeta(target).continents[0]);
   };
@@ -385,6 +390,21 @@ export default function FindGame({
       // Long enough to read the line, which is the point of having one.
       ruleset === "sudden" ? 700 : 1600
     );
+  };
+
+  /**
+   * Moves on without the answer and without paying for it.
+   *
+   * Between a wrong guess, which costs 25, and buying the answer, which costs
+   * 120, there was nothing for "I don't know this one and I don't want to pay
+   * to find out". The country counts as missed, the same as if the blitz
+   * clock had run out on it, and the streak goes — but nothing is charged.
+   */
+  const handleSkip = () => {
+    if (!target || revealed) return;
+    pass();
+    setPassedNames((prev) => new Set(prev).add(target));
+    advance();
   };
 
   /**
@@ -474,6 +494,22 @@ export default function FindGame({
       missed: asked.filter((name) => !foundNames.has(name)),
     });
   }, [summary, onRoundEnd, foundNames, fumbled, attempted, passedNames, asked]);
+  /**
+   * "Yes, I'm leaving" has to actually leave. It used to end the round and
+   * drop the player on the summary, which was honest enough when the button
+   * said "Finish & save" and a third button did the leaving — but that third
+   * button is gone, so this one carries the whole promise.
+   *
+   * The run is ended first, so it is still saved and still reported: the
+   * effect that does the reporting is declared above this one, and effects
+   * run in the order they are declared, so it has already fired by the time
+   * the navigation happens.
+   */
+  const leaving = useRef(false);
+  useEffect(() => {
+    if (summary && leaving.current) navigate("/");
+  }, [summary, navigate]);
+
 
   /**
    * Roughly how far apart two countries are, for deciding how hard to laugh.
@@ -715,7 +751,10 @@ export default function FindGame({
               cluesShown < cluesFor(target).length && (
                 <button
                   onClick={handleAnotherClue}
-                  disabled={revealed !== null}
+                  disabled={revealed !== null || !afford("letter")}
+                  title={
+                    afford("letter") ? undefined : "Not enough points yet"
+                  }
                   className="text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300 disabled:no-underline disabled:opacity-40"
                   >
                   Another clue{" "}
@@ -725,13 +764,23 @@ export default function FindGame({
             {hintsOn && !narrowedTo && (
               <button
                 onClick={handleNarrow}
-                disabled={revealed !== null}
+                disabled={revealed !== null || !afford("region")}
+                title={afford("region") ? undefined : "Not enough points yet"}
                 className="text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300 disabled:no-underline disabled:opacity-40"
               >
                 Narrow it down{" "}
                 <span className="text-zinc-600">−{HINT_COST.region}</span>
               </button>
             )}
+            {/* Free, and first: the way past a country for someone who does
+                not want to spend anything to get past it. */}
+            <button
+              onClick={handleSkip}
+              disabled={revealed !== null}
+              className="text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300 disabled:no-underline disabled:opacity-40"
+            >
+              Pass
+            </button>
             {/* Always offered, even with hints off: it is the way past a
                 country you cannot find, not a tip. */}
             <button
@@ -768,9 +817,11 @@ export default function FindGame({
         <ExitConfirm
           found={foundNames.size}
           total={asked.length}
-          onFinish={endRound}
+          onFinish={() => {
+            leaving.current = true;
+            endRound();
+          }}
           onKeepPlaying={() => round.setConfirmingExit(false)}
-          onDiscard={() => navigate("/")}
         />
       )}
 

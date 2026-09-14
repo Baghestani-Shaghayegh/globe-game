@@ -74,3 +74,30 @@ export function missQuip(
     .replace("{target}", display(target))
     .replace("{km}", km === null ? "a lot of" : Math.round(km / 100) * 100 + "");
 }
+
+/**
+ * What the game says when a typed name is the wrong one.
+ *
+ * Short on purpose. This one appears under the input while you are still
+ * typing the next attempt, so it has to be readable at a glance and gone from
+ * your mind by the next keystroke — a sentence there would be in the way. It
+ * also cannot say anything about *where* you missed, the way a click can:
+ * a wrong name is not a place.
+ */
+const WRONG_NAME = [
+  "Nope.",
+  "Not it.",
+  "Not even close.",
+  "That's a different country.",
+  "Bold. Wrong.",
+  "No, but keep going.",
+  "Confidently wrong.",
+  "Not this one.",
+];
+
+export function wrongNameQuip(
+  choose: (length: number) => number = (length) =>
+    Math.floor(Math.random() * length)
+): string {
+  return WRONG_NAME[choose(WRONG_NAME.length)];
+}

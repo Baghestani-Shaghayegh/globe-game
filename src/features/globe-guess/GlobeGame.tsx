@@ -19,6 +19,7 @@ import {
   type Ruleset,
 } from "../../data/modes";
 import { isCorrectGuess } from "../../lib/answerMatch";
+import { canAfford } from "../../lib/scoring";
 import { landShade, theme } from "../../lib/globeTheme";
 import { landMaterial } from "../../lib/globeTerrain";
 import { useGlobeTheme } from "./useGlobeTheme";
@@ -295,6 +296,22 @@ export default function GlobeGame({
         .filter((name) => !foundNames.has(name)),
     });
   }, [summary, onRoundEnd, foundNames, fumbled, attempted, expired, features]);
+  /**
+   * "Yes, I'm leaving" has to actually leave. It used to end the round and
+   * drop the player on the summary, which was honest enough when the button
+   * said "Finish & save" and a third button did the leaving — but that third
+   * button is gone, so this one carries the whole promise.
+   *
+   * The run is ended first, so it is still saved and still reported: the
+   * effect that does the reporting is declared above this one, and effects
+   * run in the order they are declared, so it has already fired by the time
+   * the navigation happens.
+   */
+  const leaving = useRef(false);
+  useEffect(() => {
+    if (summary && leaving.current) navigate("/");
+  }, [summary, navigate]);
+
 
   const closeModal = () => {
     setSelected(null);
@@ -327,6 +344,7 @@ export default function GlobeGame({
    */
   const handleHint = () => {
     if (!selected || hintLetter) return;
+    if (!canAfford(round.score, "letter")) return;
     spendHint("letter");
     setHintLetter(
       getCountryMeta(selected.properties.name).displayName.charAt(0).toUpperCase()
@@ -487,9 +505,11 @@ export default function GlobeGame({
         <ExitConfirm
           found={foundNames.size}
           total={target}
-          onFinish={endRun}
+          onFinish={() => {
+            leaving.current = true;
+            endRun();
+          }}
           onKeepPlaying={() => round.setConfirmingExit(false)}
-          onDiscard={() => navigate("/")}
         />
       )}
 
@@ -536,6 +556,9 @@ export default function GlobeGame({
         hintLetter={hintLetter}
         secondsLeft={ruleset === "blitz" ? secondsLeft : null}
         onHint={hintsOn ? handleHint : null}
+        // Offered but not payable: shown greyed rather than hidden, so the
+        // price stays visible and the reason it cannot be taken is obvious.
+        canAffordHint={canAfford(round.score, "letter")}
         names={suggestionNames}
         value={guess}
         isWrong={isWrong}

@@ -8,6 +8,8 @@ import {
   pointsFor,
   scoreCorrect,
   scoreHint,
+  canAfford,
+  scorePass,
   scoreWrong,
   WRONG_COST,
   type Score,
@@ -101,5 +103,61 @@ describe("streak multiplier", () => {
     expect(formatMultiplier(4)).toBe("2×");
     expect(formatMultiplier(1)).toBe("1.25×");
     expect(formatMultiplier(2)).toBe("1.5×");
+  });
+});
+
+describe("paying for a hint", () => {
+  it("needs the points to be there first", () => {
+    expect(canAfford(emptyScore, "letter")).toBe(false);
+    expect(canAfford(run(emptyScore, 1), "letter")).toBe(true);
+  });
+
+  it("goes by the price of the hint asked for", () => {
+    const score = { ...emptyScore, points: 50 };
+    expect(canAfford(score, "letter")).toBe(true); // 30
+    expect(canAfford(score, "continent")).toBe(true); // 40
+    expect(canAfford(score, "region")).toBe(false); // 60
+    expect(canAfford(score, "answer")).toBe(false); // 120
+  });
+
+  it("counts exactly enough as enough", () => {
+    expect(canAfford({ ...emptyScore, points: HINT_COST.region }, "region")).toBe(
+      true
+    );
+    expect(
+      canAfford({ ...emptyScore, points: HINT_COST.region - 1 }, "region")
+    ).toBe(false);
+  });
+
+  // The one hint that is not gated: a player at zero with a country they
+  // cannot find has to have a way forward.
+  it("still lets the answer be bought when it cannot be paid for", () => {
+    expect(scoreHint(emptyScore, "answer").points).toBe(0);
+  });
+});
+
+describe("passing on a country", () => {
+  // Between a wrong guess at 25 and buying the answer at 120, there was
+  // nothing for "I don't know this one and I'm not paying to find out".
+  it("costs no points", () => {
+    const score = run(emptyScore, 3);
+    expect(scorePass(score).points).toBe(score.points);
+  });
+
+  it("still breaks the streak — it was not answered", () => {
+    expect(scorePass(run(emptyScore, 3)).streak).toBe(0);
+  });
+
+  it("keeps the best streak reached", () => {
+    expect(scorePass(run(emptyScore, 4)).bestStreak).toBe(4);
+  });
+
+  // Which is the whole difference between the two, and the reason both exist.
+  it("is cheaper than a wrong guess and cheaper than the answer", () => {
+    const score = run(emptyScore, 3);
+    expect(scorePass(score).points).toBeGreaterThan(scoreWrong(score).points);
+    expect(scorePass(score).points).toBeGreaterThan(
+      scoreHint(score, "answer").points
+    );
   });
 });
