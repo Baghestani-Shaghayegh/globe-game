@@ -146,7 +146,6 @@ function Picker({
 
   return (
     <div ref={box} className={`relative min-w-0 flex-1 ${className}`}>
-      <span className="mb-1.5 block text-xs text-zinc-400">{label}</span>
       <button
         type="button"
         aria-haspopup="listbox"
@@ -155,16 +154,23 @@ function Picker({
           playTap();
           setOpen((o) => !o);
         }}
-        className={`flex w-full items-center gap-2 rounded-xl border bg-white/[0.04] px-3.5 py-2.5 text-left text-sm text-zinc-100 transition-colors ${
-          open
-            ? "border-teal-300/60"
-            : "border-white/15 hover:border-white/30"
+        className={`flex w-full items-center gap-2 rounded-xl border bg-white/[0.04] py-2.5 pl-3 pr-3.5 text-left text-sm text-zinc-100 transition-colors ${
+          open ? "border-teal-300/60" : "border-white/15 hover:border-white/30"
         }`}
       >
-        <span className="min-w-0 flex-1 truncate">{chosen?.label ?? value}</span>
+        {/* The label rides inside the field. Above it, it cost a line of a
+            page that has to fit one window — and inside it reads as part of
+            the same control rather than a heading for it. */}
+        <span className="shrink-0 rounded-md bg-white/[0.06] px-2 py-0.5 text-xs text-zinc-400">
+          {label}
+        </span>
+        <span className="min-w-0 truncate">{chosen?.label ?? value}</span>
         {chosen?.note && (
-          <span className="shrink-0 text-xs text-zinc-500">{chosen.note}</span>
+          <span className="shrink-0 text-xs text-zinc-500">
+            · {chosen.note}
+          </span>
         )}
+        <span className="flex-1" />
         <svg
           aria-hidden="true"
           viewBox="0 0 24 24"
@@ -478,16 +484,24 @@ export default function Home() {
                     playTap();
                     setGameType(t.id);
                   }}
-                  className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                  className={`rounded-lg border px-3.5 py-1.5 text-sm font-medium transition-colors ${
                     gameType === t.id
-                      ? "bg-teal-300 text-[#07111c]"
-                      : "border border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/25 hover:bg-white/[0.06] hover:text-zinc-100"
+                      ? "border-teal-300/60 bg-teal-300/[0.14] text-teal-100"
+                      : "border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/25 hover:bg-white/[0.06] hover:text-zinc-100"
                   }`}
                 >
                   {t.label}
                 </button>
               ))}
             </div>
+
+            {/* What the chosen game actually is. Every type already carried
+                this line; it was a `title` attribute, which is invisible on a
+                phone and a second late on a desktop — and "Famous for" and
+                "Outlines" mean nothing until someone tells you. */}
+            <p className="mt-2 text-sm text-zinc-400">
+              {GAME_TYPES.find((t) => t.id === gameType)?.blurb}
+            </p>
 
             {/*
               Two decisions and a button: what kind of round, which map, go.
@@ -497,7 +511,7 @@ export default function Home() {
               are a setting rather than a per-round choice — they were the same
               answer every time, which is what a setting is for.
             */}
-            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Picker
                 className="sm:max-w-[17rem]"
                 label="Map"
