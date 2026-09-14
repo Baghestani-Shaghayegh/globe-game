@@ -26,6 +26,29 @@ export const DAILY_COUNTRIES = 10;
 export const DAILY_MULTIPLIER = 2;
 
 /**
+ * How long the daily gives you for its ten countries.
+ *
+ * A countdown rather than a clock that counts up. The difference is what the
+ * round asks of you: counting up, the question was "how fast were you", and a
+ * player who could not name a country was free to sit on it. Counting down,
+ * the ten are a budget — thirty seconds each on average — and deciding to
+ * pass on one you do not know is part of playing it.
+ *
+ * Five minutes rather than three. The day's countries are drawn from the whole
+ * world, so a round can easily contain three you have never heard of; three
+ * minutes would have made those rounds unwinnable through no fault of the
+ * player, which is a lottery, not a challenge. Five is loose enough that
+ * knowing the countries is enough to finish, and tight enough that the clock
+ * is real.
+ *
+ * It is also one of the limits the rest of the game already offers, so the
+ * bucket this files under reads back as "Daily · 5 min" rather than a number
+ * nothing else uses.
+ */
+export const DAILY_LIMIT_SECONDS = 300;
+export const DAILY_LIMIT_MS = DAILY_LIMIT_SECONDS * 1_000;
+
+/**
  * How long a once-a-day puzzle took, in a shape the scores table will accept.
  *
  * The column is checked to be between a second and a day. A puzzle you open,

@@ -11,6 +11,8 @@ import { GAME_TYPES, type Mode } from "../data/modes";
 import {
   challengeFor,
   dailyType,
+  DAILY_LIMIT_MS,
+  DAILY_LIMIT_SECONDS,
   DAILY_MULTIPLIER,
   dayKey,
   formatDay,
@@ -66,7 +68,10 @@ function TodaysBoard({ type }: { type: Challenge["type"] }) {
   useEffect(() => {
     if (!accountsEnabled) return;
     let cancelled = false;
-    topScores(recordKey(type, "daily", null), dayStart(), 10)
+    // The limit goes in because recordKey puts it in: a timed round files
+    // under "@300", and a board that looked the daily up without it read an
+    // empty bucket every day.
+    topScores(recordKey(type, "daily", DAILY_LIMIT_SECONDS), dayStart(), 10)
       .then((data) => {
         if (!cancelled) setRows(data);
       })
@@ -221,6 +226,14 @@ export default function Daily() {
               {result.found} of {result.total} found ·{" "}
               {formatDuration(result.ms)}
             </p>
+            {/* Otherwise a round the clock ended reads as a round you simply
+                stopped playing, and "5:00" alone does not say which. */}
+            {result.found < result.total &&
+              result.ms >= DAILY_LIMIT_MS && (
+                <p className="mt-1 text-xs text-amber-300/80">
+                  Time ran out.
+                </p>
+              )}
             <p className="mt-4 text-2xl leading-none tracking-widest">
               {result.outcomes
                 .map((o) =>
@@ -253,7 +266,7 @@ export default function Daily() {
   const mode = dailyMode(challenge);
   const shared = {
     mode,
-    limitMs: null,
+    limitMs: DAILY_LIMIT_MS,
     ruleset: "relaxed" as const,
     pointsMultiplier: DAILY_MULTIPLIER,
   };

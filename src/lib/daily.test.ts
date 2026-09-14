@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   DAILY_COUNTRIES,
   challengeFor,
+  DAILY_LIMIT_MS,
+  DAILY_LIMIT_SECONDS,
   DAILY_MULTIPLIER,
   MAX_RUN_MS,
   MIN_RUN_MS,
@@ -15,6 +17,8 @@ import {
   streak,
   type DailyResult,
 } from "./daily";
+import { recordKey, TIME_LIMITS } from "../data/modes";
+import { describeBucket, isDailyBucket } from "./leaderboard";
 
 const POOL = Array.from({ length: 60 }, (_, i) => `Country ${i}`);
 
@@ -189,5 +193,36 @@ describe("elapsed time filed with a score", () => {
   // Rounds saved before scores were posted carry no stamp.
   it("falls back to the floor when there is no stamp", () => {
     expect(elapsedMs(undefined)).toBe(MIN_RUN_MS);
+  });
+});
+
+describe("the daily's time limit", () => {
+  it("is the milliseconds the seconds say", () => {
+    expect(DAILY_LIMIT_MS).toBe(DAILY_LIMIT_SECONDS * 1000);
+  });
+
+  // Enough that a country the player has never heard of is a setback rather
+  // than the end of the round.
+  it("leaves room for the ten countries it asks for", () => {
+    expect(DAILY_LIMIT_SECONDS / DAILY_COUNTRIES).toBeGreaterThanOrEqual(20);
+  });
+
+  // Not decoration: describeBucket reads a limit back through this list, and
+  // one that isn't in it renders as a bare "300s".
+  it("is a limit the rest of the game offers", () => {
+    expect(TIME_LIMITS.map((l) => l.seconds)).toContain(DAILY_LIMIT_SECONDS);
+  });
+
+  // Two bugs waiting here. The bucket the timed daily files under has to
+  // still read as a daily, or replaying one stops being blocked; and the key
+  // has to be the one the board looks up, which is why the limit lives in one
+  // constant both sides import.
+  it("still files under a bucket the game knows is a daily", () => {
+    const bucket = recordKey("name", "daily", DAILY_LIMIT_SECONDS);
+    // "name" is the classic game, which keeps the bare mode id — no prefix.
+    expect(bucket).toBe("daily@300");
+    expect(isDailyBucket(bucket)).toBe(true);
+    expect(describeBucket(bucket)).toContain("Daily");
+    expect(describeBucket(bucket)).toContain("5 min");
   });
 });

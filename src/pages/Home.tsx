@@ -15,7 +15,13 @@ import {
 } from "../data/modes";
 import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled } from "../lib/supabase";
-import { DAILY_MULTIPLIER, dayKey, resultFor, streak } from "../lib/daily";
+import {
+  DAILY_LIMIT_SECONDS,
+  DAILY_MULTIPLIER,
+  dayKey,
+  resultFor,
+  streak,
+} from "../lib/daily";
 import { loadMystery } from "../lib/mystery";
 import { loadConnect } from "../lib/connect";
 import { dueCount } from "../lib/practice";
@@ -564,7 +570,7 @@ export default function Home() {
                 note={
                   doneToday.daily
                     ? "Played — see your result"
-                    : "Ten countries, the same ten for everyone."
+                    : `Ten countries in ${DAILY_LIMIT_SECONDS / 60} minutes, the same ten for everyone.`
                 }
                 accent="sky"
                 badge={daily && daily.streak > 1 ? `🔥 ${daily.streak}` : undefined}
