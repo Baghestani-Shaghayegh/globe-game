@@ -135,7 +135,11 @@ describe("outlinePath", () => {
 });
 
 /** A big island at the origin, with a second one placed to order. */
-const island = (lng: number, lat: number, size: number): number[][] => [
+const island = (
+  lng: number,
+  lat: number,
+  size: number
+): [number, number][] => [
   [lng, lat], [lng + size, lat], [lng + size, lat + size], [lng, lat + size], [lng, lat],
 ];
 
