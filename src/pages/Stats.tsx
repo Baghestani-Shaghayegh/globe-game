@@ -9,7 +9,7 @@ import {
   type CountryRow,
 } from "../lib/countryStats";
 import { allBuckets, formatDuration } from "../lib/records";
-import { dayKey, streak } from "../lib/daily";
+import { dayKey, streakState } from "../lib/daily";
 import { MODES } from "../data/modes";
 import type { Continent } from "../data/continents";
 
@@ -141,7 +141,7 @@ export default function Stats() {
       ms: runs.reduce((sum, run) => sum + run.ms, 0),
     };
   }, []);
-  const [days] = useState(() => streak(dayKey()));
+  const [run] = useState(() => streakState(dayKey()));
 
   return (
     <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
@@ -174,8 +174,13 @@ export default function Stats() {
               <Tile value={String(summary.countries)} label="Countries met" />
               <Tile value={String(played.runs)} label="Rounds" />
               <Tile
-                value={days > 0 ? `🔥 ${days}` : "—"}
-                label="Daily streak"
+                value={run.days > 0 ? `🔥 ${run.days}` : "—"}
+                label={
+                  // The record earns its place here, where the page is a
+                  // record of everything else too — not on the menu, where it
+                  // would just be a second number to read.
+                  run.best > run.days ? `Daily streak · best ${run.best}` : "Daily streak"
+                }
               />
             </div>
 

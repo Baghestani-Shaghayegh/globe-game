@@ -15,6 +15,7 @@ import {
   resultFor,
   saveResult,
   streak,
+  streakState,
   type DailyResult,
 } from "./daily";
 import { recordKey, TIME_LIMITS } from "../data/modes";
@@ -130,6 +131,64 @@ describe("streaks", () => {
     expect(streak("2026-09-07")).toBe(0);
     saveResult(result("2026-08-01"));
     expect(streak("2026-09-07")).toBe(0);
+  });
+});
+
+describe("what the streak display needs to know", () => {
+  it("says whether today is already counted", () => {
+    for (const d of ["2026-09-05", "2026-09-06"]) saveResult(result(d));
+    expect(streakState("2026-09-07").playedToday).toBe(false);
+    saveResult(result("2026-09-07"));
+    expect(streakState("2026-09-07").playedToday).toBe(true);
+  });
+
+  // The morning after is the case worth getting right: the streak still
+  // stands, but it is one day from being lost, and the card has to be able to
+  // say so.
+  it("still counts the run the morning after, unplayed", () => {
+    for (const d of ["2026-09-05", "2026-09-06"]) saveResult(result(d));
+    const state = streakState("2026-09-07");
+    expect(state.days).toBe(2);
+    expect(state.playedToday).toBe(false);
+  });
+
+  it("remembers the longest run even once it is broken", () => {
+    for (const d of [
+      "2026-09-01",
+      "2026-09-02",
+      "2026-09-03",
+      "2026-09-04",
+      "2026-09-07",
+    ]) {
+      saveResult(result(d));
+    }
+    const state = streakState("2026-09-07");
+    expect(state.days).toBe(1);
+    expect(state.best).toBe(4);
+  });
+
+  it("counts the current run as the best when it is", () => {
+    for (const d of ["2026-09-05", "2026-09-06", "2026-09-07"]) saveResult(result(d));
+    expect(streakState("2026-09-07")).toEqual({
+      days: 3,
+      playedToday: true,
+      best: 3,
+    });
+  });
+
+  it("is all zeroes with nothing played", () => {
+    expect(streakState("2026-09-07")).toEqual({
+      days: 0,
+      playedToday: false,
+      best: 0,
+    });
+  });
+
+  // A month boundary is where a hand-rolled "yesterday" goes wrong.
+  it("carries a run across the end of a month", () => {
+    for (const d of ["2026-08-30", "2026-08-31", "2026-09-01"]) saveResult(result(d));
+    expect(streakState("2026-09-01").days).toBe(3);
+    expect(streakState("2026-09-01").best).toBe(3);
   });
 });
 

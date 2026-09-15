@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import DailyCard from "../components/DailyCard";
+import StreakChip from "../components/StreakChip";
 import AdSlot from "../components/AdSlot";
 import { playTap } from "../lib/sound";
 import { replayTodaysDailies } from "../lib/localData";
@@ -20,7 +21,8 @@ import {
   DAILY_MULTIPLIER,
   dayKey,
   resultFor,
-  streak,
+  streakState,
+  type Streak,
 } from "../lib/daily";
 import { loadMystery } from "../lib/mystery";
 import { loadConnect } from "../lib/connect";
@@ -300,9 +302,7 @@ export default function Home() {
   const [gameType, setGameType] = useState<GameType>("name");
   const [modeId, setModeId] = useState<ModeId>("easy");
 
-  const [daily, setDaily] = useState<{ played: boolean; streak: number } | null>(
-    null
-  );
+  const [daily, setDaily] = useState<Streak | null>(null);
   // Which of today's three are finished. Mystery and connect count as done
   // only when solved — one abandoned halfway is still waiting for you.
   const [doneToday, setDoneToday] = useState({
@@ -316,7 +316,7 @@ export default function Home() {
 
   useEffect(() => {
     const today = dayKey();
-    setDaily({ played: resultFor(today) !== null, streak: streak(today) });
+    setDaily(streakState(today));
     setDoneToday({
       daily: resultFor(today) !== null,
       mystery: (() => {
@@ -548,6 +548,9 @@ export default function Home() {
               <h2 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
                 Today's challenges
               </h2>
+              {/* Beside the heading rather than on a card: the streak is
+                  about the habit, not about any one of the three. */}
+              {daily && <StreakChip streak={daily} className="self-center" />}
               {import.meta.env.DEV && <ReplayToday />}
             </div>
 
@@ -573,7 +576,7 @@ export default function Home() {
                     : `Ten countries in ${DAILY_LIMIT_SECONDS / 60} minutes, the same ten for everyone.`
                 }
                 accent="sky"
-                badge={daily && daily.streak > 1 ? `🔥 ${daily.streak}` : undefined}
+                badge={daily && daily.days > 0 ? `🔥 ${daily.days}` : undefined}
                 done={doneToday.daily}
                 action="Start the hunt"
               />

@@ -234,6 +234,44 @@ export function streak(today: string = dayKey()): number {
   return count;
 }
 
+/**
+ * The streak, and the two things a player actually wants to know about it:
+ * whether today is already counted, and whether this is the best they have
+ * done.
+ *
+ * Built from the days already on file rather than a counter of its own, so
+ * switching the display on does not reset anyone and a day played before any
+ * of this existed still counts. The Country hunt is the only daily that keeps
+ * a per-day history — Mystery and Connect store today's result and nothing
+ * else — so it is the one the streak is built on.
+ */
+export type Streak = {
+  /** Consecutive days up to today, or up to yesterday if today is unplayed. */
+  days: number;
+  /** Whether today is already in the count. */
+  playedToday: boolean;
+  /** The longest run on file, this one included. */
+  best: number;
+};
+
+export function streakState(today: string = dayKey()): Streak {
+  const played = playedDays();
+  const set = new Set(played);
+
+  let best = 0;
+  let run = 0;
+  let previous: string | null = null;
+  // playedDays is newest first, so walking it backwards goes forwards in time
+  // and a run is a day that follows the one before it.
+  for (const day of [...played].reverse()) {
+    run = previous !== null && previousDay(day) === previous ? run + 1 : 1;
+    best = Math.max(best, run);
+    previous = day;
+  }
+
+  return { days: streak(today), playedToday: set.has(today), best };
+}
+
 function previousDay(key: string): string {
   const [y, m, d] = key.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d) - 86_400_000).toISOString().slice(0, 10);
