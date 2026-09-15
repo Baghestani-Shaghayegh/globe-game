@@ -9,6 +9,8 @@ import {
   type OverallRow,
 } from "../lib/leaderboard";
 import AdSlot from "../components/AdSlot";
+import CrownWall from "../components/CrownWall";
+import { crowns as fetchCrowns, type Crown } from "../lib/crowns";
 
 /** Gold, silver, bronze, then nothing — a podium only reads as one if it's short. */
 function rankColor(rank: number): string {
@@ -120,6 +122,23 @@ export default function Leaderboard() {
     };
   }, [since]);
 
+  const [held, setHeld] = useState<Crown[] | null>(null);
+  useEffect(() => {
+    if (!accountsEnabled) return;
+    let cancelled = false;
+    fetchCrowns()
+      .then((rows) => {
+        if (!cancelled) setHeld(rows);
+      })
+      .catch(() => {
+        // A wall that won't load must not take the weekly board down with it.
+        if (!cancelled) setHeld([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
       <main className="mx-auto w-full max-w-[1180px]">
@@ -146,7 +165,18 @@ export default function Leaderboard() {
           </p>
         ) : (
           <>
-            <div className="mt-5">
+            {/* Above the weekly board on purpose. "Who scored most this week"
+                is not a thing anyone repeats out loud; "fastest person alive
+                to name every country" is. */}
+            <div className="mt-7">
+              <CrownWall crowns={held} meId={meId} />
+            </div>
+
+            <h2 className="mt-9 text-xl font-semibold tracking-tight text-zinc-50">
+              This week
+            </h2>
+
+            <div className="mt-3">
               <Panel>
                 {overall === null ? (
                   <Empty>Loading…</Empty>
