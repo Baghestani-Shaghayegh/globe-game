@@ -429,6 +429,12 @@ export default function Home() {
               </svg>
               <span className="hidden sm:inline">Settings</span>
             </Link>
+            {/* Beside the name and flag, where the player's own things live.
+                Outside the account link rather than inside it, because the
+                streak is kept on the device and stands whether or not anyone
+                is signed in — inside, it would vanish for a signed-out player
+                who has one. */}
+            {daily && <StreakChip streak={daily} />}
             {accountsEnabled && (
               <Link
                 to="/account"
@@ -548,9 +554,6 @@ export default function Home() {
               <h2 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
                 Today's challenges
               </h2>
-              {/* Beside the heading rather than on a card: the streak is
-                  about the habit, not about any one of the three. */}
-              {daily && <StreakChip streak={daily} className="self-center" />}
               {import.meta.env.DEV && <ReplayToday />}
             </div>
 
