@@ -92,6 +92,13 @@ export default function Practice() {
         ruleset="relaxed"
         onRoundEnd={finish}
         record={false}
+        // The same whole-world view Find it already had. Drawn alone the
+        // eight are specks on an empty sphere, which is no way to learn where
+        // they are; drawn against the rest of the map, and raised out of it,
+        // they are eight places rather than eight shapes. Only they can be
+        // clicked — the backdrop is there to navigate by.
+        backdrop
+        showInPlay
       />
     ) : (
       <FindGame
@@ -105,6 +112,11 @@ export default function Practice() {
         // The whole world, with the ones being drilled raised out of it. On
         // their own the eight were specks on an empty sphere, which is no way
         // to learn where they are.
+        //
+        // The backdrop stays clickable here, unlike in Name it. This game
+        // asks "where is Burundi?", so clicking Brazil is a wrong answer and
+        // deserves to be told so — refusing the click would narrow the whole
+        // world down to eight candidates and hand over the answer.
         backdrop
         showInPlay
       />

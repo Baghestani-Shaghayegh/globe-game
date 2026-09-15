@@ -133,3 +133,81 @@ describe("outlinePath", () => {
     expect(path).not.toContain("Infinity");
   });
 });
+
+/** A big island at the origin, with a second one placed to order. */
+const island = (lng: number, lat: number, size: number): number[][] => [
+  [lng, lat], [lng + size, lat], [lng + size, lat + size], [lng, lat + size], [lng, lat],
+];
+
+describe("framing on the shape that matters", () => {
+  // France, drawn with French Guiana and Réunion, spanned two oceans and the
+  // mainland came out a thumbnail in the corner.
+  it("drops a far, minor territory so the mainland fills the box", () => {
+    const withTerritory: Geometry = {
+      type: "MultiPolygon",
+      coordinates: [[island(0, 0, 10)], [island(80, -20, 2)]],
+    };
+    const alone: Geometry = { type: "Polygon", coordinates: [island(0, 0, 10)] };
+    expect(outlinePath(withTerritory)).toBe(outlinePath(alone));
+  });
+
+  // Indonesia is 3.4 main-widths across at 78% of its largest island; the
+  // Philippines 2.2 at 85%. Far and major is the country, not a territory.
+  it("keeps a far island when it is a real part of the country", () => {
+    const scattered: Geometry = {
+      type: "MultiPolygon",
+      coordinates: [[island(0, 0, 10)], [island(60, 0, 9)]],
+    };
+    const mainOnly: Geometry = { type: "Polygon", coordinates: [island(0, 0, 10)] };
+    expect(outlinePath(scattered)).not.toBe(outlinePath(mainOnly));
+    // Two separate subpaths, so both islands really are drawn.
+    expect(outlinePath(scattered).split("M").filter(Boolean)).toHaveLength(2);
+  });
+
+  it("keeps a minor island that is close by", () => {
+    const withCorsica: Geometry = {
+      type: "MultiPolygon",
+      coordinates: [[island(0, 0, 10)], [island(13, 2, 2)]],
+    };
+    expect(outlinePath(withCorsica).split("M").filter(Boolean)).toHaveLength(2);
+  });
+
+  it("never drops everything", () => {
+    const lonely: Geometry = { type: "Polygon", coordinates: [island(0, 0, 4)] };
+    expect(outlinePath(lonely)).not.toBe("");
+  });
+});
+
+describe("countries that cross the 180th meridian", () => {
+  // Fiji runs from 177 to -178: three degrees of ocean written as 355. Framed
+  // on that, it was two specks on opposite edges of an empty box.
+  const fiji: Geometry = {
+    type: "MultiPolygon",
+    coordinates: [[island(177, -18, 2)], [island(-179, -17, 2)]],
+  };
+
+  it("frames on the real span rather than the whole world", () => {
+    const drawn = points(outlinePath(fiji));
+    const xs = drawn.map(([x]) => x);
+    // Both islands together are 5 degrees wide, so they fill the box — before
+    // the unwrap they sat at opposite edges with everything between them empty.
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(VIEW * 0.7);
+  });
+
+  it("still draws both sides of the line", () => {
+    expect(outlinePath(fiji).split("M").filter(Boolean)).toHaveLength(2);
+  });
+
+  it("leaves a country that genuinely spans a lot of longitude alone", () => {
+    // A hundred and forty degrees wide and nowhere near the meridian — wide,
+    // but not a wrap, so the longitudes must be left where they are.
+    const broad: Geometry = {
+      type: "Polygon",
+      coordinates: [[[-70, -5], [70, -5], [70, 5], [-70, 5], [-70, -5]]],
+    };
+    const xs = points(outlinePath(broad)).map(([x]) => x);
+    // Unwrapping this one would split it across the meridian and leave a
+    // narrow shape pinned to the edges instead of a band across the box.
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(VIEW * 0.8);
+  });
+});
