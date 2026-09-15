@@ -9,11 +9,14 @@ import { cluesFor } from "../data/clues";
 import { GAME_TYPES, type GameType, type Mode } from "../data/modes";
 import { allCountries } from "../lib/countryStats";
 import {
+  boxHint,
+  boxLabel,
   loadDeck,
   masteredCount,
   nextSession,
   recallsFrom,
   saveReview,
+  TOP_BOX,
 } from "../lib/practice";
 import { choiceClass } from "../components/choice";
 
@@ -146,11 +149,61 @@ export default function Practice() {
           </div>
         ) : (
           <>
-            <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2">
-              <span className="text-xs uppercase tracking-wider text-zinc-500">
-                Ask me
-              </span>
-              <div className="flex flex-wrap gap-1.5">
+            {/* A header row, because the two numbers on the right were
+                unlabelled and one of them was five dots. */}
+            <div className="mt-5 flex items-center gap-3 px-4 pb-1.5 text-[11px] uppercase tracking-wider text-zinc-600">
+              <span>Country</span>
+              <span className="ml-auto w-20 text-right">Times missed</span>
+              <span className="w-24 text-right">Progress</span>
+            </div>
+
+            <ul className="divide-y divide-white/[0.05] overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]">
+              {worst.map((entry) => (
+                <li
+                  key={entry.name}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm"
+                >
+                  <span className="text-zinc-100">{entry.display}</span>
+                  {!askable(type, [entry.name]).length && (
+                    <span className="text-xs text-zinc-600">
+                      not asked this way
+                    </span>
+                  )}
+                  <span className="ml-auto w-20 text-right tabular-nums text-xs text-rose-300/70">
+                    {entry.stat && entry.stat.missed > 0 ? entry.stat.missed : "—"}
+                  </span>
+                  {/* Words, not dots. The ladder is a run of clean answers, so
+                      that is what it says; the tooltip carries what getting it
+                      right again would buy. */}
+                  <span
+                    title={boxHint(entry.box)}
+                    className={`w-24 text-right text-xs ${
+                      entry.box === 0
+                        ? "text-zinc-500"
+                        : entry.box >= TOP_BOX
+                          ? "text-emerald-300/80"
+                          : "text-amber-300/80"
+                    }`}
+                  >
+                    {boxLabel(entry.box)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            {/* Below the list rather than above it. Up there it read as a
+                filter on the countries, which it never was — the same eight
+                are drilled whichever is picked. It is a choice about the
+                round you are about to start, so it lives with the button
+                that starts it. */}
+            <div className="mt-7 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-sm text-zinc-200">
+                How should I ask about these {worst.length}?
+              </p>
+              <p className="mt-0.5 text-xs text-zinc-500">
+                {GAME_TYPES.find((option) => option.id === type)?.blurb}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 {GAME_TYPES.map((option) => (
                   <button
                     key={option.id}
@@ -164,43 +217,10 @@ export default function Practice() {
               </div>
             </div>
 
-            <ul className="mt-5 divide-y divide-white/[0.05] overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]">
-              {worst.map((entry) => (
-                <li
-                  key={entry.name}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm"
-                >
-                  <span className="text-zinc-100">{entry.display}</span>
-                  {!askable(type, [entry.name]).length && (
-                    <span className="text-xs text-zinc-600">
-                      not asked this way
-                    </span>
-                  )}
-                  <span className="ml-auto flex items-center gap-2.5 tabular-nums text-xs text-zinc-600">
-                    {entry.stat && entry.stat.missed > 0 && (
-                      <span className="text-rose-300/70">
-                        {entry.stat.missed} missed
-                      </span>
-                    )}
-                    <span aria-label={`box ${entry.box} of 5`} className="flex gap-0.5">
-                      {[0, 1, 2, 3, 4].map((step) => (
-                        <span
-                          key={step}
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            step < entry.box ? "bg-amber-300/70" : "bg-white/10"
-                          }`}
-                        />
-                      ))}
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-
             <button
               onClick={() => setPlaying(ready)}
               disabled={ready.length === 0}
-              className="mt-6 w-full rounded-lg bg-amber-400/15 py-2.5 text-sm font-medium text-amber-200 transition-colors hover:bg-amber-400/25 disabled:opacity-40"
+              className="mt-3 w-full rounded-lg bg-amber-400/15 py-2.5 text-sm font-medium text-amber-200 transition-colors hover:bg-amber-400/25 disabled:opacity-40"
             >
               Practise {ready.length}{" "}
               {ready.length === 1 ? "country" : "countries"}

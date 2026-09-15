@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   BOX_DAYS,
+  boxHint,
+  boxLabel,
   SESSION_SIZE,
   TOP_BOX,
   buildQueue,
@@ -248,5 +250,45 @@ describe("the stored deck", () => {
     saveReview({ Chad: "clean" }, NOW);
     clearPractice();
     expect(loadDeck()).toEqual({});
+  });
+});
+
+describe("what a box says out loud", () => {
+  it("names every rung, with no gaps and no repeats", () => {
+    const said = BOX_DAYS.map((_, box) => boxLabel(box));
+    expect(said).toEqual([
+      "New",
+      "Right once",
+      "Right twice",
+      "3 in a row",
+      "4 in a row",
+      "Learned",
+    ]);
+    expect(new Set(said).size).toBe(said.length);
+  });
+
+  // The state everybody sees first, and the one the five dots said nothing
+  // about: a country missed in a round and never practised.
+  it("calls an unpractised country new", () => {
+    expect(boxLabel(0)).toBe("New");
+    expect(boxHint(0)).toContain("not practised yet");
+  });
+
+  it("says what getting it right again would buy", () => {
+    expect(boxHint(0)).toContain(`${BOX_DAYS[1]} day`);
+    expect(boxHint(1)).toContain(`${BOX_DAYS[2]} days`);
+    expect(boxHint(TOP_BOX - 1)).toContain(`${BOX_DAYS[TOP_BOX]} days`);
+  });
+
+  it("says a learned country is put away rather than promising more", () => {
+    expect(boxLabel(TOP_BOX)).toBe("Learned");
+    expect(boxHint(TOP_BOX)).toContain("put away");
+  });
+
+  // A deck written by an older version, or by hand, must not render blank.
+  it("clamps a box from outside the ladder", () => {
+    expect(boxLabel(-3)).toBe("New");
+    expect(boxLabel(99)).toBe("Learned");
+    expect(boxHint(99)).toContain("put away");
   });
 });

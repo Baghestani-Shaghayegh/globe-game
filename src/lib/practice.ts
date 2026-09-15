@@ -85,6 +85,43 @@ export function nextBox(box: number, recall: Recall): number {
   return Math.min(TOP_BOX, box + 1);
 }
 
+/**
+ * What a box means, in words.
+ *
+ * The page used to draw the box as five dots and leave the player to work out
+ * what they counted. On a fresh deck every country is in box 0, so every row
+ * showed five identical empty circles — the one state where the display says
+ * nothing at all, and the state everybody sees first.
+ *
+ * A box is a run of clean answers: miss a country and it drops to 0, get it
+ * right and it climbs one. So the honest words are about the run, not about
+ * the schedule — every country in the queue is due today whatever box it is
+ * in, and "back in 3 days" next to a country you are about to practise now
+ * would simply be wrong.
+ */
+export function boxLabel(box: number): string {
+  const step = Math.max(0, Math.min(TOP_BOX, box));
+  if (step === 0) return "New";
+  if (step === TOP_BOX) return "Learned";
+  if (step === 1) return "Right once";
+  if (step === 2) return "Right twice";
+  return `${step} in a row`;
+}
+
+/** What getting it right now would buy, for the tooltip on the label. */
+export function boxHint(box: number): string {
+  const step = Math.max(0, Math.min(TOP_BOX, box));
+  if (step === TOP_BOX) {
+    return `Answered cleanly ${TOP_BOX} times running — put away for ${BOX_DAYS[TOP_BOX]} days.`;
+  }
+  const next = BOX_DAYS[step + 1];
+  const run =
+    step === 0
+      ? "Missed and not practised yet."
+      : `Answered cleanly ${step} time${step === 1 ? "" : "s"} running.`;
+  return `${run} Get it right again and it won't be asked for ${next} day${next === 1 ? "" : "s"}.`;
+}
+
 export function isDue(card: Card, now: number): boolean {
   const due = Date.parse(card.dueAt);
   return Number.isNaN(due) || due <= now;
