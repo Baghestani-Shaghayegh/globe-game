@@ -18,14 +18,12 @@ import {
   formatDay,
   resultFor,
   saveResult,
-  streakState,
   type Challenge,
   type DailyResult,
   type Outcome,
 } from "../lib/daily";
 import { formatDuration } from "../lib/records";
 import AdSlot from "../components/AdSlot";
-import StreakChip from "../components/StreakChip";
 import Celebrate from "../components/Celebrate";
 import { dayStart, topScores, type BoardRow } from "../lib/leaderboard";
 import { accountsEnabled } from "../lib/supabase";
@@ -195,7 +193,6 @@ export default function Daily() {
 
   if (result) {
     const label = GAME_TYPES.find((t) => t.id === result.type)?.label ?? "";
-    const run = streakState(day);
     return (
       <div className="min-h-screen bg-[#07111c] px-5 py-12">
         <main className="mx-auto w-full max-w-[1180px]">
@@ -244,17 +241,6 @@ export default function Daily() {
             </p>
           </div>
 
-          {/* From day one, not day two. Finishing the round is the moment
-              the streak moves, and a player who has just started one has more
-              reason to be told about it than anybody. */}
-          <div className="mt-4 flex flex-col items-center gap-1">
-            <StreakChip streak={run} />
-            {run.days > 1 && run.days === run.best && (
-              <p className="text-xs text-amber-200/70">
-                Your longest run yet.
-              </p>
-            )}
-          </div>
 
           <AdSlot className="mt-8" />
 
