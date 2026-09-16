@@ -811,14 +811,8 @@ export default function FindGame({
 
       {confirmingFinish && (
         <ConfirmDialog
-          title="Finish this round?"
-          body={
-            <>
-              You've found {foundNames.size} of {asked.length}. Finishing ends the round
-              and saves it to your records.
-            </>
-          }
-          confirmLabel="Finish and see your score"
+          title="Finish already?"
+          confirmLabel="Finish"
           onConfirm={() => {
             setConfirmingFinish(false);
             endRound();
@@ -830,8 +824,6 @@ export default function FindGame({
 
       {round.confirmingExit && (
         <ExitConfirm
-          found={foundNames.size}
-          total={asked.length}
           onFinish={() => {
             leaving.current = true;
             endRound();

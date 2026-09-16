@@ -559,14 +559,8 @@ export default function GlobeGame({
 
       {confirmingFinish && (
         <ConfirmDialog
-          title="Finish this round?"
-          body={
-            <>
-              You've found {foundNames.size} of {target}. Finishing ends the round
-              and saves it to your records.
-            </>
-          }
-          confirmLabel="Finish and see your score"
+          title="Finish already?"
+          confirmLabel="Finish"
           onConfirm={() => {
             setConfirmingFinish(false);
             endRun();
@@ -578,8 +572,6 @@ export default function GlobeGame({
 
       {round.confirmingExit && (
         <ExitConfirm
-          found={foundNames.size}
-          total={target}
           onFinish={() => {
             leaving.current = true;
             endRun();
