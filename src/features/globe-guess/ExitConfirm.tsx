@@ -25,9 +25,16 @@ export default function ExitConfirm({
     <ConfirmDialog
       title="Leave this run?"
       body={
-        <>
-          You've found {found} of {total}. It goes to your records either way.
-        </>
+        // A run with nothing in it is not filed — `end` only records a round
+        // that found something — so promising it "goes to your records" would
+        // be a lie told at exactly the moment somebody is deciding.
+        found === 0 ? (
+          <>You haven't found any yet. Leaving now keeps nothing.</>
+        ) : (
+          <>
+            You've found {found} of {total}. It goes to your records either way.
+          </>
+        )
       }
       confirmLabel="Yes, I'm leaving"
       onConfirm={onFinish}

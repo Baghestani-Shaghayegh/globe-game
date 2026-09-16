@@ -434,12 +434,20 @@ export default function GlobeGame({
 
   // The browser's Back, and the trackpad swipe that is the same thing, now
   // ask what the arrow in the corner asks.
-  useLeaveGuard(!summary && foundNames.size > 0, () =>
-    round.setConfirmingExit(true)
-  );
+  useLeaveGuard(!summary, () => round.setConfirmingExit(true));
 
+  /**
+   * Leaving mid-round asks, however the player goes about it.
+   *
+   * It used to ask only once something had been found, on the grounds that a
+   * round with nothing in it had nothing to lose. That reads wrong from the
+   * other side: the clock has been running, the countries have been drawn,
+   * and pressing the arrow by mistake thirty seconds into a daily you get one
+   * shot at should not simply obey. A round that is over asks nothing —
+   * there is no run left to abandon.
+   */
   const handleBack = () => {
-    if (summary || foundNames.size === 0) {
+    if (summary) {
       navigate("/");
       return;
     }
