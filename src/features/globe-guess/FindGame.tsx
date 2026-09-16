@@ -9,6 +9,7 @@ import ConfirmDialog from "./ConfirmDialog";
 import { useRound } from "./useRound";
 import { recordRound } from "../../lib/countryStats";
 import { useGlobeClick } from "./useGlobeClick";
+import { useLeaveGuard } from "./useLeaveGuard";
 import { getCountryMeta } from "../../data/countries";
 import {
   BLITZ_SECONDS,
@@ -441,6 +442,12 @@ export default function FindGame({
 
   const globeClick = useGlobeClick<CountryFeature>((feature) =>
     handleClick(feature.properties.name)
+  );
+
+  // The browser's Back, and the trackpad swipe that is the same thing, now
+  // ask what the arrow in the corner asks.
+  useLeaveGuard(!summary && foundNames.size > 0, () =>
+    round.setConfirmingExit(true)
   );
 
   const handleBack = () => {
