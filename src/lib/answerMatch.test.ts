@@ -5,6 +5,7 @@ import {
   editDistance,
   isCorrectGuess,
   normalizeAnswer,
+  suggestNames,
 } from "./answerMatch";
 import { getCountryMeta } from "../data/countries";
 
@@ -153,5 +154,60 @@ describe("tolerance never confuses two real countries", () => {
       (n) => !isCorrectGuess(getCountryMeta(n).displayName, getCountryMeta(n))
     );
     expect(rejected).toEqual([]);
+  });
+});
+
+describe("what the suggestion list offers", () => {
+  const pool = [
+    { displayName: "United States", aliases: ["usa", "us", "united states of america", "america"] },
+    { displayName: "United Kingdom", aliases: ["england", "uk", "great britain", "britain"] },
+    { displayName: "Australia", aliases: [] },
+    { displayName: "Austria", aliases: [] },
+    { displayName: "Belarus", aliases: [] },
+    { displayName: "Russia", aliases: [] },
+    { displayName: "Morocco", aliases: [] },
+  ];
+  const names = (typed: string, limit = 6) =>
+    suggestNames(pool, typed, limit).map((m) => m.displayName);
+
+  // The bug this was written for: "usa" is accepted as an answer but the list
+  // under the box only searched printed names, so it offered nothing.
+  it("finds a country by its alias", () => {
+    expect(names("usa")).toEqual(["United States"]);
+    expect(names("uk")).toEqual(["United Kingdom"]);
+    expect(names("england")).toEqual(["United Kingdom"]);
+  });
+
+  // Plain substring matching put Australia, Austria, Belarus and Russia above
+  // the United States for "us" — all four contain those two letters.
+  it("puts what you are obviously reaching for first", () => {
+    expect(names("us")[0]).toBe("United States");
+  });
+
+  it("prefers a real name over a nickname", () => {
+    expect(names("united")).toEqual(["United Kingdom", "United States"]);
+  });
+
+  it("still matches a plain prefix", () => {
+    expect(names("moro")).toEqual(["Morocco"]);
+    expect(names("austr")).toEqual(["Australia", "Austria"]);
+  });
+
+  it("ignores case, accents and punctuation", () => {
+    expect(names("U.S.A.")).toEqual(["United States"]);
+    expect(names("  MOROCCO ")).toEqual(["Morocco"]);
+  });
+
+  it("offers nothing for an empty box, rather than everything", () => {
+    expect(names("")).toEqual([]);
+    expect(names("   ")).toEqual([]);
+  });
+
+  it("offers nothing for a name no country has", () => {
+    expect(names("zzzz")).toEqual([]);
+  });
+
+  it("never returns more than it was asked for", () => {
+    expect(names("a", 3).length).toBeLessThanOrEqual(3);
   });
 });

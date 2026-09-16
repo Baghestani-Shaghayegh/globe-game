@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { normalizeAnswer } from "../../lib/answerMatch";
+import { suggestNames, type Suggestable } from "../../lib/answerMatch";
 import { HINT_COST } from "../../lib/scoring";
 import { wrongNameQuip } from "../../lib/quips";
 
@@ -13,8 +13,11 @@ type Props = {
   onHint: (() => void) | null;
   /** False when the round has not earned the hint\u0027s price yet. */
   canAffordHint?: boolean;
-  /** Country names offered as autocomplete suggestions */
-  names: string[];
+  /**
+   * The countries on offer. Names *and* aliases, because the list has to be
+   * able to suggest "United States" to somebody who typed "usa".
+   */
+  names: Suggestable[];
   value: string;
   isWrong: boolean;
   onChange: (value: string) => void;
@@ -43,13 +46,10 @@ export default function GuessModal({
   const jab = useMemo(() => (isWrong ? wrongNameQuip() : ""), [isWrong]);
   const [highlighted, setHighlighted] = useState(-1);
 
-  const matches = useMemo(() => {
-    const query = normalizeAnswer(value);
-    if (!query) return [];
-    return names
-      .filter((name) => normalizeAnswer(name).includes(query))
-      .slice(0, MAX_SUGGESTIONS);
-  }, [names, value]);
+  const matches = useMemo(
+    () => suggestNames(names, value, MAX_SUGGESTIONS).map((m) => m.displayName),
+    [names, value]
+  );
 
   useEffect(() => {
     if (open) {
@@ -88,6 +88,11 @@ export default function GuessModal({
       e.preventDefault();
       if (highlighted >= 0 && matches[highlighted]) {
         handleSelect(matches[highlighted]);
+      } else if (matches.length === 1) {
+        // One suggestion left is not a choice — it is the answer, and making
+        // someone arrow down to it, or finish typing a name the box has
+        // already worked out, is a keystroke tax on knowing it.
+        handleSelect(matches[0]);
       } else {
         onSubmit(value);
       }

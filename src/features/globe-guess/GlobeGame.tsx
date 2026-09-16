@@ -203,11 +203,13 @@ export default function GlobeGame({
     return () => window.clearInterval(id);
   }, [features.length, summary, tick]);
 
+  // The whole meta, not just the printed name: the suggestion list searches
+  // aliases too, so that "usa" finds the United States.
   const suggestionNames = useMemo(
     () =>
       features
-        .map((f) => getCountryMeta(f.properties.name).displayName)
-        .sort((a, b) => a.localeCompare(b)),
+        .map((f) => getCountryMeta(f.properties.name))
+        .sort((a, b) => a.displayName.localeCompare(b.displayName)),
     [features]
   );
 

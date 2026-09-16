@@ -139,3 +139,63 @@ export function resolveName(typed: string, pool: string[]): string | null {
   }
   return null;
 }
+
+/**
+ * The countries worth offering for what has been typed so far, best first.
+ *
+ * Aliases are searched as well as the printed name, which is the whole point:
+ * "usa" is already *accepted* as an answer, but the list under the box only
+ * ever looked at "United States", so typing the three letters everyone
+ * actually types offered nothing at all. A game that takes an answer it will
+ * not suggest is a game that looks broken to the person typing.
+ *
+ * Ranked rather than merely filtered. Plain substring matching put Australia,
+ * Belarus and Russia above the United States for "us" — every one of them
+ * contains those two letters — so what someone is obviously reaching for
+ * arrived fourth. A name that *starts* with what you typed beats one that
+ * merely contains it, and a real name beats a nickname.
+ */
+export type Suggestable = { displayName: string; aliases: string[] };
+
+export function suggestNames<T extends Suggestable>(
+  pool: T[],
+  typed: string,
+  limit: number
+): T[] {
+  const query = normalizeAnswer(typed);
+  if (!query) return [];
+
+  // "U.S.A." normalises to "u s a" — the dots become spaces — which matches
+  // neither "united states" nor the alias "usa". Initials get typed with dots
+  // often enough that the list should cope; compared without spaces as well as
+  // with them, it does. Only the suggestions are this forgiving: picking one
+  // submits the country's real name, so nothing downstream has to be.
+  const tight = query.replace(/ /g, "");
+  const hits = (text: string, how: "start" | "anywhere") => {
+    const bare = text.replace(/ /g, "");
+    return how === "start"
+      ? text.startsWith(query) || bare.startsWith(tight)
+      : text.includes(query) || bare.includes(tight);
+  };
+
+  const rank = (item: T): number => {
+    const name = normalizeAnswer(item.displayName);
+    const aliases = item.aliases.map(normalizeAnswer);
+    if (hits(name, "start")) return 0;
+    if (aliases.some((alias) => hits(alias, "start"))) return 1;
+    if (hits(name, "anywhere")) return 2;
+    if (aliases.some((alias) => hits(alias, "anywhere"))) return 3;
+    return -1;
+  };
+
+  return pool
+    .map((item) => ({ item, score: rank(item) }))
+    .filter((scored) => scored.score >= 0)
+    .sort(
+      (a, b) =>
+        a.score - b.score ||
+        a.item.displayName.localeCompare(b.item.displayName)
+    )
+    .slice(0, limit)
+    .map((scored) => scored.item);
+}
