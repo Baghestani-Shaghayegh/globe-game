@@ -211,3 +211,70 @@ describe("what the suggestion list offers", () => {
     expect(names("a", 3).length).toBeLessThanOrEqual(3);
   });
 });
+
+describe("names typed with dots or run together", () => {
+  const everyName: string[] = JSON.parse(
+    readFileSync("public/data/world.geojson", "utf8")
+  ).features.map((f: { properties: { name: string } }) => f.properties.name);
+  const usa = getCountryMeta("USA");
+  const korea = getCountryMeta("South Korea");
+
+  it("accepts initials written with full stops", () => {
+    expect(isCorrectGuess("U.S.A.", usa)).toBe(true);
+    expect(isCorrectGuess("u.s.a", usa)).toBe(true);
+    expect(isCorrectGuess("U.S.", usa)).toBe(true);
+  });
+
+  it("accepts a two-word name run together", () => {
+    expect(isCorrectGuess("southkorea", korea)).toBe(true);
+    expect(isCorrectGuess("unitedstates", usa)).toBe(true);
+    expect(isCorrectGuess("unitedstatesofamerica", usa)).toBe(true);
+  });
+
+  it("still takes the ordinary spellings", () => {
+    expect(isCorrectGuess("usa", usa)).toBe(true);
+    expect(isCorrectGuess("United States", usa)).toBe(true);
+    expect(isCorrectGuess("south korea", korea)).toBe(true);
+  });
+
+  /**
+   * The guarantee this change could have broken.
+   *
+   * Removing spaces shortens names, and the fuzzy radii are derived from the
+   * map precisely so that no two countries' accepted spellings overlap. The
+   * space-free comparison is therefore exact-only — but "exact" is worth
+   * proving: every accepted spelling of every country, with its spaces taken
+   * out, must still belong to exactly one country.
+   */
+  it("never lets one country answer for another", () => {
+    const owners = new Map<string, string>();
+    const clashes: string[] = [];
+    for (const geoName of everyName) {
+      const meta = getCountryMeta(geoName);
+      const forms = [meta.displayName, meta.geoName, ...meta.aliases];
+      for (const form of forms) {
+        const key = normalizeAnswer(form).replace(/ /g, "");
+        if (!key) continue;
+        const owner = owners.get(key);
+        if (owner && owner !== geoName) clashes.push(`${key}: ${owner} vs ${geoName}`);
+        owners.set(key, geoName);
+      }
+    }
+    expect(clashes).toEqual([]);
+  });
+
+  it("keeps the pairs the radii exist to separate apart", () => {
+    const pairs: [string, string][] = [
+      ["South Korea", "North Korea"],
+      ["Ireland", "Iceland"],
+      ["Zambia", "Gambia"],
+      ["Niger", "Nigeria"],
+      ["Austria", "Australia"],
+    ];
+    for (const [a, b] of pairs) {
+      const other = getCountryMeta(b);
+      expect(isCorrectGuess(a.replace(/ /g, ""), other)).toBe(false);
+      expect(isCorrectGuess(a, other)).toBe(false);
+    }
+  });
+});

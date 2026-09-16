@@ -50,6 +50,18 @@ export function editDistance(a: string, b: string, limit: number): number {
   return previous[b.length];
 }
 
+/**
+ * The same text with its spaces taken out.
+ *
+ * "U.S.A." normalises to "u s a" — the dots become spaces — which is equal to
+ * neither "united states" nor the alias "usa". Compared without spaces it is
+ * equal to the alias, and so are "south korea" typed as "southkorea" and every
+ * other name someone runs together.
+ */
+function spaceless(text: string): string {
+  return text.replace(/ /g, "");
+}
+
 /** Nobody should get two free slips in a name this short. */
 function lengthCap(name: string): number {
   if (name.length <= 4) return 0;
@@ -115,6 +127,14 @@ export function isCorrectGuess(guess: string, country: CountryMeta): boolean {
 
   if (accepted.includes(normalized)) return true;
 
+  // Exact only, deliberately. The radii below are computed from the whole map
+  // so that no two countries' accepted spellings can overlap; handing them
+  // strings with the spaces removed would shorten every name and quietly
+  // widen every radius, which is the one thing keeping North Korea from
+  // answering for South.
+  const tight = spaceless(normalized);
+  if (accepted.some((name) => spaceless(name) === tight)) return true;
+
   return accepted.some((name) => {
     const limit = allowedSlips(name);
     return limit > 0 && editDistance(normalized, name, limit) <= limit;
@@ -170,9 +190,9 @@ export function suggestNames<T extends Suggestable>(
   // often enough that the list should cope; compared without spaces as well as
   // with them, it does. Only the suggestions are this forgiving: picking one
   // submits the country's real name, so nothing downstream has to be.
-  const tight = query.replace(/ /g, "");
+  const tight = spaceless(query);
   const hits = (text: string, how: "start" | "anywhere") => {
-    const bare = text.replace(/ /g, "");
+    const bare = spaceless(text);
     return how === "start"
       ? text.startsWith(query) || bare.startsWith(tight)
       : text.includes(query) || bare.includes(tight);
