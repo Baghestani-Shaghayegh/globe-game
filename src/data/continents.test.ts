@@ -75,13 +75,16 @@ describe("mode membership", () => {
       americas: countOf("americas"),
       oceania: countOf("oceania"),
     }).toEqual({
-      easy: 167,
-      hard: 177,
-      europe: 43,
-      africa: 49,
-      asia: 47,
-      americas: 28,
-      oceania: 6,
+      // The 1:10m map: 196 sovereign countries — every UN member plus the
+      // handful this game has always counted, like Taiwan and Kosovo's
+      // neighbours — and 44 dependencies on top of them for the full map.
+      easy: 196,
+      hard: 240,
+      europe: 49,
+      africa: 54,
+      asia: 50,
+      americas: 35,
+      oceania: 14,
     });
   });
 

@@ -42,17 +42,60 @@ const OVERRIDES: Record<string, { displayName?: string; aliases?: string[] }> = 
 };
 
 // Territories, dependencies, and disputed regions — hard mode only.
+/**
+ * Not sovereign states: dependencies, overseas parts of other countries, and
+ * the disputed places this game has always counted separately.
+ *
+ * This is exactly what "Full map" adds to "Countries only", and it has to
+ * agree with scripts/map-names.mjs — the map is built from that list, and a
+ * place classified one way there and another way here would be counted twice
+ * or not at all. A test compares the two.
+ */
 const TERRITORIES = new Set([
+  "American Samoa",
+  "Anguilla",
   "Antarctica",
+  "Aruba",
+  "Bermuda",
+  "British Indian Ocean Territory",
+  "British Virgin Islands",
+  "Cayman Islands",
+  "Cook Islands",
+  "Curaçao",
   "Falkland Islands",
+  "Faroe Islands",
+  "French Polynesia",
   "French Southern and Antarctic Lands",
+  "Gibraltar",
   "Greenland",
+  "Guam",
+  "Guernsey",
+  "Heard Island and McDonald Islands",
+  "Hong Kong",
+  "Isle of Man",
+  "Jersey",
   "Kosovo",
+  "Macao",
+  "Montserrat",
   "New Caledonia",
+  "Niue",
+  "Norfolk Island",
   "Northern Cyprus",
+  "Northern Mariana Islands",
+  "Pitcairn Islands",
   "Puerto Rico",
+  "Saint Barthelemy",
+  "Saint Helena",
+  "Saint Martin",
+  "Saint Pierre and Miquelon",
+  "Sint Maarten",
   "Somaliland",
+  "South Georgia and the South Sandwich Islands",
+  "Turks and Caicos Islands",
+  "United States Virgin Islands",
+  "Wallis and Futuna",
   "Western Sahara",
+  "Åland",
 ]);
 
 export function getCountryMeta(geoName: string): CountryMeta {

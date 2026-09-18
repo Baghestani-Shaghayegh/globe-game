@@ -17,7 +17,10 @@ describe("featureCentre", () => {
   it.each([
     ["France", 46.7, 1.8],
     ["USA", 37.2, -95.8],
-    ["Japan", 36.2, 135.7],
+    // Moved from 36.2/135.7 with the 1:10m map: Honshu is drawn in more
+    // detail now, and its own centre sits a little north, by the Noto
+    // peninsula rather than inland of Kyoto. Still Honshu.
+    ["Japan", 37.5, 136.5],
     ["Chile", -35.7, -71.3],
     ["Australia", -24.9, 133.5],
     ["Egypt", 26.8, 30.8],

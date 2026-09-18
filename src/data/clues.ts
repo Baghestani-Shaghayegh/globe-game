@@ -847,6 +847,152 @@ export const CLUES: Record<string, string[]> = {
     "Ancient stone ruins gave the country its name",
     "Harare is its capital",
   ],
+  // Added with the 1:10m map: the small states it brought in.
+  Andorra: [
+    "A principality in the Pyrenees ruled jointly by a bishop and a president",
+    "Duty-free shopping between France and Spain",
+    "Its capital shares the country's name, with la Vella after it",
+  ],
+  "Antigua and Barbuda": [
+    "Said to have a beach for every day of the year",
+    "Nelson's Dockyard is its Georgian naval harbour",
+    "Saint John's is its capital",
+  ],
+  Bahrain: [
+    "An island kingdom joined to Saudi Arabia by a causeway",
+    "Hosts the Gulf's first Formula One circuit",
+    "Manama is its capital",
+  ],
+  Barbados: [
+    "The easternmost island of the Caribbean",
+    "Birthplace of rum, and of Rihanna",
+    "Bridgetown is its capital",
+  ],
+  "Cabo Verde": [
+    "A volcanic archipelago off the coast of Senegal",
+    "Morna music and Cesária Évora came from here",
+    "Praia is its capital",
+  ],
+  Comoros: [
+    "Islands between Mozambique and Madagascar",
+    "Its flag carries four stars for four islands",
+    "Moroni is its capital",
+  ],
+  Dominica: [
+    "The Nature Isle, with a boiling lake",
+    "A volcanic Caribbean island often confused with a larger neighbour",
+    "Roseau is its capital",
+  ],
+  Grenada: [
+    "The Spice Isle, and a major source of nutmeg",
+    "Invaded by the United States in 1983",
+    "St. George's is its capital",
+  ],
+  Kiribati: [
+    "Spread across all four hemispheres",
+    "The first country to see each new year",
+    "Tarawa is its capital",
+  ],
+  Liechtenstein: [
+    "A tiny alpine principality between Switzerland and Austria",
+    "Doubly landlocked — its neighbours are landlocked too",
+    "Vaduz is its capital",
+  ],
+  Maldives: [
+    "Over a thousand coral islands, barely above the sea",
+    "The lowest-lying country on earth",
+    "Malé is its capital",
+  ],
+  Malta: [
+    "A Mediterranean island fortress of the Knights",
+    "Awarded the George Cross for surviving a siege",
+    "Valletta is its capital",
+  ],
+  "Marshall Islands": [
+    "Bikini Atoll was its nuclear test site",
+    "Pacific atolls in a chain of two long arcs",
+    "Majuro is its capital",
+  ],
+  Mauritius: [
+    "The dodo lived and died here",
+    "An Indian Ocean island east of Madagascar",
+    "Port Louis is its capital",
+  ],
+  Micronesia: [
+    "Four states across the western Pacific",
+    "The stone money of Yap comes from here",
+    "Palikir is its capital",
+  ],
+  Monaco: [
+    "A city-state on the Riviera, famous for its casino",
+    "Its Grand Prix runs through the streets",
+    "Its capital is the country itself",
+  ],
+  Nauru: [
+    "The world's smallest island country",
+    "Once made rich, then poor, by phosphate",
+    "Yaren is its capital",
+  ],
+  Palau: [
+    "Its Jellyfish Lake is full of stingless jellyfish",
+    "Rock Islands scattered across the western Pacific",
+    "Ngerulmud is its capital",
+  ],
+  "Saint Kitts and Nevis": [
+    "The smallest country in the Americas",
+    "Two islands, and a volcano called Mount Liamuiga",
+    "Basseterre is its capital",
+  ],
+  "Saint Lucia": [
+    "The Pitons rise straight out of its sea",
+    "The only country named after a woman",
+    "Castries is its capital",
+  ],
+  "Saint Vincent and the Grenadines": [
+    "A chain of small islands south of Saint Lucia",
+    "La Soufrière erupted here in 2021",
+    "Kingstown is its capital",
+  ],
+  Samoa: [
+    "Robert Louis Stevenson is buried here",
+    "It jumped the date line in 2011, skipping a day",
+    "Apia is its capital",
+  ],
+  "San Marino": [
+    "The oldest republic in the world, on Mount Titano",
+    "Entirely surrounded by Italy",
+    "Its capital carries the same name as the country",
+  ],
+  "Sao Tome and Principe": [
+    "Two islands in the Gulf of Guinea",
+    "Cocoa made it, briefly, the world's largest producer",
+    "Its capital sits on the larger of the two islands",
+  ],
+  Seychelles: [
+    "The coco de mer grows only here",
+    "Granite islands in the Indian Ocean",
+    "Victoria is its capital",
+  ],
+  Singapore: [
+    "A city-state at the tip of the Malay Peninsula",
+    "Left Malaysia in 1965 and became a port of its own",
+    "A capital, a city and a country all at once",
+  ],
+  Tonga: [
+    "The only Pacific nation never colonised",
+    "A kingdom of a hundred and seventy islands",
+    "Nuku'alofa is its capital",
+  ],
+  Tuvalu: [
+    "Its .tv internet domain earns more than its exports",
+    "Nine low atolls in the Pacific",
+    "Funafuti is its capital",
+  ],
+  "Vatican City": [
+    "The smallest country in the world, inside another city",
+    "The Sistine Chapel is here",
+    "A conclave elects its head of state",
+  ],
 };
 
 /** The clues for a country, or an empty list when it has none. */
