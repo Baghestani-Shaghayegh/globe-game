@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
+import { useViewport } from "../../lib/useViewport";
 import { Link, useNavigate } from "react-router-dom";
 import RoundSummary from "./RoundSummary";
 import GameHud from "./GameHud";
@@ -142,6 +143,10 @@ export default function FindGame({
 
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
+  // Handed to the globe explicitly: left to itself it measures the window
+  // once and keeps that canvas forever, so a window grown from half the
+  // screen to all of it leaves the globe stranded off to one side.
+  const viewport = useViewport();
   // The scene does not exist until the globe says so, and the look is
   // installed into the scene.
   // Finishing early ends the round for good, so it asks first — the same
@@ -185,8 +190,6 @@ export default function FindGame({
   /** The keyboard route to an answer, for players who can't click the globe. */
   const [typing, setTyping] = useState(false);
   const [typed, setTyped] = useState("");
-  /** The name of the answered country under the pointer, if any. */
-  const [hoverName, setHoverName] = useState<string | null>(null);
 
   // Read once: a preference changed mid-round shouldn't move the goalposts.
   const [hintsOn] = useState(hintsEnabled);
@@ -268,6 +271,25 @@ export default function FindGame({
     );
     framed.current = true;
   }, [features, mode]);
+
+
+  /**
+   * Keep the globe the same share of the window when the window changes.
+   *
+   * `worldAltitude` works out how far back the camera has to sit for the
+   * sphere to fill a given viewport, and it was only ever asked once. Grow the
+   * window and the globe stays framed for the old one — too small, with the
+   * sphere adrift in the middle of nothing. The view is kept, only the
+   * distance is redone.
+   */
+  useEffect(() => {
+    if (!framed.current) return;
+    const globe = globeRef.current;
+    if (!globe) return;
+    const at = globe.pointOfView();
+    globe.pointOfView({ lat: at.lat, lng: at.lng, altitude: worldView() }, 0);
+    // The point of view is read, not tracked: this runs on a resize.
+  }, [viewport.width, viewport.height]);
 
   useEffect(() => {
     if (features.length) begin();
@@ -626,6 +648,8 @@ export default function FindGame({
     >
       <Globe
         ref={globeRef}
+        width={viewport.width}
+        height={viewport.height}
         rendererConfig={{
           antialias: true,
           alpha: true,
@@ -637,6 +661,17 @@ export default function FindGame({
         {...GLOBE_SURFACE}
         polygonsData={features}
         polygonCapMaterial={capColor}
+        polygonLabel={(d) => {
+          const { name } = (d as CountryFeature).properties;
+          // Only ones already answered. Naming an unanswered country here
+          // would hand over every question the round has left.
+          if (!foundNames.has(name) && !summary) return "";
+          const fill = fillFor(name);
+          if (!fill.answer) return "";
+          return `<span style="color:${answerStroke(fill.color)};font-weight:600">${
+            getCountryMeta(name).displayName
+          }</span>`;
+        }}
         polygonStrokeColor={(d) => {
           const { name } = (d as CountryFeature).properties;
           // Off-board scenery keeps no border at all: an outline in the land
@@ -659,27 +694,11 @@ export default function FindGame({
           return 0.008;
         }}
         polygonsTransitionDuration={200}
-        onPolygonHover={(polygon) => {
-          const feature = polygon as CountryFeature | null;
-          const name = feature?.properties.name;
-          // Only ones already answered. Naming an unanswered country here
-          // would hand over every question the round has left.
-          setHoverName(
-            name && (foundNames.has(name) || summary)
-              ? getCountryMeta(name).displayName
-              : null
-          );
-          globeClick.setHovered(feature);
-        }}
+        onPolygonHover={(polygon) =>
+          globeClick.setHovered(polygon as CountryFeature | null)
+        }
       />
 
-      {hoverName && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-8 z-10 flex justify-center">
-          <span className="rounded-full border border-white/10 bg-[#141b23]/90 px-3.5 py-1.5 text-sm text-zinc-100 backdrop-blur">
-            {hoverName}
-          </span>
-        </div>
-      )}
 
       <GameHud
         onBack={handleBack}

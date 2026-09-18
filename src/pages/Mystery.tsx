@@ -8,6 +8,7 @@ import {
 } from "react";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
+import { useViewport } from "../lib/useViewport";
 import { Link } from "react-router-dom";
 import { useGlobeClick } from "../features/globe-guess/useGlobeClick";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
@@ -48,6 +49,10 @@ const worldView = () => worldAltitude(window.innerWidth, window.innerHeight);
 export default function Mystery() {
   useGlobeTheme();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
+  // Handed to the globe explicitly: left to itself it measures the window
+  // once and keeps that canvas forever, so a window grown from half the
+  // screen to all of it leaves the globe stranded off to one side.
+  const viewport = useViewport();
   // The scene does not exist until the globe says so, and the look is
   // installed into the scene.
   const [ready, setReady] = useState(false);
@@ -123,6 +128,23 @@ export default function Mystery() {
     if (!ready) return;
     globeRef.current?.pointOfView({ lat: 12, lng: 20, altitude: worldView() }, 0);
   }, [ready]);
+
+  /**
+   * Keep the globe the same share of the window when the window changes.
+   *
+   * `worldAltitude` works out how far back the camera sits for the sphere to
+   * fill a given viewport, and it was only ever asked once. Grow the window
+   * and the globe stays framed for the old one. The view is kept, only the
+   * distance is redone.
+   */
+  useEffect(() => {
+    const globe = globeRef.current;
+    if (!globe || !ready) return;
+    const at = globe.pointOfView();
+    globe.pointOfView({ lat: at.lat, lng: at.lng, altitude: worldView() }, 0);
+    // The point of view is read, not tracked: this runs on a resize.
+  }, [viewport.width, viewport.height, ready]);
+
 
   const [burst, setBurst] = useState(0);
 
@@ -261,6 +283,8 @@ export default function Mystery() {
     >
       <Globe
         ref={globeRef}
+        width={viewport.width}
+        height={viewport.height}
         rendererConfig={{ antialias: true, alpha: true, logarithmicDepthBuffer: true }}
         backgroundColor={theme.page}
         globeMaterial={ocean}

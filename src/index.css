@@ -68,3 +68,23 @@ body {
     display: none;
   }
 }
+
+/*
+ * The name of a country you have already answered, shown against the country
+ * itself rather than in a box.
+ *
+ * The globe library draws its tooltip as a dark rounded chip, which on a
+ * filled-in country reads as a label pasted over the map. Stripped back to
+ * plain text: the colour comes from the country's own fill, dark enough
+ * against it to be legible and close enough to it to belong.
+ */
+.float-tooltip-kap {
+  /* !important because the library injects its own rule at runtime, after
+     this stylesheet, and would otherwise win on order alone. */
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
+  font: inherit !important;
+  /* Enough of a lift to survive the land's mottled texture underneath. */
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+}

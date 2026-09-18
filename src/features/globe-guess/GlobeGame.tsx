@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
+import { useViewport } from "../../lib/useViewport";
 import { Link, useNavigate } from "react-router-dom";
 import GuessModal from "./GuessModal";
 import RoundSummary from "./RoundSummary";
@@ -96,6 +97,10 @@ export default function GlobeGame({
 
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
+  // Handed to the globe explicitly: left to itself it measures the window
+  // once and keeps that canvas forever, so a window grown from half the
+  // screen to all of it leaves the globe stranded off to one side.
+  const viewport = useViewport();
   // The scene does not exist until the globe says so, and the look is
   // installed into the scene.
   // Finishing early ends the round for good, so it asks first — the same
@@ -117,8 +122,6 @@ export default function GlobeGame({
   const [world, setWorld] = useState<CountryFeature[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [selected, setSelected] = useState<CountryFeature | null>(null);
-  /** The name of the answered country under the pointer, if any. */
-  const [hoverName, setHoverName] = useState<string | null>(null);
   const [guess, setGuess] = useState("");
   const [isWrong, setIsWrong] = useState(false);
   const [foundNames, setFoundNames] = useState<Set<string>>(new Set());
@@ -200,6 +203,25 @@ export default function GlobeGame({
     );
     framed.current = true;
   }, [features, mode]);
+
+
+  /**
+   * Keep the globe the same share of the window when the window changes.
+   *
+   * `worldAltitude` works out how far back the camera has to sit for the
+   * sphere to fill a given viewport, and it was only ever asked once. Grow the
+   * window and the globe stays framed for the old one — too small, with the
+   * sphere adrift in the middle of nothing. The view is kept, only the
+   * distance is redone.
+   */
+  useEffect(() => {
+    if (!framed.current) return;
+    const globe = globeRef.current;
+    if (!globe) return;
+    const at = globe.pointOfView();
+    globe.pointOfView({ lat: at.lat, lng: at.lng, altitude: worldView() }, 0);
+    // The point of view is read, not tracked: this runs on a resize.
+  }, [viewport.width, viewport.height]);
 
   useEffect(() => {
     if (features.length) begin();
@@ -505,6 +527,8 @@ export default function GlobeGame({
     >
       <Globe
         ref={globeRef}
+        width={viewport.width}
+        height={viewport.height}
         rendererConfig={{
           antialias: true,
           alpha: true,
@@ -521,6 +545,17 @@ export default function GlobeGame({
           return fill.answer
             ? landMaterial(fill.color, "answer")
             : landMaterial(fill.color);
+        }}
+        polygonLabel={(d) => {
+          const { name } = (d as CountryFeature).properties;
+          const fill = fillFor(name);
+          // Naming a country you have already answered gives nothing away and
+          // turns a finished board into something you can read back. Naming an
+          // unanswered one would simply be the answer.
+          if (!fill.answer) return "";
+          return `<span style="color:${answerStroke(fill.color)};font-weight:600">${
+            getCountryMeta(name).displayName
+          }</span>`;
         }}
         polygonStrokeColor={(d) => {
           const { name } = (d as CountryFeature).properties;
@@ -543,14 +578,6 @@ export default function GlobeGame({
         onPolygonHover={(polygon) => {
           const feature = polygon as CountryFeature | null;
           const name = feature?.properties.name;
-          // Naming a country you have already answered gives nothing away and
-          // turns a finished board into something you can read back. Naming an
-          // unanswered one would simply be the answer.
-          setHoverName(
-            name && (foundNames.has(name) || expired.has(name) || summary)
-              ? getCountryMeta(name).displayName
-              : null
-          );
           // No pointer over the scenery. The cursor is the only thing that
           // says "this one isn't yours to click" before you try it.
           const playable =
@@ -559,13 +586,6 @@ export default function GlobeGame({
         }}
       />
 
-      {hoverName && !selected && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-8 z-10 flex justify-center">
-          <span className="rounded-full border border-white/10 bg-[#141b23]/90 px-3.5 py-1.5 text-sm text-zinc-100 backdrop-blur">
-            {hoverName}
-          </span>
-        </div>
-      )}
 
       <GameHud
         onBack={handleBack}
