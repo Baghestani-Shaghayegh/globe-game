@@ -21,7 +21,12 @@ import {
 } from "../../data/modes";
 import { isCorrectGuess } from "../../lib/answerMatch";
 import { canAfford } from "../../lib/scoring";
-import { backdropColor, landShade, theme } from "../../lib/globeTheme";
+import {
+  answerStroke,
+  backdropColor,
+  landShade,
+  theme,
+} from "../../lib/globeTheme";
 import { landMaterial } from "../../lib/globeTerrain";
 import { useGlobeTheme } from "./useGlobeTheme";
 import { GLOBE_SURFACE, useGlobeLook } from "./useGlobeLook";
@@ -112,6 +117,8 @@ export default function GlobeGame({
   const [world, setWorld] = useState<CountryFeature[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [selected, setSelected] = useState<CountryFeature | null>(null);
+  /** The name of the answered country under the pointer, if any. */
+  const [hoverName, setHoverName] = useState<string | null>(null);
   const [guess, setGuess] = useState("");
   const [isWrong, setIsWrong] = useState(false);
   const [foundNames, setFoundNames] = useState<Set<string>>(new Set());
@@ -454,6 +461,28 @@ export default function GlobeGame({
     round.setConfirmingExit(true);
   };
 
+  /**
+   * What colour a country is, and whether that colour is an answer.
+   *
+   * One function because the cap and the border both need it and must agree:
+   * the border is derived from the fill, so a second copy of these rules
+   * would eventually outline a country in a shade of a colour it is not.
+   */
+  const fillFor = (name: string): { color: string; answer: boolean } => {
+    // Scenery first, ahead of every other rule — including the one that paints
+    // the whole board "missed" once the round is over, which would otherwise
+    // turn the entire world red at the end of a daily.
+    if (backdrop && !inPlaySet.has(name))
+      return { color: backdropColor(), answer: false };
+    if (foundNames.has(name)) return { color: theme.found, answer: true };
+    if (expired.has(name)) return { color: theme.missed, answer: true };
+    if (name === cursorName) return { color: theme.selected, answer: true };
+    if (summary) return { color: theme.missed, answer: true };
+    if (selected && selected.properties.name === name)
+      return { color: theme.selected, answer: true };
+    return { color: landShade(name), answer: false };
+  };
+
   if (loadError) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#07111c] px-6">
@@ -488,19 +517,19 @@ export default function GlobeGame({
         polygonsData={backdrop ? world : features}
         polygonCapMaterial={(d) => {
           const { name } = (d as CountryFeature).properties;
-          // Scenery first, ahead of every other rule — including the one that
-          // paints the whole board "missed" once the round is over, which
-          // would otherwise turn the entire world red at the end of a daily.
-          if (backdrop && !inPlaySet.has(name))
-            return landMaterial(backdropColor());
-          if (foundNames.has(name)) return landMaterial(theme.found, "answer");
-          if (expired.has(name)) return landMaterial(theme.missed, "answer");
-          if (name === cursorName) return landMaterial(theme.selected, "answer");
-          // Once the run is over, everything left is shown as missed.
-          if (summary) return landMaterial(theme.missed, "answer");
-          if (selected && selected.properties.name === name)
-            return landMaterial(theme.selected, "answer");
-          return landMaterial(landShade(name));
+          const fill = fillFor(name);
+          return fill.answer
+            ? landMaterial(fill.color, "answer")
+            : landMaterial(fill.color);
+        }}
+        polygonStrokeColor={(d) => {
+          const { name } = (d as CountryFeature).properties;
+          const fill = fillFor(name);
+          // A border drawn in the one pale stroke vanishes the moment a
+          // country is filled in: measured against the palettes it lands at
+          // 1.06 on Emerald and 1.10 on Mono, which is not a faint line but no
+          // line. An answer gets a border derived from its own colour instead.
+          return fill.answer ? answerStroke(fill.color) : theme.stroke;
         }}
         polygonAltitude={(d) => {
           const { name } = (d as CountryFeature).properties;
@@ -514,6 +543,14 @@ export default function GlobeGame({
         onPolygonHover={(polygon) => {
           const feature = polygon as CountryFeature | null;
           const name = feature?.properties.name;
+          // Naming a country you have already answered gives nothing away and
+          // turns a finished board into something you can read back. Naming an
+          // unanswered one would simply be the answer.
+          setHoverName(
+            name && (foundNames.has(name) || expired.has(name) || summary)
+              ? getCountryMeta(name).displayName
+              : null
+          );
           // No pointer over the scenery. The cursor is the only thing that
           // says "this one isn't yours to click" before you try it.
           const playable =
@@ -521,6 +558,14 @@ export default function GlobeGame({
           globeClick.setHovered(playable ? feature : null);
         }}
       />
+
+      {hoverName && !selected && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-8 z-10 flex justify-center">
+          <span className="rounded-full border border-white/10 bg-[#141b23]/90 px-3.5 py-1.5 text-sm text-zinc-100 backdrop-blur">
+            {hoverName}
+          </span>
+        </div>
+      )}
 
       <GameHud
         onBack={handleBack}

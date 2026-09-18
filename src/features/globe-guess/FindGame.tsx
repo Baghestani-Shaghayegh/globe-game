@@ -25,7 +25,12 @@ import { isCorrectGuess } from "../../lib/answerMatch";
 import { HINT_COST, canAfford, type HintKind } from "../../lib/scoring";
 import { missQuip } from "../../lib/quips";
 import { hintsEnabled } from "../../lib/prefs";
-import { backdropColor, landShade, theme } from "../../lib/globeTheme";
+import {
+  answerStroke,
+  backdropColor,
+  landShade,
+  theme,
+} from "../../lib/globeTheme";
 import { landMaterial } from "../../lib/globeTerrain";
 import { useGlobeTheme } from "./useGlobeTheme";
 import { GLOBE_SURFACE, useGlobeLook } from "./useGlobeLook";
@@ -180,6 +185,8 @@ export default function FindGame({
   /** The keyboard route to an answer, for players who can't click the globe. */
   const [typing, setTyping] = useState(false);
   const [typed, setTyped] = useState("");
+  /** The name of the answered country under the pointer, if any. */
+  const [hoverName, setHoverName] = useState<string | null>(null);
 
   // Read once: a preference changed mid-round shouldn't move the goalposts.
   const [hintsOn] = useState(hintsEnabled);
@@ -552,21 +559,28 @@ export default function FindGame({
     [features]
   );
 
-  const capColor = useMemo(
-    () => (d: object) => {
-      const { name } = (d as CountryFeature).properties;
-      if (name === wrongName) return landMaterial(theme.missed, "answer");
-      if (name === revealed) return landMaterial(theme.selected, "answer");
-      if (foundNames.has(name)) return landMaterial(theme.found, "answer");
+  /**
+   * What colour a country is, and whether that colour is an answer.
+   *
+   * One function because the cap and the border both read it and must agree:
+   * the border of an answer is derived from its fill, so a second copy of
+   * these rules would eventually outline a country in a shade of a colour it
+   * is not.
+   */
+  const fillFor = useMemo(
+    () => (name: string): { color: string; answer: boolean } => {
+      if (name === wrongName) return { color: theme.missed, answer: true };
+      if (name === revealed) return { color: theme.selected, answer: true };
+      if (foundNames.has(name)) return { color: theme.found, answer: true };
       if (summary && passedNames.has(name))
-        return landMaterial(theme.missed, "answer");
+        return { color: theme.missed, answer: true };
       if (narrowedTo && !getCountryMeta(name).continents.includes(narrowedTo))
-        return landMaterial(theme.sphere, "answer");
+        return { color: theme.sphere, answer: true };
       // The rest of the world, when the ones in play are being marked: there
       // to navigate by, not to be read.
       if (showInPlay && !inPlaySet.has(name))
-        return landMaterial(backdropColor());
-      return landMaterial(landShade(name));
+        return { color: backdropColor(), answer: false };
+      return { color: landShade(name), answer: false };
     },
     [
       wrongName,
@@ -578,6 +592,16 @@ export default function FindGame({
       showInPlay,
       inPlaySet,
     ]
+  );
+
+  const capColor = useMemo(
+    () => (d: object) => {
+      const fill = fillFor((d as CountryFeature).properties.name);
+      return fill.answer
+        ? landMaterial(fill.color, "answer")
+        : landMaterial(fill.color);
+    },
+    [fillFor]
   );
 
   if (loadError) {
@@ -613,6 +637,19 @@ export default function FindGame({
         {...GLOBE_SURFACE}
         polygonsData={features}
         polygonCapMaterial={capColor}
+        polygonStrokeColor={(d) => {
+          const { name } = (d as CountryFeature).properties;
+          // Off-board scenery keeps no border at all: an outline in the land
+          // colour worked while the land was flat, but a lit fill moves and an
+          // unlit stroke does not, and the hidden map leaked through the gap.
+          if (showInPlay && !inPlaySet.has(name)) return null;
+          const fill = fillFor(name);
+          // A border in the one pale stroke vanishes the moment a country is
+          // filled in — measured against the palettes it lands at 1.06 on
+          // Emerald, which is not a faint line but no line. An answer gets a
+          // border derived from its own colour instead.
+          return fill.answer ? answerStroke(fill.color) : theme.stroke;
+        }}
         polygonAltitude={(d) => {
           const { name } = (d as CountryFeature).properties;
           if (name === revealed) return 0.06;
@@ -622,10 +659,27 @@ export default function FindGame({
           return 0.008;
         }}
         polygonsTransitionDuration={200}
-        onPolygonHover={(polygon) =>
-          globeClick.setHovered(polygon as CountryFeature | null)
-        }
+        onPolygonHover={(polygon) => {
+          const feature = polygon as CountryFeature | null;
+          const name = feature?.properties.name;
+          // Only ones already answered. Naming an unanswered country here
+          // would hand over every question the round has left.
+          setHoverName(
+            name && (foundNames.has(name) || summary)
+              ? getCountryMeta(name).displayName
+              : null
+          );
+          globeClick.setHovered(feature);
+        }}
       />
+
+      {hoverName && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-8 z-10 flex justify-center">
+          <span className="rounded-full border border-white/10 bg-[#141b23]/90 px-3.5 py-1.5 text-sm text-zinc-100 backdrop-blur">
+            {hoverName}
+          </span>
+        </div>
+      )}
 
       <GameHud
         onBack={handleBack}

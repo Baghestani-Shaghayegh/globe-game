@@ -286,6 +286,59 @@ function hash(text: string): number {
 }
 
 /** Blends two #rrggbb colours, `amount` of the way from the first to the second. */
+/** WCAG relative luminance, for judging whether two colours read apart. */
+function luminance(hex: string): number {
+  const channel = (at: number) => {
+    const value = parseInt(hex.slice(at, at + 2), 16) / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+}
+
+/** How far apart two colours read, 1 being identical. */
+function contrast(a: string, b: string): number {
+  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (light + 0.05) / (dark + 0.05);
+}
+
+/**
+ * How far apart a border has to read from the land it is drawn on.
+ *
+ * Three is the point at which a hairline stops dissolving into its
+ * background. Measured across the palettes, the ordinary stroke clears it
+ * comfortably on unanswered land — 3.1 to 5.8 — and nowhere near it on an
+ * answer: 1.06 on Emerald, 1.10 on Mono, 1.13 on Atlantic. A ratio of 1.06 is
+ * not a faint line, it is no line.
+ */
+const READABLE = 3;
+
+/**
+ * A border that reads on a filled-in answer, whatever colour the answer is.
+ *
+ * The one pale stroke suits the dark unanswered land it was chosen against
+ * and disappears the moment a country turns green. Rather than pick a second
+ * colour by eye — which would be wrong again the next time a palette is added
+ * — this darkens the answer's own colour until it measurably separates from
+ * it, so the border is always a shade of the country it outlines and always
+ * visible on it.
+ */
+export function answerStroke(fill: string): string {
+  // Darker first: a border that is a shadow of the country reads as part of
+  // it, where a lighter one reads as something laid on top.
+  for (let amount = 0.3; amount <= 0.9; amount += 0.05) {
+    const candidate = mix(fill, "#000000", amount);
+    if (contrast(candidate, fill) >= READABLE) return candidate;
+  }
+  // Nothing short of black separated from it, which means the fill is already
+  // dark — the narrowed-out land in Find it is nearly the colour of the sea.
+  // There is nowhere further down to go, so go up.
+  for (let amount = 0.3; amount <= 0.9; amount += 0.05) {
+    const candidate = mix(fill, "#ffffff", amount);
+    if (contrast(candidate, fill) >= READABLE) return candidate;
+  }
+  return "#ffffff";
+}
+
 function mix(from: string, to: string, amount: number): string {
   const channels = (hex: string) =>
     [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));

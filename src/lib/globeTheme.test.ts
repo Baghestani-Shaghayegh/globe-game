@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   GLOBE_THEMES,
+  answerStroke,
   backdropColor,
   landShade,
   setGlobeTheme,
@@ -133,5 +134,60 @@ describe("land shading", () => {
     setGlobeTheme("ember");
     const after = NAMES.map((name) => landShade(name));
     expect(after).not.toEqual(before);
+  });
+});
+
+const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const luminance = (hex: string) => {
+  const n = parseInt(hex.slice(1), 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => lin(v / 255));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contrast = (a: string, b: string) => {
+  const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (light + 0.05) / (dark + 0.05);
+};
+
+describe("a border that reads on a filled-in answer", () => {
+  /**
+   * The bug: one pale stroke chosen against dark unanswered land, reused on
+   * every country. Measured, it clears 3 comfortably on unanswered land — 3.1
+   * to 5.8 across the palettes — and lands at 1.06 on Emerald's found green,
+   * 1.10 on Mono, 1.13 on Atlantic. A ratio of 1.06 is not a faint line, it is
+   * no line.
+   */
+  it("separates from every answer colour in every palette", () => {
+    const weak: string[] = [];
+    for (const theme of GLOBE_THEMES) {
+      for (const key of ["found", "missed", "selected"] as const) {
+        const fill = theme.palette[key];
+        const ratio = contrast(answerStroke(fill), fill);
+        if (ratio < 3) weak.push(`${theme.id}.${key} = ${ratio.toFixed(2)}`);
+      }
+    }
+    expect(weak).toEqual([]);
+  });
+
+  // The whole point of deriving it rather than picking a second colour by eye:
+  // a palette added later is covered without anyone remembering to check.
+  it("holds for a colour no palette uses", () => {
+    for (const fill of ["#ffffff", "#000000", "#4ade80", "#fde047", "#1a1a1a"]) {
+      expect(contrast(answerStroke(fill), fill)).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("is a shade of the country it outlines, not a colour of its own", () => {
+    // Darker than the fill in every channel, so the border reads as the same
+    // country rather than a stripe of something else laid over it. Only where
+    // darkening works — on near-black land it has to go the other way.
+    const fill = "#4ade80";
+    const stroke = answerStroke(fill);
+    const channels = (hex: string) =>
+      [1, 3, 5].map((at) => parseInt(hex.slice(at, at + 2), 16));
+    const [fr, fg, fb] = channels(fill);
+    const [sr, sg, sb] = channels(stroke);
+    expect(sr).toBeLessThanOrEqual(fr);
+    expect(sg).toBeLessThanOrEqual(fg);
+    expect(sb).toBeLessThanOrEqual(fb);
   });
 });
