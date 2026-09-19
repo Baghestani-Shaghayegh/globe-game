@@ -3,12 +3,14 @@ import {
   addRun,
   allBuckets,
   bestLabel,
+  bestPoints,
   bestScore,
   bestTime,
   clearAll,
   formatDuration,
   getRuns,
   isComplete,
+  SCORING_VERSION,
 } from "./records";
 import {
   gamePath,
@@ -291,5 +293,36 @@ describe("outline rounds", () => {
     ]) {
       expect(key).toMatch(shape);
     }
+  });
+});
+
+describe("bestPoints", () => {
+  // A score from the 3.5x streak is worth about twice one from now; left in,
+  // it would stand as the best forever.
+  it("ignores scores earned under the old rules", () => {
+    localStorage.setItem(
+      "worldguess.records.v3",
+      JSON.stringify({
+        easy: [{ ms: 1000, at: "2026-09-18T00:00:00Z", found: 20, total: 196, points: 9000 }],
+      })
+    );
+    expect(bestPoints("easy")).toBeNull();
+
+    addRun("easy", { ms: 1000, found: 10, total: 196, points: 1200 });
+    expect(bestPoints("easy")).toMatchObject({
+      points: 1200,
+      scoring: SCORING_VERSION,
+    });
+  });
+
+  it("keeps the old run in the history", () => {
+    localStorage.setItem(
+      "worldguess.records.v3",
+      JSON.stringify({
+        easy: [{ ms: 1000, at: "2026-09-18T00:00:00Z", found: 20, total: 196, points: 9000 }],
+      })
+    );
+    addRun("easy", { ms: 1000, found: 10, total: 196, points: 1200 });
+    expect(getRuns("easy")).toHaveLength(2);
   });
 });

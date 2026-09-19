@@ -218,7 +218,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: "blitz",
     name: "Against the clock",
-    desc: "Score 2,000 points in a blitz round.",
+    desc: "Score 1,250 points in a blitz round.",
     icon: "⏱️",
     measure: ({ buckets }) => ({
       have: buckets
@@ -228,7 +228,10 @@ export const ACHIEVEMENTS: Achievement[] = [
             b.runs.reduce((inner, run) => Math.max(inner, run.points ?? 0), best),
           0
         ),
-      need: 2000,
+      // Was 2,000, about ten answers in a row when the streak paid up to
+      // 3.5x. At 1.5x the same ten answers come to 1,350, so the bar moves
+      // with the scoring rather than the badge quietly getting harder.
+      need: 1250,
     }),
   },
 ];

@@ -20,7 +20,19 @@ export type Run = {
   points?: number;
   /** Longest run of correct answers. Absent on older runs. */
   bestStreak?: number;
+  /** Which scoring rules the points were earned under. Absent before v2. */
+  scoring?: number;
 };
+
+/**
+ * The scoring rules runs are filed under now.
+ *
+ * 2: the streak capped at 1.5x rather than 3.5x, and hints charged to the
+ * answer they help with. A score from before is worth about twice one from
+ * after, so it no longer counts as a best — it would stand forever. It stays
+ * in the history, so XP and badges built on it are not taken away.
+ */
+export const SCORING_VERSION = 2;
 
 /**
  * Keyed by `recordKey(gameType, modeId)` — the classic game keeps the bare mode
@@ -148,7 +160,12 @@ export function getRuns(key: string): Run[] {
 /** Files a finished run, newest first, and returns the mode's updated history. */
 export function addRun(key: string, run: Omit<Run, "at">): Run[] {
   const runs = [
-    { ...run, ms: Math.round(run.ms), at: new Date().toISOString() },
+    {
+      ...run,
+      ms: Math.round(run.ms),
+      at: new Date().toISOString(),
+      scoring: SCORING_VERSION,
+    },
     ...getRuns(key),
   ].slice(0, MAX_RUNS);
 
@@ -166,9 +183,11 @@ export function bestTime(key: string): Run | null {
     : null;
 }
 
-/** The highest score in this mode, ignoring runs from before scoring existed. */
+/** The highest score in this mode, under the scoring rules in force now. */
 export function bestPoints(key: string): Run | null {
-  const scored = getRuns(key).filter((run) => typeof run.points === "number");
+  const scored = getRuns(key).filter(
+    (run) => typeof run.points === "number" && run.scoring === SCORING_VERSION
+  );
   return scored.length
     ? scored.reduce((best, run) => (run.points! > best.points! ? run : best))
     : null;
