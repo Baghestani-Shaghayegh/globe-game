@@ -11,7 +11,6 @@ export default function DailyCard({
   title,
   note,
   accent,
-  badge,
   done = false,
   action,
 }: {
@@ -21,8 +20,6 @@ export default function DailyCard({
   note: string;
   /** Tailwind colour stem, e.g. "sky" — the card's border, wash and glow. */
   accent: "sky" | "rose" | "violet";
-  /** A streak or a "done" marker, shown top-right. */
-  badge?: string;
   /**
    * Already finished today.
    *
@@ -64,9 +61,6 @@ export default function DailyCard({
           {title}
         </span>
         <span className="ml-auto flex shrink-0 items-center gap-2">
-          {badge && (
-            <span className="text-xs tabular-nums text-zinc-400">{badge}</span>
-          )}
           {done && (
             <span
               aria-label="finished today"

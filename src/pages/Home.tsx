@@ -576,7 +576,6 @@ export default function Home() {
                     : `Ten countries in ${DAILY_LIMIT_SECONDS / 60} minutes, the same ten for everyone.`
                 }
                 accent="sky"
-                badge={daily && daily.days > 0 ? `🔥 ${daily.days}` : undefined}
                 done={doneToday.daily}
                 action="Start the hunt"
               />
