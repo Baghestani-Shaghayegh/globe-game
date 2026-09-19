@@ -4,8 +4,6 @@ import DailyCard from "../components/DailyCard";
 import StreakChip from "../components/StreakChip";
 import AdSlot from "../components/AdSlot";
 import { playTap } from "../lib/sound";
-import { replayTodaysDailies } from "../lib/localData";
-import { clearTodaysDailyScore } from "../lib/leaderboard";
 import { getCountryMeta } from "../data/countries";
 import {
   GAME_TYPES,
@@ -554,7 +552,6 @@ export default function Home() {
               <h2 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
                 Today's challenges
               </h2>
-              {import.meta.env.DEV && <ReplayToday />}
             </div>
 
             {/* Under the title rather than beside it: it is a sentence about
@@ -674,25 +671,3 @@ export default function Home() {
   );
 }
 
-/**
- * Put today's three puzzles back to unplayed, from the row they sit on.
- *
- * Development only — `import.meta.env.DEV` keeps it out of every built bundle,
- * because a daily anyone can replay is not a daily at all.
- */
-function ReplayToday() {
-  return (
-    <button
-      onClick={() => {
-        replayTodaysDailies(dayKey());
-        // Also takes today's score off the board, so a replayed daily can
-        // actually land there. Allowed for listed accounts only.
-        void clearTodaysDailyScore().finally(() => window.location.reload());
-      }}
-      title="Development only — puts today's three puzzles back to unplayed"
-      className="shrink-0 rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-xs font-medium text-amber-200/90 transition-colors hover:bg-amber-400/20"
-    >
-      Replay today
-    </button>
-  );
-}
