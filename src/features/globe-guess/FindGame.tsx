@@ -122,6 +122,66 @@ type Props = {
  * something it is famous for — and the player clicks it on the globe. Only the
  * prompt differs between the three; everything else is one game.
  */
+/**
+ * A country's name, placed on the country.
+ *
+ * The name used to ride the pointer as a tooltip, which meant it was near the
+ * country rather than on it and moved whenever the hand did. This sits at the
+ * country's own centre and turns with the globe, because that is where the
+ * name of a place belongs.
+ *
+ */
+type NameTag = {
+  lat: number;
+  lng: number;
+  text: string;
+  /** Grown to be clickable, so its name has to sit above rather than on it. */
+  tiny: boolean;
+};
+
+function tagFor(feature: {
+  properties: { name: string; tiny?: boolean };
+  geometry: Geometry;
+}): NameTag {
+  const { lat, lng } = featureCentre(feature.geometry);
+  return {
+    lat,
+    lng,
+    text: getCountryMeta(feature.properties.name).displayName,
+    tiny: feature.properties.tiny === true,
+  };
+}
+
+/**
+ * The label itself: thin black text and nothing else.
+ *
+ * Plain DOM rather than the globe library's own label layer, which builds text
+ * out of 3D geometry from a typeface it fetches at runtime — a font over the
+ * network, to write one country's name. This is a span; it costs nothing, it
+ * takes the same CSS as the rest of the game, and it cannot fail to load.
+ *
+ * Black, because it is only ever drawn on a country that has been answered,
+ * and those colours — the found green, the missed red, the selected amber —
+ * are all light enough to read black against. A faint light halo keeps it off
+ * the land's mottled texture without turning it into a badge.
+ */
+function nameLabel(tag: NameTag): HTMLElement {
+  const el = document.createElement("span");
+  el.textContent = tag.text;
+  el.style.cssText = [
+    "color: #05140c",
+    "font: 300 13px ui-sans-serif, system-ui, sans-serif",
+    "letter-spacing: 0.01em",
+    "white-space: nowrap",
+    "pointer-events: none",
+    "text-shadow: 0 0 3px rgb(255 255 255 / 0.45)",
+    // A country grown to stay clickable is smaller than its own name, so the
+    // name sits above it rather than across it.
+    tag.tiny ? "transform: translateY(-14px)" : "",
+  ].join(";");
+  return el;
+}
+
 /** The whole-world view, sized to this window. Shared by every game. */
 const worldView = () => worldAltitude(window.innerWidth, window.innerHeight);
 
@@ -190,6 +250,8 @@ export default function FindGame({
   /** The keyboard route to an answer, for players who can't click the globe. */
   const [typing, setTyping] = useState(false);
   const [typed, setTyped] = useState("");
+  /** The name shown on the country under the pointer, if it is answered. */
+  const [nameTag, setNameTag] = useState<NameTag | null>(null);
 
   // Read once: a preference changed mid-round shouldn't move the goalposts.
   const [hintsOn] = useState(hintsEnabled);
@@ -661,17 +723,12 @@ export default function FindGame({
         {...GLOBE_SURFACE}
         polygonsData={features}
         polygonCapMaterial={capColor}
-        polygonLabel={(d) => {
-          const { name } = (d as CountryFeature).properties;
-          // Only ones already answered. Naming an unanswered country here
-          // would hand over every question the round has left.
-          if (!foundNames.has(name) && !summary) return "";
-          const fill = fillFor(name);
-          if (!fill.answer) return "";
-          return `<span style="color:${answerStroke(fill.color)};font-weight:600">${
-            getCountryMeta(name).displayName
-          }</span>`;
-        }}
+        htmlElementsData={nameTag ? [nameTag] : []}
+        htmlLat={(d) => (d as NameTag).lat}
+        htmlLng={(d) => (d as NameTag).lng}
+        htmlAltitude={0.02}
+        htmlElement={(d) => nameLabel(d as NameTag)}
+        htmlTransitionDuration={0}
         polygonStrokeColor={(d) => {
           const { name } = (d as CountryFeature).properties;
           // Off-board scenery keeps no border at all: an outline in the land
@@ -694,9 +751,18 @@ export default function FindGame({
           return 0.008;
         }}
         polygonsTransitionDuration={200}
-        onPolygonHover={(polygon) =>
-          globeClick.setHovered(polygon as CountryFeature | null)
-        }
+        onPolygonHover={(polygon) => {
+          const feature = polygon as CountryFeature | null;
+          const name = feature?.properties.name;
+          // Only ones already answered. Naming an unanswered country here
+          // would hand over every question the round has left.
+          setNameTag(
+            feature && name && (foundNames.has(name) || summary)
+              ? tagFor(feature)
+              : null
+          );
+          globeClick.setHovered(feature);
+        }}
       />
 
 
