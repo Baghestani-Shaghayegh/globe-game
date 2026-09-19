@@ -313,7 +313,7 @@ export default function Connect() {
           ← Modes
         </button>
         <div className="rounded-lg border border-white/10 bg-[#141b23]/90 px-3 py-1.5 text-right text-sm backdrop-blur">
-          <p className="font-medium text-zinc-100">Connect #{puzzle.number}</p>
+          <p className="font-medium text-zinc-100">Connect</p>
           <p className="text-xs tabular-nums text-zinc-500">
             par {puzzle.par} · {result?.chain.length ?? 0} placed
           </p>

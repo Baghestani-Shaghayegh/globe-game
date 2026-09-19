@@ -36,7 +36,7 @@ function dailyMode(challenge: Challenge): Mode {
     id: "daily",
     name: "Daily challenge",
     desc: "",
-    label: `#${challenge.number}`,
+    label: "Daily",
     level: 2,
     accent: "#38bdf8",
     regional: false,
@@ -204,7 +204,7 @@ export default function Daily() {
           </Link>
 
           <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
-            Daily #{result.number}
+            Daily challenge
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
             {formatDay(result.day)} · {label}
