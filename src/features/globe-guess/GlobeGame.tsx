@@ -317,13 +317,20 @@ export default function GlobeGame({
 
   // The whole meta, not just the printed name: the suggestion list searches
   // aliases too, so that "usa" finds the United States.
-  const suggestionNames = useMemo(
-    () =>
-      features
-        .map((f) => getCountryMeta(f.properties.name))
-        .sort((a, b) => a.displayName.localeCompare(b.displayName)),
-    [features]
-  );
+  //
+  // Drawn from the whole map, not the round. Offered only the round's own
+  // countries, the daily's list held ten names, and typing an L showed the
+  // one L that was an answer. Territories only when the round has some, so a
+  // countries-only round is not padded with names that can never be right.
+  const suggestionNames = useMemo(() => {
+    const withTerritories = features.some(
+      (f) => getCountryMeta(f.properties.name).tier === "territory"
+    );
+    return world
+      .map((f) => getCountryMeta(f.properties.name))
+      .filter((meta) => withTerritories || meta.tier === "country")
+      .sort((a, b) => a.displayName.localeCompare(b.displayName));
+  }, [world, features]);
 
   /** The countries the round is actually about, by name. */
   const inPlaySet = useMemo(
