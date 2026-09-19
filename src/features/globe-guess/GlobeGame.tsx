@@ -148,6 +148,16 @@ function nameLabel(tag: NameTag): HTMLElement {
   return holder;
 }
 
+/**
+ * The label layer's accessors, made once. Written inline they were new on
+ * every render, and the globe takes a new `htmlElement` as an order to throw
+ * the label away and build it again — which the round's clock asked for four
+ * times a second.
+ */
+const tagLat = (d: object) => (d as NameTag).lat;
+const tagLng = (d: object) => (d as NameTag).lng;
+const tagElement = (d: object) => nameLabel(d as NameTag);
+
 /** The whole-world view, sized to this window. Shared by every game. */
 const worldView = () => worldAltitude(window.innerWidth, window.innerHeight);
 
@@ -163,7 +173,7 @@ export default function GlobeGame({
   showInPlay = false,
 }: Props) {
   // Repaint when the player changes the globe palette.
-  useGlobeTheme();
+  const themeId = useGlobeTheme();
 
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
@@ -562,20 +572,68 @@ export default function GlobeGame({
    * the border is derived from the fill, so a second copy of these rules
    * would eventually outline a country in a shade of a colour it is not.
    */
-  const fillFor = (name: string): { color: string; answer: boolean } => {
-    // Scenery first, ahead of every other rule — including the one that paints
-    // the whole board "missed" once the round is over, which would otherwise
-    // turn the entire world red at the end of a daily.
-    if (backdrop && !inPlaySet.has(name))
-      return { color: backdropColor(), answer: false };
-    if (foundNames.has(name)) return { color: theme.found, answer: true };
-    if (expired.has(name)) return { color: theme.missed, answer: true };
-    if (name === cursorName) return { color: theme.selected, answer: true };
-    if (summary) return { color: theme.missed, answer: true };
-    if (selected && selected.properties.name === name)
-      return { color: theme.selected, answer: true };
-    return { color: landShade(name), answer: false };
-  };
+  const fillFor = useCallback(
+    (name: string): { color: string; answer: boolean } => {
+      // Scenery first, ahead of every other rule — including the one that paints
+      // the whole board "missed" once the round is over, which would otherwise
+      // turn the entire world red at the end of a daily.
+      if (backdrop && !inPlaySet.has(name))
+        return { color: backdropColor(), answer: false };
+      if (foundNames.has(name)) return { color: theme.found, answer: true };
+      if (expired.has(name)) return { color: theme.missed, answer: true };
+      if (name === cursorName) return { color: theme.selected, answer: true };
+      if (summary) return { color: theme.missed, answer: true };
+      if (selected && selected.properties.name === name)
+        return { color: theme.selected, answer: true };
+      return { color: landShade(name), answer: false };
+    },
+    // themeId: the palette is a live object, so a swap changes these colours
+    // without changing anything else listed here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [backdrop, inPlaySet, foundNames, expired, cursorName, summary, selected, themeId]
+  );
+
+  /*
+   * The polygon accessors, kept stable between renders. The globe takes a new
+   * accessor as a sign the colours may have changed and walks every piece of
+   * land in the world to find out — so written inline, hovering onto a new
+   * country or a tick of the round's clock repainted the whole map.
+   */
+  const capMaterial = useCallback(
+    (d: object) => {
+      const fill = fillFor((d as CountryFeature).properties.name);
+      return fill.answer
+        ? landMaterial(fill.color, "answer")
+        : landMaterial(fill.color);
+    },
+    [fillFor]
+  );
+
+  const strokeColor = useCallback(
+    (d: object) => {
+      const fill = fillFor((d as CountryFeature).properties.name);
+      // A border drawn in the one pale stroke vanishes the moment a
+      // country is filled in: measured against the palettes it lands at
+      // 1.06 on Emerald and 1.10 on Mono, which is not a faint line but no
+      // line. An answer gets a border derived from its own colour instead.
+      return fill.answer ? answerStroke(fill.color) : theme.stroke;
+    },
+    [fillFor]
+  );
+
+  const altitude = useCallback(
+    (d: object) => {
+      const { name } = (d as CountryFeature).properties;
+      // Lifted, so the ones in play stand off the sphere and read as
+      // raised even where the colour alone would not carry.
+      if (showInPlay && inPlaySet.has(name)) return 0.035;
+      if (backdrop && !inPlaySet.has(name)) return 0.008;
+      return 0.012;
+    },
+    [showInPlay, inPlaySet, backdrop]
+  );
+
+  const tags = useMemo(() => (nameTag ? [nameTag] : []), [nameTag]);
 
   if (loadError) {
     return (
@@ -611,36 +669,15 @@ export default function GlobeGame({
         onGlobeReady={() => setReady(true)}
         {...GLOBE_SURFACE}
         polygonsData={backdrop ? world : features}
-        polygonCapMaterial={(d) => {
-          const { name } = (d as CountryFeature).properties;
-          const fill = fillFor(name);
-          return fill.answer
-            ? landMaterial(fill.color, "answer")
-            : landMaterial(fill.color);
-        }}
-        htmlElementsData={nameTag ? [nameTag] : []}
-        htmlLat={(d) => (d as NameTag).lat}
-        htmlLng={(d) => (d as NameTag).lng}
+        polygonCapMaterial={capMaterial}
+        htmlElementsData={tags}
+        htmlLat={tagLat}
+        htmlLng={tagLng}
         htmlAltitude={0.02}
-        htmlElement={(d) => nameLabel(d as NameTag)}
+        htmlElement={tagElement}
         htmlTransitionDuration={0}
-        polygonStrokeColor={(d) => {
-          const { name } = (d as CountryFeature).properties;
-          const fill = fillFor(name);
-          // A border drawn in the one pale stroke vanishes the moment a
-          // country is filled in: measured against the palettes it lands at
-          // 1.06 on Emerald and 1.10 on Mono, which is not a faint line but no
-          // line. An answer gets a border derived from its own colour instead.
-          return fill.answer ? answerStroke(fill.color) : theme.stroke;
-        }}
-        polygonAltitude={(d) => {
-          const { name } = (d as CountryFeature).properties;
-          // Lifted, so the ones in play stand off the sphere and read as
-          // raised even where the colour alone would not carry.
-          if (showInPlay && inPlaySet.has(name)) return 0.035;
-          if (backdrop && !inPlaySet.has(name)) return 0.008;
-          return 0.012;
-        }}
+        polygonStrokeColor={strokeColor}
+        polygonAltitude={altitude}
         polygonsTransitionDuration={0}
         onPolygonHover={(polygon) => {
           const feature = polygon as CountryFeature | null;

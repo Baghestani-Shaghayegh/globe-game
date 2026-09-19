@@ -192,6 +192,16 @@ function nameLabel(tag: NameTag): HTMLElement {
   return holder;
 }
 
+/**
+ * The label layer's accessors, made once. Written inline they were new on
+ * every render, and the globe takes a new `htmlElement` as an order to throw
+ * the label away and build it again — which the round's clock asked for four
+ * times a second.
+ */
+const tagLat = (d: object) => (d as NameTag).lat;
+const tagLng = (d: object) => (d as NameTag).lng;
+const tagElement = (d: object) => nameLabel(d as NameTag);
+
 /** The whole-world view, sized to this window. Shared by every game. */
 const worldView = () => worldAltitude(window.innerWidth, window.innerHeight);
 
@@ -209,7 +219,7 @@ export default function FindGame({
   fixedOrder,
 }: Props) {
   // Repaint when the player changes the globe palette.
-  useGlobeTheme();
+  const themeId = useGlobeTheme();
 
   const navigate = useNavigate();
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
@@ -676,6 +686,7 @@ export default function FindGame({
         return { color: backdropColor(), answer: false };
       return { color: landShade(name), answer: false };
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       wrongName,
       revealed,
@@ -685,6 +696,9 @@ export default function FindGame({
       narrowedTo,
       showInPlay,
       inPlaySet,
+      // The palette is a live object: a swap changes these colours without
+      // changing anything else listed here.
+      themeId,
     ]
   );
 
@@ -697,6 +711,44 @@ export default function FindGame({
     },
     [fillFor]
   );
+
+  /*
+   * The border and height, kept stable between renders like the fill above.
+   * The globe takes a new accessor as a sign the map may have changed and
+   * walks every piece of land in the world to find out — so written inline,
+   * hovering onto a new country or a tick of the round's clock repainted the
+   * whole map.
+   */
+  const strokeColor = useCallback(
+    (d: object) => {
+      const { name } = (d as CountryFeature).properties;
+      // Off-board scenery keeps no border at all: an outline in the land
+      // colour worked while the land was flat, but a lit fill moves and an
+      // unlit stroke does not, and the hidden map leaked through the gap.
+      if (showInPlay && !inPlaySet.has(name)) return null;
+      const fill = fillFor(name);
+      // A border in the one pale stroke vanishes the moment a country is
+      // filled in — measured against the palettes it lands at 1.06 on
+      // Emerald, which is not a faint line but no line. An answer gets a
+      // border derived from its own colour instead.
+      return fill.answer ? answerStroke(fill.color) : theme.stroke;
+    },
+    [showInPlay, inPlaySet, fillFor]
+  );
+
+  const altitude = useCallback(
+    (d: object) => {
+      const { name } = (d as CountryFeature).properties;
+      if (name === revealed) return 0.06;
+      // Lifted, so the ones being drilled stand off the sphere and read
+      // as raised even where the colour alone would not carry.
+      if (showInPlay && inPlaySet.has(name)) return 0.035;
+      return 0.008;
+    },
+    [revealed, showInPlay, inPlaySet]
+  );
+
+  const tags = useMemo(() => (nameTag ? [nameTag] : []), [nameTag]);
 
   if (loadError) {
     return (
@@ -733,33 +785,14 @@ export default function FindGame({
         {...GLOBE_SURFACE}
         polygonsData={features}
         polygonCapMaterial={capColor}
-        htmlElementsData={nameTag ? [nameTag] : []}
-        htmlLat={(d) => (d as NameTag).lat}
-        htmlLng={(d) => (d as NameTag).lng}
+        htmlElementsData={tags}
+        htmlLat={tagLat}
+        htmlLng={tagLng}
         htmlAltitude={0.02}
-        htmlElement={(d) => nameLabel(d as NameTag)}
+        htmlElement={tagElement}
         htmlTransitionDuration={0}
-        polygonStrokeColor={(d) => {
-          const { name } = (d as CountryFeature).properties;
-          // Off-board scenery keeps no border at all: an outline in the land
-          // colour worked while the land was flat, but a lit fill moves and an
-          // unlit stroke does not, and the hidden map leaked through the gap.
-          if (showInPlay && !inPlaySet.has(name)) return null;
-          const fill = fillFor(name);
-          // A border in the one pale stroke vanishes the moment a country is
-          // filled in — measured against the palettes it lands at 1.06 on
-          // Emerald, which is not a faint line but no line. An answer gets a
-          // border derived from its own colour instead.
-          return fill.answer ? answerStroke(fill.color) : theme.stroke;
-        }}
-        polygonAltitude={(d) => {
-          const { name } = (d as CountryFeature).properties;
-          if (name === revealed) return 0.06;
-          // Lifted, so the ones being drilled stand off the sphere and read
-          // as raised even where the colour alone would not carry.
-          if (showInPlay && inPlaySet.has(name)) return 0.035;
-          return 0.008;
-        }}
+        polygonStrokeColor={strokeColor}
+        polygonAltitude={altitude}
         polygonsTransitionDuration={200}
         onPolygonHover={(polygon) => {
           const feature = polygon as CountryFeature | null;

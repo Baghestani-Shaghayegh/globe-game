@@ -34,8 +34,18 @@ const DETAIL = 0.06;
 /** Never fewer than this many points, however small the country. */
 const FLOOR = 8;
 
-/** Rings smaller than this are dropped — but never a country's last one. */
-const SPECK = 0.0004;
+/**
+ * Islands whose bounding box is smaller than this, in square degrees, are
+ * dropped — but never a country's last one.
+ *
+ * It was 0.0004, which kept 3,855 separate pieces of land: Canada alone was
+ * 410 of them. The globe makes each piece its own mesh, draws each one every
+ * frame, and tests each one under the pointer, so the map ran at half the
+ * frame rate of the one it replaced. 0.2 — an island about fifty kilometres
+ * across — keeps 628: every country, Japan's main islands, Crete, Sicily and
+ * the Arctic islands, and none of the rocks nobody could see from orbit.
+ */
+const SPECK = 0.2;
 
 /**
  * The smallest a place may appear on the globe, in degrees across.
