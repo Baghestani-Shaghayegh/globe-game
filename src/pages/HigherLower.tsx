@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import ExitConfirm from "../features/globe-guess/ExitConfirm";
+import { useLeaveGuard } from "../features/globe-guess/useLeaveGuard";
 import { getCountryMeta } from "../data/countries";
 import { areaOf } from "../data/areas";
 import { VIEW, outlinePath } from "../lib/outline";
@@ -173,12 +175,36 @@ export default function HigherLower() {
     [pair, verdict, pool, scores.streak, scores.best]
   );
 
+
+  /**
+   * Leaving mid-game asks first, by the link or by the browser's Back — which
+   * on a trackpad is a two-finger swipe, easy to trigger while dragging a
+   * globe around.
+   *
+   * The streak is the whole game here, and leaving ends it. Asked only once
+   * there is one to lose.
+   */
+  const navigate = useNavigate();
+  const [leaving, setLeaving] = useState(false);
+  const goingSomewhere = useRef(false);
+  const inProgress = scores.streak > 0;
+  useLeaveGuard(inProgress && !goingSomewhere.current, () => setLeaving(true));
+
+  const leave = () => {
+    goingSomewhere.current = true;
+    navigate("/");
+  };
   return (
     <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
       <main className="mx-auto flex w-full max-w-2xl flex-col">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <Link
             to="/"
+            onClick={(e) => {
+              if (!inProgress) return;
+              e.preventDefault();
+              setLeaving(true);
+            }}
             className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
           >
             ← Modes
@@ -247,6 +273,10 @@ export default function HigherLower() {
       </main>
 
       <Celebrate burst={burst} count={80} />
+      {leaving && (
+        <ExitConfirm onFinish={leave} onKeepPlaying={() => setLeaving(false)} />
+      )}
+
     </div>
   );
 }

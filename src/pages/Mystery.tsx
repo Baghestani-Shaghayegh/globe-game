@@ -9,7 +9,9 @@ import {
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
 import { useViewport } from "../lib/useViewport";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import ExitConfirm from "../features/globe-guess/ExitConfirm";
+import { useLeaveGuard } from "../features/globe-guess/useLeaveGuard";
 import { useGlobeClick } from "../features/globe-guess/useGlobeClick";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
 import { GLOBE_SURFACE, useGlobeLook } from "../features/globe-guess/useGlobeLook";
@@ -259,6 +261,25 @@ export default function Mystery() {
     [guessed, result]
   );
 
+  const navigate = useNavigate();
+  const [leaving, setLeaving] = useState(false);
+  const goingSomewhere = useRef(false);
+  const inProgress = !!result && !result.solved && !result.gaveUp && result.guesses.length > 0;
+  useLeaveGuard(inProgress && !goingSomewhere.current, () => setLeaving(true));
+
+  const leave = () => {
+    goingSomewhere.current = true;
+    navigate("/");
+  };
+
+  const handleBack = () => {
+    if (!inProgress) {
+      leave();
+      return;
+    }
+    setLeaving(true);
+  };
+
   if (loadError) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#07111c] px-6">
@@ -275,6 +296,15 @@ export default function Mystery() {
 
   const guesses = result?.guesses ?? [];
 
+  /**
+   * Leaving mid-game asks first, by the link or by the browser's Back — which
+   * on a trackpad is a two-finger swipe, easy to trigger while dragging a
+   * globe around.
+   *
+   * A mystery is one attempt a day, so walking out of a half-solved one is
+   * not a small thing. Asked only once a guess has been made — opening it
+   * and turning straight round has cost nothing.
+   */
   return (
     <div
       className="relative h-screen w-screen overflow-hidden bg-[#07111c]"
@@ -302,12 +332,12 @@ export default function Mystery() {
       />
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4">
-        <Link
-          to="/"
+        <button
+          onClick={handleBack}
           className="pointer-events-auto rounded-lg border border-white/10 bg-[#141b23]/90 px-3 py-1.5 text-sm text-zinc-300 backdrop-blur transition-colors hover:text-zinc-100"
         >
           ← Modes
-        </Link>
+        </button>
         <div className="rounded-lg border border-white/10 bg-[#141b23]/90 px-3 py-1.5 text-right text-sm backdrop-blur">
           <p className="font-medium text-zinc-100">
             Mystery #{result?.number ?? "…"}
@@ -417,6 +447,10 @@ export default function Mystery() {
       {/* Only on the guess that solves it: a burst on every reload of a
           finished puzzle would be confetti for opening a page. */}
       <Celebrate burst={burst} count={90} />
+      {leaving && (
+        <ExitConfirm onFinish={leave} onKeepPlaying={() => setLeaving(false)} />
+      )}
+
     </div>
   );
 }
