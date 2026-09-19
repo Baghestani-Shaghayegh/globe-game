@@ -86,6 +86,8 @@ export function useRound(
   } = {}
 ) {
   const startedAt = useRef<number | null>(null);
+  /** When the question being answered was put to the player, for speed. */
+  const questionAt = useRef<number | null>(null);
   const recorded = useRef(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -108,10 +110,30 @@ export function useRound(
   /** Starts the clock the first time it's called; later calls do nothing. */
   const begin = useCallback(() => {
     if (startedAt.current === null) startedAt.current = performance.now();
+    if (questionAt.current === null) questionAt.current = performance.now();
+  }, []);
+
+  /**
+   * Starts the clock on a new question. Find it calls this when a new country
+   * is asked, so the pause after a revealed answer is not charged to the next
+   * one. Name it has no questions as such: its clock runs from the last
+   * answer, which `correct` and `pass` reset.
+   */
+  const startQuestion = useCallback(() => {
+    questionAt.current = performance.now();
+  }, []);
+
+  /** How long the current question has taken, and the clock started again. */
+  const lapQuestion = useCallback(() => {
+    const now = performance.now();
+    const ms = questionAt.current === null ? 0 : now - questionAt.current;
+    questionAt.current = now;
+    return ms;
   }, []);
 
   const reset = useCallback(() => {
     startedAt.current = null;
+    questionAt.current = null;
     recorded.current = false;
     setElapsedMs(0);
     setSummary(null);
@@ -217,6 +239,7 @@ export function useRound(
 
   return {
     begin,
+    startQuestion,
     reset,
     tick,
     end,
@@ -226,9 +249,10 @@ export function useRound(
       (name: string) => {
         const before = scoreNow.current.streak;
         const hints = hintsOn(scoreNow.current, name);
+        const ms = lapQuestion();
         playCorrect(before);
         setGain({
-          points: pointsFor(before, hints),
+          points: pointsFor(before, hints, ms),
           // A first answer is worth the base and nothing more; calling that
           // "1x" would dress up the ordinary case as a bonus. A helped one
           // earns no streak bonus, so it gets no multiplier either.
@@ -236,9 +260,9 @@ export function useRound(
             before > 0 && hints === 0 ? formatMultiplier(before) : null,
           id: ++gainId.current,
         });
-        applyScore((s) => scoreCorrect(s, name));
+        applyScore((s) => scoreCorrect(s, name, ms));
       },
-      [applyScore]
+      [applyScore, lapQuestion]
     ),
     /** Records a wrong answer, which only costs the streak. */
     wrong: useCallback(() => {
@@ -248,8 +272,9 @@ export function useRound(
     /** Moves past a country without answering it, and without a charge. */
     pass: useCallback(() => {
       playOther();
+      lapQuestion();
       applyScore(scorePass);
-    }, [applyScore]),
+    }, [applyScore, lapQuestion]),
     /** Buys a hint for a country, charged to that country's answer. */
     spendHint: useCallback(
       (hint: HintKind, name: string) => {

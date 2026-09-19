@@ -42,21 +42,41 @@ export type HintKind = "letter" | "region" | "answer";
  */
 export const HINT_FACTOR = 0.5;
 
+/**
+ * How quickly an answer came, as the share of the base it keeps.
+ *
+ * Quiz games that race the clock pay a quick answer more — Kahoot gives the
+ * full amount for an instant answer and half for one at the buzzer. The same
+ * here: within FAST_MS the whole base, falling evenly to SLOW_SHARE of it by
+ * SLOW_MS, and no lower. Speed only ever takes away, so the most an answer
+ * can pay is unchanged. The window allows for typing: finding a country and
+ * spelling it takes a quick player about five seconds.
+ */
+export const FAST_MS = 5_000;
+export const SLOW_MS = 30_000;
+export const SLOW_SHARE = 0.5;
+
+export function speedShare(ms: number): number {
+  const late = Math.min(1, Math.max(0, (ms - FAST_MS) / (SLOW_MS - FAST_MS)));
+  return 1 - (1 - SLOW_SHARE) * late;
+}
+
 /** Hints bought so far on this one country. */
 export function hintsOn(score: Score, name: string): number {
   return score.hints?.name === name ? score.hints.count : 0;
 }
 
 /**
- * Points for a correct answer given the streak it continues and the hints
- * bought for it. A helped answer is paid from the base alone.
+ * Points for a correct answer given the streak it continues, the hints bought
+ * for it, and how long it took. Speed and hints scale the base; the streak
+ * bonus is added on top, and a helped answer does not get it.
  */
-export function pointsFor(streakBefore: number, hints = 0): number {
-  if (hints > 0) return Math.round(POINTS_PER_COUNTRY * HINT_FACTOR ** hints);
-  return (
-    POINTS_PER_COUNTRY +
-    Math.min(MAX_STREAK_BONUS, streakBefore * STREAK_BONUS)
+export function pointsFor(streakBefore: number, hints = 0, ms = 0): number {
+  const base = Math.round(
+    POINTS_PER_COUNTRY * speedShare(ms) * HINT_FACTOR ** hints
   );
+  if (hints > 0) return base;
+  return base + Math.min(MAX_STREAK_BONUS, streakBefore * STREAK_BONUS);
 }
 
 /**
@@ -93,12 +113,15 @@ export const emptyScore: Score = {
   hints: null,
 };
 
-/** A correct answer: paid by streak and hints, and the country's hints spent. */
-export function scoreCorrect(score: Score, name = ""): Score {
+/**
+ * A correct answer: paid by streak, hints and speed, and the country's hints
+ * spent. `ms` is how long this answer took.
+ */
+export function scoreCorrect(score: Score, name = "", ms = 0): Score {
   const hints = hintsOn(score, name);
   const streak = hints > 0 ? 0 : score.streak + 1;
   return {
-    points: score.points + pointsFor(score.streak, hints),
+    points: score.points + pointsFor(score.streak, hints, ms),
     streak,
     bestStreak: Math.max(score.bestStreak, streak),
     hints: null,

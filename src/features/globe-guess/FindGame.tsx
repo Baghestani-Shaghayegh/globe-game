@@ -383,6 +383,13 @@ export default function FindGame({
   }, [features.length, summary, tick]);
 
   const target = queue[0] ?? null;
+
+  // The speed clock starts when a country is asked, not when the last one was
+  // answered: a revealed answer holds the screen for a moment first.
+  const { startQuestion } = round;
+  useEffect(() => {
+    if (target) startQuestion();
+  }, [target, startQuestion]);
   const targetLabel = target ? getCountryMeta(target).displayName : "";
 
   /**

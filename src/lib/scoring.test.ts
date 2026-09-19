@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  FAST_MS,
   HINT_FACTOR,
   POINTS_PER_COUNTRY,
+  SLOW_MS,
   emptyScore,
   formatMultiplier,
   hintsOn,
@@ -11,6 +13,7 @@ import {
   scoreHint,
   scorePass,
   scoreWrong,
+  speedShare,
   WRONG_COST,
   type Score,
 } from "./scoring";
@@ -197,5 +200,41 @@ describe("passing on a country", () => {
     expect(scorePass(score).points).toBeGreaterThan(
       scoreHint(score, "answer", "Peru").points
     );
+  });
+});
+
+describe("speed", () => {
+  it("pays the whole base for a quick answer", () => {
+    expect(pointsFor(0, 0, 1_000)).toBe(100);
+    expect(pointsFor(0, 0, FAST_MS)).toBe(100);
+  });
+
+  // Kahoot's rule: the full amount at once, half at the buzzer.
+  it("falls to half the base for a slow one, and no lower", () => {
+    expect(pointsFor(0, 0, SLOW_MS)).toBe(50);
+    expect(pointsFor(0, 0, 10 * 60_000)).toBe(50);
+  });
+
+  it("falls evenly in between", () => {
+    expect(speedShare((FAST_MS + SLOW_MS) / 2)).toBeCloseTo(0.75);
+    expect(pointsFor(0, 0, (FAST_MS + SLOW_MS) / 2)).toBe(75);
+  });
+
+  // Speed only takes away, so the most an answer can pay stays 150.
+  it("never raises what an answer can pay", () => {
+    expect(pointsFor(10, 0, 0)).toBe(150);
+    expect(pointsFor(10, 0, SLOW_MS)).toBe(100);
+  });
+
+  it("leaves the streak bonus whole", () => {
+    expect(pointsFor(5, 0, SLOW_MS) - pointsFor(0, 0, SLOW_MS)).toBe(50);
+  });
+
+  it("scales a helped answer too", () => {
+    expect(pointsFor(0, 1, SLOW_MS)).toBe(25);
+  });
+
+  it("is what scoreCorrect pays", () => {
+    expect(scoreCorrect(emptyScore, "Peru", SLOW_MS).points).toBe(50);
   });
 });
