@@ -23,7 +23,6 @@ import { flagUrl } from "../../data/flags";
 import { cluesFor } from "../../data/clues";
 import { capitalOf } from "../../data/capitals";
 import { isCorrectGuess } from "../../lib/answerMatch";
-import { HINT_COST, canAfford, type HintKind } from "../../lib/scoring";
 import { missQuip } from "../../lib/quips";
 import { hintsEnabled } from "../../lib/prefs";
 import {
@@ -455,22 +454,17 @@ export default function FindGame({
   };
 
   /** Buys the next clue for this country, while there is one left. */
-  /** Whether the round has earned enough to pay for a hint yet. */
-  const afford = (hint: HintKind) => canAfford(round.score, hint);
-
   const handleAnotherClue = () => {
     if (!target || revealed) return;
     if (cluesShown >= cluesFor(target).length) return;
-    if (!afford("letter")) return;
-    spendHint("letter");
+    spendHint("letter", target);
     setCluesShown((shown) => shown + 1);
   };
 
   /** Narrows the search to the target's continent, for a price. */
   const handleNarrow = () => {
     if (!target || narrowedTo || revealed) return;
-    if (!afford("region")) return;
-    spendHint("region");
+    spendHint("region", target);
     setNarrowedTo(getCountryMeta(target).continents[0]);
   };
 
@@ -480,7 +474,7 @@ export default function FindGame({
 
     if (name === target) {
       setFoundNames((prev) => new Set(prev).add(name));
-      correct();
+      correct(name);
       advance();
       return;
     }
@@ -539,7 +533,7 @@ export default function FindGame({
       );
     }
 
-    spendHint("answer");
+    spendHint("answer", target);
     setPassedNames((prev) => new Set(prev).add(target));
     setRevealed(target);
     window.clearTimeout(wrongTimer.current);
@@ -948,25 +942,21 @@ export default function FindGame({
               cluesShown < cluesFor(target).length && (
                 <button
                   onClick={handleAnotherClue}
-                  disabled={revealed !== null || !afford("letter")}
-                  title={
-                    afford("letter") ? undefined : "Not enough points yet"
-                  }
+                  disabled={revealed !== null}
                   className="text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300 disabled:no-underline disabled:opacity-40"
                   >
                   Another clue{" "}
-                  <span className="text-zinc-600">−{HINT_COST.letter}</span>
+                  <span className="text-zinc-600">½ points</span>
                 </button>
               )}
             {hintsOn && !narrowedTo && (
               <button
                 onClick={handleNarrow}
-                disabled={revealed !== null || !afford("region")}
-                title={afford("region") ? undefined : "Not enough points yet"}
+                disabled={revealed !== null}
                 className="text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300 disabled:no-underline disabled:opacity-40"
               >
                 Narrow it down{" "}
-                <span className="text-zinc-600">−{HINT_COST.region}</span>
+                <span className="text-zinc-600">½ points</span>
               </button>
             )}
             {/* Free, and first: the way past a country for someone who does
@@ -985,7 +975,7 @@ export default function FindGame({
               disabled={revealed !== null}
               className="text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300 disabled:no-underline disabled:opacity-40"
             >
-              Show me <span className="text-zinc-600">−{HINT_COST.answer}</span>
+              Show me <span className="text-zinc-600">0 points</span>
             </button>
           </div>
         </div>

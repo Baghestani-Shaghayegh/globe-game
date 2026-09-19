@@ -4,6 +4,7 @@ import { postScore } from "../../lib/leaderboard";
 import {
   emptyScore,
   formatMultiplier,
+  hintsOn,
   pointsFor,
   scoreCorrect,
   scoreHint,
@@ -220,19 +221,25 @@ export function useRound(
     tick,
     end,
     score,
-    /** Records a correct answer, continuing the streak. */
-    correct: useCallback(() => {
-      const before = scoreNow.current.streak;
-      playCorrect(before);
-      setGain({
-        points: pointsFor(before),
-        // A first answer is worth the base and nothing more; calling that
-        // "1x" would dress up the ordinary case as a bonus.
-        multiplier: before > 0 ? formatMultiplier(before) : null,
-        id: ++gainId.current,
-      });
-      applyScore(scoreCorrect);
-    }, [applyScore]),
+    /** Records a correct answer for a country, paid by streak and hints. */
+    correct: useCallback(
+      (name: string) => {
+        const before = scoreNow.current.streak;
+        const hints = hintsOn(scoreNow.current, name);
+        playCorrect(before);
+        setGain({
+          points: pointsFor(before, hints),
+          // A first answer is worth the base and nothing more; calling that
+          // "1x" would dress up the ordinary case as a bonus. A helped one
+          // earns no streak bonus, so it gets no multiplier either.
+          multiplier:
+            before > 0 && hints === 0 ? formatMultiplier(before) : null,
+          id: ++gainId.current,
+        });
+        applyScore((s) => scoreCorrect(s, name));
+      },
+      [applyScore]
+    ),
     /** Records a wrong answer, which only costs the streak. */
     wrong: useCallback(() => {
       playWrong();
@@ -243,11 +250,11 @@ export function useRound(
       playOther();
       applyScore(scorePass);
     }, [applyScore]),
-    /** Charges for a hint. */
+    /** Buys a hint for a country, charged to that country's answer. */
     spendHint: useCallback(
-      (hint: HintKind) => {
+      (hint: HintKind, name: string) => {
         playHint();
-        applyScore((s) => scoreHint(s, hint));
+        applyScore((s) => scoreHint(s, hint, name));
       },
       [applyScore]
     ),

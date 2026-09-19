@@ -3,37 +3,56 @@
  *
  * A correct answer is worth a base amount, plus a bonus that grows with the
  * current streak so a run of answers is worth more than the same answers
- * scattered between mistakes. Hints are paid for out of the same pot, which is
- * what makes taking one a decision rather than a free win.
+ * scattered between mistakes. A hint is paid for by the country it helps with,
+ * which is what makes taking one a decision rather than a free win.
  */
 export const POINTS_PER_COUNTRY = 100;
-/** Extra per country already in the streak, capped so it can't run away. */
-export const STREAK_BONUS = 25;
-export const MAX_STREAK_BONUS = 250;
+/**
+ * Extra per country already in the streak, capped so it can't run away.
+ *
+ * It was +25 a step up to +250, so an answer at the top of a streak paid
+ * 3.5 times the base and a long round was mostly streak: a perfect 196 came
+ * to 67,225. Quiz games that reward a run keep the reward a garnish —
+ * Kahoot's streak bonus tops out at half again — so this now does the same:
+ * +10 a step, up to +50, 1.5x at the top. The same perfect 196 is 29,250.
+ */
+export const STREAK_BONUS = 10;
+export const MAX_STREAK_BONUS = 50;
 
 /**
  * What a wrong answer costs.
  *
  * It used to cost nothing but the streak, on the reasoning that the run was
  * punishment enough. That made clicking around the map free: with no price on
- * a guess, sweeping the continent always beat thinking. It is deliberately
- * less than the cheapest hint, so buying a nudge stays the better deal than
- * guessing blind.
+ * a guess, sweeping the continent always beat thinking.
  */
 export const WRONG_COST = 25;
 
-export type HintKind = "letter" | "continent" | "region" | "answer";
+export type HintKind = "letter" | "region" | "answer";
 
-/** What each hint costs. Showing the answer outright costs the most. */
-export const HINT_COST: Record<HintKind, number> = {
-  letter: 30,
-  continent: 40,
-  region: 60,
-  answer: 120,
-};
+/**
+ * What each hint leaves a country worth.
+ *
+ * Hints used to be a flat charge on the round's total — 30 for a letter — and
+ * left the streak alone, so at the top of a streak a letter cost under a
+ * tenth of the answer it bought. Now a hint is charged to the country it is
+ * for, the way quiz games price help: each one halves what that country pays,
+ * and a helped answer earns no streak bonus and starts the streak again.
+ * "Show me" is not a hint in this sense — see `scoreHint`.
+ */
+export const HINT_FACTOR = 0.5;
 
-/** Points for a correct answer given the streak it continues. */
-export function pointsFor(streakBefore: number): number {
+/** Hints bought so far on this one country. */
+export function hintsOn(score: Score, name: string): number {
+  return score.hints?.name === name ? score.hints.count : 0;
+}
+
+/**
+ * Points for a correct answer given the streak it continues and the hints
+ * bought for it. A helped answer is paid from the base alone.
+ */
+export function pointsFor(streakBefore: number, hints = 0): number {
+  if (hints > 0) return Math.round(POINTS_PER_COUNTRY * HINT_FACTOR ** hints);
   return (
     POINTS_PER_COUNTRY +
     Math.min(MAX_STREAK_BONUS, streakBefore * STREAK_BONUS)
@@ -42,7 +61,7 @@ export function pointsFor(streakBefore: number): number {
 
 /**
  * The same number said out loud: what the next correct answer is worth as a
- * multiple of the base. The streak always paid — 3.5x at the top — but the
+ * multiple of the base. The streak always paid — 1.5x at the top — but the
  * only thing on screen was a count, so nobody could tell. This is the figure
  * the HUD shows, and it is derived from `pointsFor` rather than restated, so
  * the display cannot drift from the scoring.
@@ -63,20 +82,33 @@ export type Score = {
   streak: number;
   /** The longest streak reached this round. */
   bestStreak: number;
+  /** Hints bought for the country being answered, and which country. */
+  hints: { name: string; count: number } | null;
 };
 
-export const emptyScore: Score = { points: 0, streak: 0, bestStreak: 0 };
+export const emptyScore: Score = {
+  points: 0,
+  streak: 0,
+  bestStreak: 0,
+  hints: null,
+};
 
-export function scoreCorrect(score: Score): Score {
-  const streak = score.streak + 1;
+/** A correct answer: paid by streak and hints, and the country's hints spent. */
+export function scoreCorrect(score: Score, name = ""): Score {
+  const hints = hintsOn(score, name);
+  const streak = hints > 0 ? 0 : score.streak + 1;
   return {
-    points: score.points + pointsFor(score.streak),
+    points: score.points + pointsFor(score.streak, hints),
     streak,
     bestStreak: Math.max(score.bestStreak, streak),
+    hints: null,
   };
 }
 
-/** A wrong answer breaks the streak and costs points, never below zero. */
+/**
+ * A wrong answer breaks the streak and costs points, never below zero. Hints
+ * already bought stay with the country: it is still the one being asked.
+ */
 export function scoreWrong(score: Score): Score {
   return {
     ...score,
@@ -88,32 +120,30 @@ export function scoreWrong(score: Score): Score {
 /**
  * Passing on a country: the streak goes, the points stay.
  *
- * Between a wrong answer, which costs 25, and buying the answer, which costs
- * 120, there was nothing for "I don't know this one and I don't want to pay
- * to find out". This is that. It is not free — a streak is worth up to 250 on
- * the next correct answer — it just isn't charged for.
+ * For "I don't know this one and I don't want to pay to find out". It is not
+ * free — a streak is worth up to 50 on every answer after it — it just isn't
+ * charged for.
  */
 export function scorePass(score: Score): Score {
-  return { ...score, streak: 0 };
-}
-
-/** Hints are deducted, but a round's score never goes below zero. */
-export function scoreHint(score: Score, hint: HintKind): Score {
-  return { ...score, points: Math.max(0, score.points - HINT_COST[hint]) };
+  return { ...score, streak: 0, hints: null };
 }
 
 /**
- * Whether a hint can be paid for out of what has been earned so far.
+ * Buys a hint for one country.
  *
- * The floor in `scoreHint` meant a hint cost nothing at zero points, so every
- * hint was free at the start of every round — free exactly when it is worth
- * the most. Offering one that cannot be paid for is the thing to stop, not
- * the deduction.
- *
- * Deliberately not applied to "show me the answer": that is the way past a
- * country you cannot find rather than an advantage, and a player with no
- * points and no way forward is stuck. It still charges what it can.
+ * A letter or a narrowed map halves what that country will pay. "Show me"
+ * gives the country away, so it pays nothing, ends the streak, and costs what
+ * a wrong answer costs — or it would be the free way to learn every answer,
+ * better than passing.
  */
-export function canAfford(score: Score, hint: HintKind): boolean {
-  return score.points >= HINT_COST[hint];
+export function scoreHint(score: Score, hint: HintKind, name: string): Score {
+  if (hint === "answer") {
+    return {
+      ...score,
+      points: Math.max(0, score.points - WRONG_COST),
+      streak: 0,
+      hints: null,
+    };
+  }
+  return { ...score, hints: { name, count: hintsOn(score, name) + 1 } };
 }

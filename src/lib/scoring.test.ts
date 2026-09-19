@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
-  HINT_COST,
+  HINT_FACTOR,
   POINTS_PER_COUNTRY,
   emptyScore,
   formatMultiplier,
+  hintsOn,
   multiplierFor,
   pointsFor,
   scoreCorrect,
   scoreHint,
-  canAfford,
   scorePass,
   scoreWrong,
   WRONG_COST,
@@ -21,26 +21,44 @@ const run = (score: Score, times: number) =>
 describe("pointsFor", () => {
   it("pays more as the streak grows", () => {
     expect(pointsFor(0)).toBe(100);
-    expect(pointsFor(1)).toBe(125);
-    expect(pointsFor(4)).toBe(200);
+    expect(pointsFor(1)).toBe(110);
+    expect(pointsFor(4)).toBe(140);
   });
 
-  it("caps the streak bonus", () => {
-    expect(pointsFor(10)).toBe(350);
-    expect(pointsFor(100)).toBe(350);
+  it("caps the streak bonus at half again", () => {
+    expect(pointsFor(5)).toBe(150);
+    expect(pointsFor(100)).toBe(150);
+  });
+
+  it("halves a country's worth for each hint, and drops the streak bonus", () => {
+    expect(pointsFor(10, 1)).toBe(50);
+    expect(pointsFor(10, 2)).toBe(25);
+    expect(pointsFor(0, 1)).toBe(POINTS_PER_COUNTRY * HINT_FACTOR);
+  });
+});
+
+// The totals the change was made for: the old rules paid 67,225 for a perfect
+// 196 and 2,125 for a perfect ten, most of it streak.
+describe("what a perfect round pays", () => {
+  it("is 29,250 for the whole map", () => {
+    expect(run(emptyScore, 196).points).toBe(29_250);
+  });
+
+  it("is 1,350 for ten, before the daily doubles it", () => {
+    expect(run(emptyScore, 10).points).toBe(1_350);
   });
 });
 
 describe("scoring a round", () => {
   it("counts a streak of correct answers", () => {
     const score = run(emptyScore, 3);
-    expect(score).toEqual({ points: 375, streak: 3, bestStreak: 3 });
+    expect(score).toEqual({ points: 330, streak: 3, bestStreak: 3, hints: null });
   });
 
   it("breaks the streak on a wrong answer, and charges for it", () => {
     const after = scoreWrong(run(emptyScore, 3));
     expect(after).toMatchObject({
-      points: 375 - WRONG_COST,
+      points: 330 - WRONG_COST,
       streak: 0,
       bestStreak: 3,
     });
@@ -53,10 +71,6 @@ describe("scoring a round", () => {
     expect(scoreWrong(scoreWrong(emptyScore)).points).toBe(0);
   });
 
-  it("costs less than the cheapest hint, so a nudge stays the better deal", () => {
-    expect(WRONG_COST).toBeLessThan(Math.min(...Object.values(HINT_COST)));
-  });
-
   it("remembers the best streak across breaks", () => {
     let score = run(emptyScore, 4);
     score = scoreWrong(score);
@@ -64,15 +78,72 @@ describe("scoring a round", () => {
     expect(score.streak).toBe(2);
     expect(score.bestStreak).toBe(4);
   });
+});
 
-  it("charges for a hint without touching the streak", () => {
-    const score = scoreHint(run(emptyScore, 2), "letter");
-    expect(score.points).toBe(225 - HINT_COST.letter);
-    expect(score.streak).toBe(2);
+describe("hints", () => {
+  // The complaint that started this: at the top of a streak a letter cost 30
+  // against an answer worth 350, and the streak carried on as if unhelped.
+  it("costs a helped answer at least half of what it would have paid", () => {
+    const streaking = run(emptyScore, 8);
+    const unhelped = scoreCorrect(streaking, "Peru").points - streaking.points;
+    const helped =
+      scoreCorrect(scoreHint(streaking, "letter", "Peru"), "Peru").points -
+      streaking.points;
+    expect(helped).toBeLessThanOrEqual(unhelped / 2);
   });
 
-  it("never lets a hint push the score negative", () => {
-    expect(scoreHint(emptyScore, "answer").points).toBe(0);
+  it("ends the streak on a helped answer", () => {
+    const score = scoreCorrect(
+      scoreHint(run(emptyScore, 4), "letter", "Peru"),
+      "Peru"
+    );
+    expect(score.streak).toBe(0);
+    expect(score.bestStreak).toBe(4);
+  });
+
+  it("takes nothing from the round until the answer comes", () => {
+    const score = run(emptyScore, 2);
+    expect(scoreHint(score, "letter", "Peru").points).toBe(score.points);
+  });
+
+  it("stacks: a letter and a narrowed map leave a quarter", () => {
+    let score = scoreHint(emptyScore, "letter", "Peru");
+    score = scoreHint(score, "region", "Peru");
+    expect(hintsOn(score, "Peru")).toBe(2);
+    expect(scoreCorrect(score, "Peru").points).toBe(25);
+  });
+
+  // Buying a letter for one country, then answering a different one, must not
+  // charge the second for the first's help.
+  it("belongs to the country it was bought for", () => {
+    const score = scoreHint(emptyScore, "letter", "Peru");
+    expect(hintsOn(score, "Chile")).toBe(0);
+    expect(scoreCorrect(score, "Chile").points).toBe(100);
+  });
+
+  it("stays with the country through a wrong guess", () => {
+    const score = scoreWrong(scoreHint(emptyScore, "letter", "Peru"));
+    expect(hintsOn(score, "Peru")).toBe(1);
+  });
+
+  it("is spent once the country is answered or passed", () => {
+    const hinted = scoreHint(emptyScore, "letter", "Peru");
+    expect(scoreCorrect(hinted, "Peru").hints).toBe(null);
+    expect(scorePass(hinted).hints).toBe(null);
+  });
+});
+
+describe("showing the answer", () => {
+  it("pays nothing, ends the streak, and costs what a wrong answer costs", () => {
+    const score = run(emptyScore, 3);
+    const after = scoreHint(score, "answer", "Peru");
+    expect(after.points).toBe(score.points - WRONG_COST);
+    expect(after.streak).toBe(0);
+  });
+
+  // A player at zero with a country they cannot find has to have a way on.
+  it("is always possible, even with nothing to pay with", () => {
+    expect(scoreHint(emptyScore, "answer", "Peru").points).toBe(0);
   });
 });
 
@@ -87,58 +158,25 @@ describe("streak multiplier", () => {
     }
   });
 
-  it("starts at 1 and climbs a quarter per answer", () => {
+  it("starts at 1 and climbs a tenth per answer", () => {
     expect(multiplierFor(0)).toBe(1);
-    expect(multiplierFor(1)).toBe(1.25);
-    expect(multiplierFor(4)).toBe(2);
+    expect(multiplierFor(1)).toBe(1.1);
+    expect(multiplierFor(4)).toBe(1.4);
   });
 
   it("stops climbing at the cap", () => {
-    expect(multiplierFor(10)).toBe(3.5);
-    expect(multiplierFor(40)).toBe(3.5);
+    expect(multiplierFor(5)).toBe(1.5);
+    expect(multiplierFor(40)).toBe(1.5);
   });
 
   it("writes whole multiples without a decimal tail", () => {
     expect(formatMultiplier(0)).toBe("1×");
-    expect(formatMultiplier(4)).toBe("2×");
-    expect(formatMultiplier(1)).toBe("1.25×");
-    expect(formatMultiplier(2)).toBe("1.5×");
-  });
-});
-
-describe("paying for a hint", () => {
-  it("needs the points to be there first", () => {
-    expect(canAfford(emptyScore, "letter")).toBe(false);
-    expect(canAfford(run(emptyScore, 1), "letter")).toBe(true);
-  });
-
-  it("goes by the price of the hint asked for", () => {
-    const score = { ...emptyScore, points: 50 };
-    expect(canAfford(score, "letter")).toBe(true); // 30
-    expect(canAfford(score, "continent")).toBe(true); // 40
-    expect(canAfford(score, "region")).toBe(false); // 60
-    expect(canAfford(score, "answer")).toBe(false); // 120
-  });
-
-  it("counts exactly enough as enough", () => {
-    expect(canAfford({ ...emptyScore, points: HINT_COST.region }, "region")).toBe(
-      true
-    );
-    expect(
-      canAfford({ ...emptyScore, points: HINT_COST.region - 1 }, "region")
-    ).toBe(false);
-  });
-
-  // The one hint that is not gated: a player at zero with a country they
-  // cannot find has to have a way forward.
-  it("still lets the answer be bought when it cannot be paid for", () => {
-    expect(scoreHint(emptyScore, "answer").points).toBe(0);
+    expect(formatMultiplier(1)).toBe("1.1×");
+    expect(formatMultiplier(5)).toBe("1.5×");
   });
 });
 
 describe("passing on a country", () => {
-  // Between a wrong guess at 25 and buying the answer at 120, there was
-  // nothing for "I don't know this one and I'm not paying to find out".
   it("costs no points", () => {
     const score = run(emptyScore, 3);
     expect(scorePass(score).points).toBe(score.points);
@@ -157,7 +195,7 @@ describe("passing on a country", () => {
     const score = run(emptyScore, 3);
     expect(scorePass(score).points).toBeGreaterThan(scoreWrong(score).points);
     expect(scorePass(score).points).toBeGreaterThan(
-      scoreHint(score, "answer").points
+      scoreHint(score, "answer", "Peru").points
     );
   });
 });

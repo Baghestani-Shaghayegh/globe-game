@@ -21,7 +21,6 @@ import {
   type Ruleset,
 } from "../../data/modes";
 import { isCorrectGuess } from "../../lib/answerMatch";
-import { canAfford } from "../../lib/scoring";
 import {
   answerStroke,
   backdropColor,
@@ -501,8 +500,7 @@ export default function GlobeGame({
    */
   const handleHint = () => {
     if (!selected || hintLetter) return;
-    if (!canAfford(round.score, "letter")) return;
-    spendHint("letter");
+    spendHint("letter", selected.properties.name);
     setHintLetter(
       getCountryMeta(selected.properties.name).displayName.charAt(0).toUpperCase()
     );
@@ -517,7 +515,7 @@ export default function GlobeGame({
     const country = getCountryMeta(name);
     if (isCorrectGuess(value, country)) {
       setFoundNames((prev) => new Set(prev).add(country.geoName));
-      correct();
+      correct(name);
       closeModal();
     } else {
       setFumbled((prev) => new Set(prev).add(name));
@@ -809,7 +807,6 @@ export default function GlobeGame({
         onHint={hintsOn ? handleHint : null}
         // Offered but not payable: shown greyed rather than hidden, so the
         // price stays visible and the reason it cannot be taken is obvious.
-        canAffordHint={canAfford(round.score, "letter")}
         names={suggestionNames}
         value={guess}
         isWrong={isWrong}

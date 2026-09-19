@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { suggestNames, type Suggestable } from "../../lib/answerMatch";
-import { HINT_COST } from "../../lib/scoring";
 import { wrongNameQuip } from "../../lib/quips";
 
 type Props = {
@@ -11,8 +10,6 @@ type Props = {
   secondsLeft: number | null;
   /** Buys the first letter. Null when the player has hints turned off. */
   onHint: (() => void) | null;
-  /** False when the round has not earned the hint\u0027s price yet. */
-  canAffordHint?: boolean;
   /**
    * The countries on offer. Names *and* aliases, because the list has to be
    * able to suggest "United States" to somebody who typed "usa".
@@ -32,7 +29,6 @@ export default function GuessModal({
   hintLetter,
   secondsLeft,
   onHint,
-  canAffordHint = true,
   names,
   value,
   isWrong,
@@ -175,12 +171,10 @@ export default function GuessModal({
             ) : (
               <button
                 onClick={onHint ?? undefined}
-                disabled={!canAffordHint}
-                title={canAffordHint ? undefined : "Not enough points yet"}
-                className="rounded-md border border-white/10 px-2 py-1 text-zinc-400 transition-colors hover:border-white/25 hover:text-zinc-100 disabled:opacity-40 disabled:hover:border-white/10 disabled:hover:text-zinc-400"
+                className="rounded-md border border-white/10 px-2 py-1 text-zinc-400 transition-colors hover:border-white/25 hover:text-zinc-100"
               >
                 First letter{" "}
-                <span className="text-zinc-600">−{HINT_COST.letter}</span>
+                <span className="text-zinc-600">½ points</span>
               </button>
             )}
           </div>
