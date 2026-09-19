@@ -36,7 +36,13 @@ import { landMaterial } from "../../lib/globeTerrain";
 import { useGlobeTheme } from "./useGlobeTheme";
 import { GLOBE_SURFACE, useGlobeLook } from "./useGlobeLook";
 import type { Continent } from "../../data/continents";
-import { altitudeFor, featureCentre, type Geometry, worldAltitude } from "../../lib/geo";
+import {
+  altitudeFor,
+  featureCentre,
+  type Geometry,
+  labelPoint,
+  worldAltitude,
+} from "../../lib/geo";
 import { VIEW, outlinePath } from "../../lib/outline";
 
 type CountryFeature = {
@@ -143,7 +149,7 @@ function tagFor(feature: {
   properties: { name: string; tiny?: boolean };
   geometry: Geometry;
 }): NameTag {
-  const { lat, lng } = featureCentre(feature.geometry);
+  const { lat, lng } = labelPoint(feature.geometry);
   return {
     lat,
     lng,
@@ -166,7 +172,11 @@ function tagFor(feature: {
  * the land's mottled texture without turning it into a badge.
  */
 function nameLabel(tag: NameTag): HTMLElement {
-  const el = document.createElement("span");
+  // The globe centres the outer element on the point by writing its transform
+  // every frame, so the nudge for a tiny country has to go on the inner one.
+  const holder = document.createElement("div");
+  holder.style.pointerEvents = "none";
+  const el = holder.appendChild(document.createElement("span"));
   el.textContent = tag.text;
   el.style.cssText = [
     "color: #05140c",
@@ -177,9 +187,9 @@ function nameLabel(tag: NameTag): HTMLElement {
     "text-shadow: 0 0 3px rgb(255 255 255 / 0.45)",
     // A country grown to stay clickable is smaller than its own name, so the
     // name sits above it rather than across it.
-    tag.tiny ? "transform: translateY(-14px)" : "",
+    tag.tiny ? "display: inline-block; transform: translateY(-14px)" : "",
   ].join(";");
-  return el;
+  return holder;
 }
 
 /** The whole-world view, sized to this window. Shared by every game. */

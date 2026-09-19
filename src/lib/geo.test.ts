@@ -1,6 +1,13 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { altitudeFor, featureCentre, type Geometry, ROUND_FOV, worldAltitude } from "./geo";
+import {
+  altitudeFor,
+  featureCentre,
+  type Geometry,
+  labelPoint,
+  ROUND_FOV,
+  worldAltitude,
+} from "./geo";
 
 type Feature = { properties: { name: string }; geometry: Geometry };
 
@@ -51,6 +58,78 @@ describe("featureCentre", () => {
     expect(centreOf("France").span).toBeGreaterThan(
       centreOf("Luxembourg").span
     );
+  });
+});
+
+describe("across the 180° line", () => {
+  // Russia's mainland is drawn over the antimeridian. Taken literally, its
+  // box ran the whole way round the world and the middle was the North Sea —
+  // on the far side of the globe from Russia, so its name never showed.
+  it("keeps Russia's centre in Russia", () => {
+    const centre = centreOf("Russia");
+    expect(centre.lat).toBeGreaterThan(50);
+    expect(centre.lng).toBeGreaterThan(60);
+    expect(centre.lng).toBeLessThan(140);
+    expect(centre.span).toBeLessThan(120);
+  });
+
+  it("keeps Fiji's centre by Fiji", () => {
+    expect(Math.abs(centreOf("Fiji").lng)).toBeGreaterThan(175);
+  });
+});
+
+/** Point-in-polygon on the raw data, for checking a label is on its land. */
+function onLand(name: string, lat: number, lng: number): boolean {
+  const { geometry } = features.find((f) => f.properties.name === name)!;
+  const polygons =
+    geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates;
+  return polygons.some((polygon) => {
+    let inside = false;
+    for (const ring of polygon) {
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const [ax, ay] = ring[i];
+        const [bx, by] = ring[j];
+        if (ay > lat !== by > lat && lng < ((bx - ax) * (lat - ay)) / (by - ay) + ax) {
+          inside = !inside;
+        }
+      }
+    }
+    return inside;
+  });
+}
+
+describe("labelPoint", () => {
+  const labelOf = (name: string) =>
+    labelPoint(features.find((f) => f.properties.name === name)!.geometry);
+
+  // The middle of the box round these misses the country: Croatia's is in
+  // Bosnia, Norway's is in Sweden, Vietnam's is in Laos.
+  it.each(["Croatia", "Norway", "Vietnam", "Chile", "Russia", "South Africa"])(
+    "writes %s's name on %s",
+    (name) => {
+      const { lat, lng } = labelOf(name);
+      expect(onLand(name, lat, lng)).toBe(true);
+    }
+  );
+
+  it("puts Russia's name in Siberia, not the North Sea", () => {
+    const { lat, lng } = labelOf("Russia");
+    expect(lat).toBeCloseTo(62, 0);
+    expect(lng).toBeCloseTo(109, -1);
+  });
+
+  it("returns a usable point for every country on the map", () => {
+    const broken = features
+      .map((f) => [f.properties.name, labelPoint(f.geometry)] as const)
+      .filter(
+        ([, c]) =>
+          !Number.isFinite(c.lat) ||
+          !Number.isFinite(c.lng) ||
+          Math.abs(c.lat) > 90 ||
+          Math.abs(c.lng) > 180
+      )
+      .map(([name]) => name);
+    expect(broken).toEqual([]);
   });
 });
 
