@@ -12,7 +12,6 @@ export default function DailyCard({
   note,
   accent,
   done = false,
-  action,
 }: {
   to: string;
   icon: string;
@@ -29,26 +28,28 @@ export default function DailyCard({
    * two you have yet to play.
    */
   done?: boolean;
-  /** The call to action at the foot of the card. */
-  action?: string;
 }) {
-  // Each wash is laid over an opaque base rather than straight onto the page:
-  // these cards sit on top of the globe, and a 6% tint on its own leaves the
-  // continents reading through the words.
+  // The wash is a background *image*, not a second background colour.
+  //
+  // It used to be `bg-sky-400/[0.07]` next to an opaque `bg-[#07111c]/75` on
+  // the same element — two utilities setting the same property, so the tint
+  // won and the opaque base never applied at all. The card was a 7% film over
+  // the globe, which is why the highlight off the Atlantic read straight
+  // through the words on it. A gradient layers over the colour instead.
   const tone = done
-    ? "border-white/10 bg-[#07111c]/75 hover:border-white/20"
+    ? "border-white/10 hover:border-white/20"
     : {
-        sky: "border-sky-400/25 bg-sky-400/[0.07] hover:border-sky-400/50",
-        rose: "border-rose-400/25 bg-rose-400/[0.06] hover:border-rose-400/50",
+        sky: "border-sky-400/25 [background-image:linear-gradient(rgba(56,189,248,0.10),rgba(56,189,248,0.10))] hover:border-sky-400/50",
+        rose: "border-rose-400/25 [background-image:linear-gradient(rgba(251,113,133,0.09),rgba(251,113,133,0.09))] hover:border-rose-400/50",
         violet:
-          "border-violet-400/25 bg-violet-400/[0.06] hover:border-violet-400/50",
+          "border-violet-400/25 [background-image:linear-gradient(rgba(167,139,250,0.09),rgba(167,139,250,0.09))] hover:border-violet-400/50",
       }[accent];
 
   return (
     <Link
       onClick={playTap}
       to={to}
-      className={`group relative flex flex-1 flex-col gap-1 rounded-2xl border bg-[#07111c]/75 px-4 py-3.5 backdrop-blur-sm transition-colors ${tone}`}
+      className={`group relative flex flex-col gap-1 rounded-2xl border bg-[#0a1420]/95 px-4 py-3.5 backdrop-blur-sm transition-colors ${tone}`}
     >
       <span className="flex items-center gap-2">
         <span
@@ -69,23 +70,19 @@ export default function DailyCard({
               ✓
             </span>
           )}
+          <span
+            aria-hidden="true"
+            className="text-zinc-600 transition-colors group-hover:text-zinc-300"
+          >
+            ›
+          </span>
         </span>
       </span>
       <span
-        className={`text-sm leading-snug ${done ? "text-zinc-600" : "text-zinc-400"}`}
+        className={`text-sm leading-snug ${done ? "text-zinc-500" : "text-zinc-400"}`}
       >
         {note}
       </span>
-
-      {action && (
-        <span
-          className={`mt-auto pt-1.5 text-sm font-medium ${
-            done ? "text-zinc-500" : "text-teal-300 group-hover:text-teal-200"
-          }`}
-        >
-          {done ? "See your result" : action} <span aria-hidden="true">→</span>
-        </span>
-      )}
     </Link>
   );
 }

@@ -246,7 +246,7 @@ function WayToPlay({
     <Link
       onClick={playTap}
       to={to}
-      className="group flex items-center gap-3 rounded-xl border border-white/10 bg-[#07111c]/70 px-4 py-[clamp(0.4rem,1.6vh,1.3rem)] backdrop-blur-sm transition-colors hover:border-white/25 hover:bg-[#07111c]/80"
+      className="group flex items-center gap-3 rounded-xl border border-white/12 bg-[#0a1420]/95 px-4 py-[clamp(0.4rem,1.6vh,1.3rem)] backdrop-blur-sm transition-colors hover:border-white/30 hover:bg-[#0d1928]"
     >
       <span className="shrink-0 text-zinc-400 transition-colors group-hover:text-zinc-200">
         {icon}
@@ -260,7 +260,7 @@ function WayToPlay({
             </span>
           )}
         </span>
-        <span className="block truncate text-sm text-zinc-500">{note}</span>
+        <span className="block truncate text-sm text-zinc-400">{note}</span>
       </span>
       <span
         aria-hidden="true"
@@ -459,160 +459,157 @@ export default function Home() {
         <main className="flex flex-1 flex-col">
           <div aria-hidden="true" className="grow-[0.45]" />
 
+          {/* One headline, not three. An eyebrow above it and a tagline
+              under it said the same thing a third and a fourth time, and
+              three competing lines of prose is how a page starts to read as
+              noise before anything on it has been clicked. */}
           <section className="pt-[clamp(0.5rem,2.1vh,2.25rem)]">
-            <p className="text-xs uppercase tracking-[0.22em] text-teal-300/80">
-              The world is your playground
-            </p>
-            <h1 className="mt-3 max-w-lg text-4xl font-semibold leading-[1.08] tracking-tight text-zinc-50 sm:text-[clamp(2.1rem,4.9vh,3rem)]">
+            <h1 className="max-w-lg text-4xl font-semibold leading-[1.08] tracking-tight text-zinc-50 sm:text-[clamp(2.1rem,4.9vh,3rem)]">
               How well do you know your world?
             </h1>
-            <p className="mt-2.5 text-base text-zinc-400 sm:text-lg">
-              Pick a challenge. Discover somewhere new.
-            </p>
           </section>
 
           {/* Start a round: what kind, where, how long, go. */}
           <section className="mt-[clamp(0.75rem,2.1vh,1.75rem)] max-w-2xl">
             {/*
-              All six, always. Three of them used to fold behind a "More"
-              chevron, which hid half the game behind a control that told you
-              nothing about what was under it — and the ones it hid are the
-              ones a returning player is most likely to want.
+              One panel, not a scatter of loose controls. The tabs, the line
+              that explains them and the map picker are three parts of a
+              single decision — start a round — and over a moving globe a row
+              of unbacked chips read as debris on the page rather than as a
+              thing to use. The surface is near-opaque for the same reason:
+              a 3% white fill over continents is a smudge, not a card.
             */}
-            <div
-              role="tablist"
-              aria-label="Game type"
-              className="flex flex-wrap gap-1.5"
-            >
-              {GAME_TYPES.map((t) => (
+            <div className="rounded-2xl border border-white/12 bg-[#0b1726]/92 p-4 backdrop-blur-sm sm:p-5">
+              {/*
+                All six, always. Three of them used to fold behind a "More"
+                chevron, which hid half the game behind a control that told you
+                nothing about what was under it — and the ones it hid are the
+                ones a returning player is most likely to want.
+              */}
+              <div
+                role="tablist"
+                aria-label="Game type"
+                className="flex flex-wrap gap-1.5"
+              >
+                {GAME_TYPES.map((t) => (
+                  <button
+                    key={t.id}
+                    role="tab"
+                    aria-selected={gameType === t.id}
+                    title={t.blurb}
+                    onClick={() => {
+                      playTap();
+                      setGameType(t.id);
+                    }}
+                    className={`rounded-lg border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                      gameType === t.id
+                        ? "border-teal-300/60 bg-teal-300/[0.14] text-teal-100"
+                        : "border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/25 hover:bg-white/[0.06] hover:text-zinc-100"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* What the chosen game actually is. Every type already carried
+                  this line; it was a `title` attribute, which is invisible on a
+                  phone and a second late on a desktop — and "Famous for" and
+                  "Outlines" mean nothing until someone tells you. */}
+              <p className="mt-2 text-sm text-zinc-400">
+                {GAME_TYPES.find((t) => t.id === gameType)?.blurb}
+              </p>
+
+              {/*
+                Two decisions and a button: what kind of round, which map, go.
+                The round length and the clock used to live here too, behind a
+                "Customize round" control that opened a panel that then had to be
+                opened again. Rounds are ten countries counting up now, and hints
+                are a setting rather than a per-round choice — they were the same
+                answer every time, which is what a setting is for.
+              */}
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Picker
+                  className="sm:max-w-[17rem]"
+                  label="Map"
+                  value={modeId}
+                  onChange={(v) => setModeId(v as ModeId)}
+                  options={MODES.map((mode) => ({
+                    value: mode.id,
+                    label: mode.name,
+                    note: counts[mode.id] ? String(counts[mode.id]) : undefined,
+                  }))}
+                />
                 <button
-                  key={t.id}
-                  role="tab"
-                  aria-selected={gameType === t.id}
-                  title={t.blurb}
                   onClick={() => {
                     playTap();
-                    setGameType(t.id);
+                    start();
                   }}
-                  className={`rounded-lg border px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                    gameType === t.id
-                      ? "border-teal-300/60 bg-teal-300/[0.14] text-teal-100"
-                      : "border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/25 hover:bg-white/[0.06] hover:text-zinc-100"
-                  }`}
+                  className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-teal-300 px-6 py-2.5 font-semibold text-[#07111c] transition-colors hover:bg-teal-200"
                 >
-                  {t.label}
+                  Start playing
+                  <span aria-hidden="true">→</span>
                 </button>
-              ))}
+              </div>
+
             </div>
-
-            {/* What the chosen game actually is. Every type already carried
-                this line; it was a `title` attribute, which is invisible on a
-                phone and a second late on a desktop — and "Famous for" and
-                "Outlines" mean nothing until someone tells you. */}
-            <p className="mt-2 text-sm text-zinc-400">
-              {GAME_TYPES.find((t) => t.id === gameType)?.blurb}
-            </p>
-
-            {/*
-              Two decisions and a button: what kind of round, which map, go.
-              The round length and the clock used to live here too, behind a
-              "Customize round" control that opened a panel that then had to be
-              opened again. Rounds are ten countries counting up now, and hints
-              are a setting rather than a per-round choice — they were the same
-              answer every time, which is what a setting is for.
-            */}
-            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Picker
-                className="sm:max-w-[17rem]"
-                label="Map"
-                value={modeId}
-                onChange={(v) => setModeId(v as ModeId)}
-                options={MODES.map((mode) => ({
-                  value: mode.id,
-                  label: mode.name,
-                  note: counts[mode.id] ? String(counts[mode.id]) : undefined,
-                }))}
-              />
-              <button
-                onClick={() => {
-                  playTap();
-                  start();
-                }}
-                className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-teal-300 px-6 py-2.5 font-semibold text-[#07111c] transition-colors hover:bg-teal-200"
-              >
-                Start playing
-                <span aria-hidden="true">→</span>
-              </button>
-            </div>
-
           </section>
 
-          <section className="mt-[clamp(0.75rem,2.4vh,2.5rem)] flex min-h-0 flex-[3] flex-col">
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <section className="mt-[clamp(0.75rem,2.4vh,2.5rem)]">
+            {/* The multiplier was a sentence under this heading — "Get 3×
+                more points by doing daily challenges" — which is eleven words
+                to carry one number. As a chip it reads in a glance and stops
+                competing with the cards it is about. */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <h2 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
                 Today's challenges
               </h2>
+              <span className="rounded-full bg-teal-300/15 px-2.5 py-0.5 text-xs font-semibold text-teal-200">
+                {DAILY_MULTIPLIER}× points
+              </span>
             </div>
 
-            {/* Under the title rather than beside it: it is a sentence about
-                the section, and on the heading line it read as part of the
-                heading. */}
-            <p className="mt-1 text-sm text-zinc-400">
-              Get{" "}
-              <span className="font-semibold text-teal-300">
-                {DAILY_MULTIPLIER}× more points
-              </span>{" "}
-              by doing daily challenges
-            </p>
-
-            <div className="mt-3 grid min-h-0 flex-1 gap-3 sm:grid-cols-3">
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <DailyCard
                 to="/daily"
                 icon="🗺️"
                 title="Country hunt"
                 note={
                   doneToday.daily
-                    ? "Played — see your result"
-                    : `Ten countries in ${DAILY_LIMIT_SECONDS / 60} minutes, the same ten for everyone.`
+                    ? "See your result"
+                    : `Ten countries, ${DAILY_LIMIT_SECONDS / 60} minutes`
                 }
                 accent="sky"
                 done={doneToday.daily}
-                action="Start the hunt"
               />
               <DailyCard
                 to="/mystery"
                 icon="🔥"
                 title="Mystery country"
                 note={
-                  doneToday.mystery
-                    ? "Found — see your result"
-                    : "Find it with warmer-or-colder clues."
+                  doneToday.mystery ? "See your result" : "Warmer or colder clues"
                 }
                 accent="rose"
                 done={doneToday.mystery}
-                action="Solve mystery"
               />
               <DailyCard
                 to="/connect"
                 icon="🔗"
                 title="Connect"
                 note={
-                  doneToday.connect
-                    ? "Linked — see your result"
-                    : "Link two countries across the map."
+                  doneToday.connect ? "See your result" : "Link two countries by land"
                 }
                 accent="violet"
                 done={doneToday.connect}
-                action="Make a connection"
               />
             </div>
           </section>
 
-          <section className="mt-[clamp(0.75rem,2.4vh,1.75rem)] flex min-h-0 flex-[2] flex-col">
+          <section className="mt-[clamp(0.75rem,2.4vh,1.75rem)]">
             <h2 className="text-xs uppercase tracking-[0.18em] text-zinc-500">
               More ways to play
             </h2>
-            <div className="mt-2.5 grid min-h-0 flex-1 gap-3 sm:grid-cols-3">
+            <div className="mt-2.5 grid gap-3 sm:grid-cols-3">
               <WayToPlay
                 to="/practice"
                 title="Practice"
@@ -639,6 +636,8 @@ export default function Home() {
               />
             </div>
           </section>
+
+          <div aria-hidden="true" className="grow-[0.55]" />
 
           <AdSlot className="mt-[clamp(0.75rem,2.4vh,1.75rem)]" />
 
