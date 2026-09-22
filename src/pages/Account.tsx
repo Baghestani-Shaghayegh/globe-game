@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
 import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled, supabase, urlAuthError } from "../lib/supabase";
 import {
@@ -11,6 +10,7 @@ import {
 } from "../lib/profiles";
 import { FLAG_CODE } from "../data/flags";
 import { getCountryMeta } from "../data/countries";
+import { PageShell } from "../components/SiteHeader";
 
 /** Every country the game ships a flag for, by the name a player would look for. */
 function flagOptions(): { code: string; name: string }[] {
@@ -24,17 +24,9 @@ function flagOptions(): { code: string; name: string }[] {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
-      <main className="mx-auto w-full max-w-[1180px]">
-        <Link
-          to="/"
-          className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
-        >
-          ← Modes
-        </Link>
-        {children}
-      </main>
-    </div>
+    <PageShell>
+      {children}
+    </PageShell>
   );
 }
 

@@ -12,6 +12,7 @@ import {
 } from "../lib/rooms";
 import { GAME_TYPES, MODES, type GameType, type ModeId } from "../data/modes";
 import Segmented from "../components/Segmented";
+import { PageShell } from "../components/SiteHeader";
 
 /**
  * A room can be any game type but "name it" — that one asks a player to type,
@@ -39,20 +40,12 @@ function mapHint(id: ModeId): string {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
-      <main className="mx-auto w-full max-w-[1180px]">
-        <Link
-          to="/"
-          className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
-        >
-          ← Modes
-        </Link>
-        <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
-          Play together
-        </h1>
-        {children}
-      </main>
-    </div>
+    <PageShell>
+      <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
+        Play together
+      </h1>
+      {children}
+    </PageShell>
   );
 }
 

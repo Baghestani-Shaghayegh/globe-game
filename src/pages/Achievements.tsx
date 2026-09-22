@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { refresh, tally, type Earned } from "../lib/achievements";
+import { PageShell, ProgressTabs } from "../components/SiteHeader";
 
 function when(iso: string | null): string {
   if (!iso) return "";
@@ -79,47 +79,40 @@ export default function Achievements() {
   );
 
   return (
-    <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
-      <main className="mx-auto w-full max-w-[1180px]">
-        <Link
-          to="/"
-          className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
+    <PageShell>
+      <div className="mt-5 flex flex-wrap items-baseline justify-between gap-3">
+        <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">
+          Badges
+        </h1>
+        <span className="tabular-nums text-zinc-400">
+          {counts.unlocked} of {counts.total}
+        </span>
+      </div>
+
+      <ProgressTabs />
+
+      <div className="mt-4 flex items-center gap-3">
+        <span
+          aria-hidden="true"
+          className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-white/[0.07]"
         >
-          ← Modes
-        </Link>
-
-        <div className="mt-5 flex flex-wrap items-baseline justify-between gap-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">
-            Badges
-          </h1>
-          <span className="tabular-nums text-zinc-400">
-            {counts.unlocked} of {counts.total}
-          </span>
-        </div>
-
-        <div className="mt-4 flex items-center gap-3">
           <span
-            aria-hidden="true"
-            className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-white/[0.07]"
-          >
-            <span
-              className="block h-full rounded-full bg-amber-300/70"
-              style={{ width: `${(counts.unlocked / counts.total) * 100}%` }}
-            />
-          </span>
-        </div>
+            className="block h-full rounded-full bg-amber-300/70"
+            style={{ width: `${(counts.unlocked / counts.total) * 100}%` }}
+          />
+        </span>
+      </div>
 
-        <p className="mt-4 text-sm text-zinc-500">
-          Counted from everything you've already played — badges you'd earned
-          before this page existed are here too.
-        </p>
+      <p className="mt-4 text-sm text-zinc-500">
+        Counted from everything you've already played — badges you'd earned
+        before this page existed are here too.
+      </p>
 
-        <ul className="mt-7 grid gap-3 sm:grid-cols-2">
-          {ordered.map((badge) => (
-            <Badge key={badge.id} badge={badge} />
-          ))}
-        </ul>
-      </main>
-    </div>
+      <ul className="mt-7 grid gap-3 sm:grid-cols-2">
+        {ordered.map((badge) => (
+          <Badge key={badge.id} badge={badge} />
+        ))}
+      </ul>
+    </PageShell>
   );
 }

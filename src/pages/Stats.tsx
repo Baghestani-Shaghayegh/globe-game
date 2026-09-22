@@ -12,6 +12,7 @@ import { allBuckets, formatDuration } from "../lib/records";
 import { dayKey, streakState } from "../lib/daily";
 import { MODES } from "../data/modes";
 import type { Continent } from "../data/continents";
+import { PageShell, ProgressTabs } from "../components/SiteHeader";
 
 const FALLBACK_ACCENT = "#8fb8d1";
 
@@ -144,85 +145,78 @@ export default function Stats() {
   const [run] = useState(() => streakState(dayKey()));
 
   return (
-    <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
-      <main className="mx-auto w-full max-w-[1180px]">
-        <Link
-          to="/"
-          className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
-        >
-          ← Modes
-        </Link>
+    <PageShell>
+      <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
+        Your stats
+      </h1>
 
-        <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
-          Your stats
-        </h1>
+      <ProgressTabs />
 
-        {summary.accuracy === null ? (
-          <p className="mt-4 text-zinc-400">
-            Nothing measured yet. Play a round and this page fills in with the
-            countries you know and the ones that keep getting away.
+      {summary.accuracy === null ? (
+        <p className="mt-4 text-zinc-400">
+          Nothing measured yet. Play a round and this page fills in with the
+          countries you know and the ones that keep getting away.
+        </p>
+      ) : (
+        <>
+          <p className="mt-2 text-zinc-400">
+            Counted from every country a round has actually put in front of
+            you.
           </p>
-        ) : (
-          <>
-            <p className="mt-2 text-zinc-400">
-              Counted from every country a round has actually put in front of
-              you.
-            </p>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Tile value={`${summary.accuracy}%`} label="First try" />
-              <Tile value={String(summary.countries)} label="Countries met" />
-              <Tile value={String(played.runs)} label="Rounds" />
-              <Tile
-                value={run.days > 0 ? `🔥 ${run.days}` : "—"}
-                label={
-                  // The record earns its place here, where the page is a
-                  // record of everything else too — not on the menu, where it
-                  // would just be a second number to read.
-                  run.best > run.days ? `Daily streak · best ${run.best}` : "Daily streak"
-                }
-              />
-            </div>
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Tile value={`${summary.accuracy}%`} label="First try" />
+            <Tile value={String(summary.countries)} label="Countries met" />
+            <Tile value={String(played.runs)} label="Rounds" />
+            <Tile
+              value={run.days > 0 ? `🔥 ${run.days}` : "—"}
+              label={
+                // The record earns its place here, where the page is a
+                // record of everything else too — not on the menu, where it
+                // would just be a second number to read.
+                run.best > run.days ? `Daily streak · best ${run.best}` : "Daily streak"
+              }
+            />
+          </div>
 
+          <Section
+            title="Accuracy by continent"
+            hint="weakest first"
+          >
+            <ul className="divide-y divide-white/[0.05]">
+              {continents.map((row) => (
+                <ContinentBar key={row.continent} row={row} />
+              ))}
+            </ul>
+          </Section>
+
+          {missed.length > 0 && (
             <Section
-              title="Accuracy by continent"
-              hint="weakest first"
+              title="Keeps beating you"
+              hint="practice these"
             >
               <ul className="divide-y divide-white/[0.05]">
-                {continents.map((row) => (
-                  <ContinentBar key={row.continent} row={row} />
+                {missed.map((row) => (
+                  <MissedRow key={row.geoName} row={row} />
                 ))}
               </ul>
             </Section>
+          )}
 
-            {missed.length > 0 && (
-              <Section
-                title="Keeps beating you"
-                hint="practice these"
-              >
-                <ul className="divide-y divide-white/[0.05]">
-                  {missed.map((row) => (
-                    <MissedRow key={row.geoName} row={row} />
-                  ))}
-                </ul>
-              </Section>
-            )}
+          <p className="mt-6 text-sm tabular-nums text-zinc-600">
+            {summary.seen} {summary.seen === 1 ? "country" : "countries"} put
+            to you across {played.runs} {played.runs === 1 ? "round" : "rounds"}
+            {played.ms > 0 && ` · ${formatDuration(played.ms)} played`}
+          </p>
+        </>
+      )}
 
-            <p className="mt-6 text-sm tabular-nums text-zinc-600">
-              {summary.seen} {summary.seen === 1 ? "country" : "countries"} put
-              to you across {played.runs} {played.runs === 1 ? "round" : "rounds"}
-              {played.ms > 0 && ` · ${formatDuration(played.ms)} played`}
-            </p>
-          </>
-        )}
-
-        <Link
-          to="/records"
-          className="mt-8 inline-block text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
-        >
-          Your records
-        </Link>
-      </main>
-    </div>
+      <Link
+        to="/records"
+        className="mt-8 inline-block text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+      >
+        Your records
+      </Link>
+    </PageShell>
   );
 }

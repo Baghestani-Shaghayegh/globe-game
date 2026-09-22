@@ -13,6 +13,7 @@ import { clearStats } from "../lib/countryStats";
 import { clearAchievements } from "../lib/achievements";
 import { clearPractice } from "../lib/practice";
 import { GAME_TYPES, MODES, TIME_LIMITS, gamePath } from "../data/modes";
+import { PageShell, ProgressTabs } from "../components/SiteHeader";
 
 function modeName(modeId: string): string {
   return MODES.find((m) => m.id === modeId)?.name ?? modeId;
@@ -139,6 +140,8 @@ function BucketCard({ bucket }: { bucket: Bucket }) {
           Play this again
         </Link>
       </div>
+
+      <ProgressTabs />
     </div>
   );
 }
@@ -157,84 +160,75 @@ export default function Records() {
   }, [buckets]);
 
   return (
-    <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
-      <main className="mx-auto w-full max-w-[1180px]">
+    <PageShell>
+      <div className="mt-5 flex flex-wrap items-baseline justify-between gap-3">
+        <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">
+          Records
+        </h1>
         <Link
-          to="/"
-          className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
+          to="/stats"
+          className="text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
         >
-          ← Modes
+          Your stats
         </Link>
+      </div>
 
-        <div className="mt-5 flex flex-wrap items-baseline justify-between gap-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">
-            Records
-          </h1>
-          <Link
-            to="/stats"
-            className="text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
-          >
-            Your stats
-          </Link>
-        </div>
-
-        {buckets.length === 0 ? (
-          <p className="mt-4 text-zinc-400">
-            No runs yet. Finish a round and it'll show up here.
+      {buckets.length === 0 ? (
+        <p className="mt-4 text-zinc-400">
+          No runs yet. Finish a round and it'll show up here.
+        </p>
+      ) : (
+        <>
+          <p className="mt-2 tabular-nums text-zinc-400">
+            {totals.runs} {totals.runs === 1 ? "run" : "runs"} ·{" "}
+            {totals.found} countries found · {formatDuration(totals.played)}{" "}
+            played
           </p>
-        ) : (
-          <>
-            <p className="mt-2 tabular-nums text-zinc-400">
-              {totals.runs} {totals.runs === 1 ? "run" : "runs"} ·{" "}
-              {totals.found} countries found · {formatDuration(totals.played)}{" "}
-              played
-            </p>
 
-            <div className="mt-8 flex flex-col gap-4">
-              {buckets.map((bucket) => (
-                <BucketCard key={bucket.key} bucket={bucket} />
-              ))}
-            </div>
+          <div className="mt-8 flex flex-col gap-4">
+            {buckets.map((bucket) => (
+              <BucketCard key={bucket.key} bucket={bucket} />
+            ))}
+          </div>
 
-            <div className="mt-8">
-              {confirmingClear ? (
-                <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                  <span className="text-sm text-zinc-300">
-                    Delete every run, country stat, badge and practice card?
-                    This can't be undone.
-                  </span>
-                  <button
-                    onClick={() => {
-                      clearAll();
-                      clearStats();
-                      clearAchievements();
-                      clearPractice();
-                      setBuckets([]);
-                      setConfirmingClear(false);
-                    }}
-                    className="rounded-lg bg-rose-500/15 px-3 py-1.5 text-sm font-medium text-rose-300 transition-colors hover:bg-rose-500/25"
-                  >
-                    Delete
-                  </button>
-                  <button
-                    onClick={() => setConfirmingClear(false)}
-                    className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
+          <div className="mt-8">
+            {confirmingClear ? (
+              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                <span className="text-sm text-zinc-300">
+                  Delete every run, country stat, badge and practice card?
+                  This can't be undone.
+                </span>
                 <button
-                  onClick={() => setConfirmingClear(true)}
-                  className="text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+                  onClick={() => {
+                    clearAll();
+                    clearStats();
+                    clearAchievements();
+                    clearPractice();
+                    setBuckets([]);
+                    setConfirmingClear(false);
+                  }}
+                  className="rounded-lg bg-rose-500/15 px-3 py-1.5 text-sm font-medium text-rose-300 transition-colors hover:bg-rose-500/25"
                 >
-                  Clear records
+                  Delete
                 </button>
-              )}
-            </div>
-          </>
-        )}
-      </main>
-    </div>
+                <button
+                  onClick={() => setConfirmingClear(false)}
+                  className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmingClear(true)}
+                className="text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+              >
+                Clear records
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </PageShell>
   );
 }

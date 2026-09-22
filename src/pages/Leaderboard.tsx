@@ -11,6 +11,7 @@ import {
 import AdSlot from "../components/AdSlot";
 import CrownWall from "../components/CrownWall";
 import { crowns as fetchCrowns, type Crown } from "../lib/crowns";
+import { PageShell } from "../components/SiteHeader";
 
 /** Gold, silver, bronze, then nothing — a podium only reads as one if it's short. */
 function rankColor(rank: number): string {
@@ -140,84 +141,75 @@ export default function Leaderboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
-      <main className="mx-auto w-full max-w-[1180px]">
-        <Link
-          to="/"
-          className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
-        >
-          ← Modes
-        </Link>
+    <PageShell>
+      <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
+        Leaderboard
+      </h1>
 
-        <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
-          Leaderboard
-        </h1>
+      <p className="mt-2 text-sm text-zinc-500">
+        Points from every round you play, the daily included. Everyone starts
+        level again in {untilWeekEnd()}.
+      </p>
 
-        <p className="mt-2 text-sm text-zinc-500">
-          Points from every round you play, the daily included. Everyone starts
-          level again in {untilWeekEnd()}.
+      {!accountsEnabled ? (
+        <p className="mt-6 text-zinc-400">
+          This copy of the game is running without accounts configured, so
+          there's no board to show.
         </p>
+      ) : (
+        <>
+          {/* Above the weekly board on purpose. "Who scored most this week"
+              is not a thing anyone repeats out loud; "fastest person alive
+              to name every country" is. */}
+          <div className="mt-7">
+            <CrownWall crowns={held} meId={meId} />
+          </div>
 
-        {!accountsEnabled ? (
-          <p className="mt-6 text-zinc-400">
-            This copy of the game is running without accounts configured, so
-            there's no board to show.
-          </p>
-        ) : (
-          <>
-            {/* Above the weekly board on purpose. "Who scored most this week"
-                is not a thing anyone repeats out loud; "fastest person alive
-                to name every country" is. */}
-            <div className="mt-7">
-              <CrownWall crowns={held} meId={meId} />
-            </div>
+          <h2 className="mt-9 text-xl font-semibold tracking-tight text-zinc-50">
+            This week
+          </h2>
 
-            <h2 className="mt-9 text-xl font-semibold tracking-tight text-zinc-50">
-              This week
-            </h2>
+          <div className="mt-3">
+            <Panel>
+              {overall === null ? (
+                <Empty>Loading…</Empty>
+              ) : overall.length === 0 ? (
+                <Empty>
+                  {error ?? "Nobody has played yet. Be the first name here."}
+                </Empty>
+              ) : (
+                <ul className="divide-y divide-white/[0.05]">
+                  {overall.map((row) => (
+                    <Row
+                      key={row.user_id}
+                      rank={row.rank}
+                      username={row.username}
+                      country={row.country}
+                      isYou={row.user_id === meId}
+                      headline={row.points.toLocaleString()}
+                    />
+                  ))}
+                </ul>
+              )}
+            </Panel>
+          </div>
 
-            <div className="mt-3">
-              <Panel>
-                {overall === null ? (
-                  <Empty>Loading…</Empty>
-                ) : overall.length === 0 ? (
-                  <Empty>
-                    {error ?? "Nobody has played yet. Be the first name here."}
-                  </Empty>
-                ) : (
-                  <ul className="divide-y divide-white/[0.05]">
-                    {overall.map((row) => (
-                      <Row
-                        key={row.user_id}
-                        rank={row.rank}
-                        username={row.username}
-                        country={row.country}
-                        isYou={row.user_id === meId}
-                        headline={row.points.toLocaleString()}
-                      />
-                    ))}
-                  </ul>
-                )}
-              </Panel>
-            </div>
+          {!profile && (
+            <p className="mt-8 text-sm text-zinc-500">
+              Your runs are saved on this device already.{" "}
+              <Link
+                to="/account"
+                className="text-zinc-300 underline underline-offset-4 hover:text-zinc-100"
+              >
+                Pick a name
+              </Link>{" "}
+              and the next one lands here too.
+            </p>
+          )}
+        </>
+      )}
 
-            {!profile && (
-              <p className="mt-8 text-sm text-zinc-500">
-                Your runs are saved on this device already.{" "}
-                <Link
-                  to="/account"
-                  className="text-zinc-300 underline underline-offset-4 hover:text-zinc-100"
-                >
-                  Pick a name
-                </Link>{" "}
-                and the next one lands here too.
-              </p>
-            )}
-          </>
-        )}
-
-        <AdSlot className="mt-10" />
-      </main>
-    </div>
+      <AdSlot className="mt-10" />
+    </PageShell>
   );
 }

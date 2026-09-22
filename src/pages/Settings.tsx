@@ -21,6 +21,7 @@ import {
   storedCount,
 } from "../lib/localData";
 import { GLOBE_THEMES, activeThemeId } from "../lib/globeTheme";
+import { PageShell } from "../components/SiteHeader";
 
 function Row({
   title,
@@ -169,106 +170,97 @@ export default function Settings() {
   const palette = GLOBE_THEMES.find((t) => t.id === activeThemeId());
 
   return (
-    <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
-      <main className="mx-auto w-full max-w-[1180px]">
-        <Link
-          to="/"
-          className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
+    <PageShell>
+      <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
+        Settings
+      </h1>
+
+      <Panel>
+        <Row
+          title="Hints"
+          hint="A nudge towards the answer, paid for in points. Off means you can still be shown an answer to move on."
         >
-          ← Modes
+          <div className="flex flex-wrap gap-1.5">
+            {[true, false].map((on) => (
+              <button
+                key={String(on)}
+                onClick={() => {
+                  setHints(on);
+                  setHintsEnabled(on);
+                }}
+                aria-pressed={hints === on}
+                className={choiceClass(hints === on)}
+              >
+                {on ? "On" : "Off"}
+              </button>
+            ))}
+          </div>
+        </Row>
+
+        <Row
+          title="Sound"
+          hint="A note for each right answer, rising as your streak grows."
+        >
+          <div className="flex flex-wrap gap-1.5">
+            {[true, false].map((on) => (
+              <button
+                key={String(on)}
+                onClick={() => {
+                  setSound(on);
+                  setSoundEnabled(on);
+                  // Turning it on plays one, so the choice is audible rather
+                  // than a promise about the next round.
+                  if (on) playCorrect(3);
+                }}
+                aria-pressed={sound === on}
+                className={choiceClass(sound === on)}
+              >
+                {on ? "On" : "Off"}
+              </button>
+            ))}
+          </div>
+        </Row>
+
+        {/* The palettes are unlocked by levelling, so they are chosen where
+            the levels are rather than duplicated here. */}
+        <Row
+          title="Globe palette"
+          hint={`Currently ${palette?.name ?? "Atlantic"}. New palettes unlock as you level up.`}
+        >
+          <Link to="/levels" className={`inline-block ${choiceClass(false)}`}>
+            Choose a palette
+          </Link>
+        </Row>
+      </Panel>
+
+      {adsConfigured && (
+        <Panel>
+          <Cookies />
+        </Panel>
+      )}
+
+      <Panel>
+        <ClearData />
+      </Panel>
+
+
+      <p className="mt-6 text-sm text-zinc-500">
+        Your account, if you have one, is managed on the{" "}
+        <Link
+          to="/account"
+          className="text-zinc-300 underline underline-offset-4 hover:text-zinc-100"
+        >
+          account page
         </Link>
-
-        <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
-          Settings
-        </h1>
-
-        <Panel>
-          <Row
-            title="Hints"
-            hint="A nudge towards the answer, paid for in points. Off means you can still be shown an answer to move on."
-          >
-            <div className="flex flex-wrap gap-1.5">
-              {[true, false].map((on) => (
-                <button
-                  key={String(on)}
-                  onClick={() => {
-                    setHints(on);
-                    setHintsEnabled(on);
-                  }}
-                  aria-pressed={hints === on}
-                  className={choiceClass(hints === on)}
-                >
-                  {on ? "On" : "Off"}
-                </button>
-              ))}
-            </div>
-          </Row>
-
-          <Row
-            title="Sound"
-            hint="A note for each right answer, rising as your streak grows."
-          >
-            <div className="flex flex-wrap gap-1.5">
-              {[true, false].map((on) => (
-                <button
-                  key={String(on)}
-                  onClick={() => {
-                    setSound(on);
-                    setSoundEnabled(on);
-                    // Turning it on plays one, so the choice is audible rather
-                    // than a promise about the next round.
-                    if (on) playCorrect(3);
-                  }}
-                  aria-pressed={sound === on}
-                  className={choiceClass(sound === on)}
-                >
-                  {on ? "On" : "Off"}
-                </button>
-              ))}
-            </div>
-          </Row>
-
-          {/* The palettes are unlocked by levelling, so they are chosen where
-              the levels are rather than duplicated here. */}
-          <Row
-            title="Globe palette"
-            hint={`Currently ${palette?.name ?? "Atlantic"}. New palettes unlock as you level up.`}
-          >
-            <Link to="/levels" className={`inline-block ${choiceClass(false)}`}>
-              Choose a palette
-            </Link>
-          </Row>
-        </Panel>
-
-        {adsConfigured && (
-          <Panel>
-            <Cookies />
-          </Panel>
-        )}
-
-        <Panel>
-          <ClearData />
-        </Panel>
-
-
-        <p className="mt-6 text-sm text-zinc-500">
-          Your account, if you have one, is managed on the{" "}
-          <Link
-            to="/account"
-            className="text-zinc-300 underline underline-offset-4 hover:text-zinc-100"
-          >
-            account page
-          </Link>
-          . What the game stores and why is set out in the{" "}
-          <Link
-            to="/privacy"
-            className="text-zinc-300 underline underline-offset-4 hover:text-zinc-100"
-          >
-            privacy policy
-          </Link>
-          .
-        </p>
-      </main>
-    </div>
+        . What the game stores and why is set out in the{" "}
+        <Link
+          to="/privacy"
+          className="text-zinc-300 underline underline-offset-4 hover:text-zinc-100"
+        >
+          privacy policy
+        </Link>
+        .
+      </p>
+    </PageShell>
   );
 }

@@ -1,8 +1,8 @@
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import DailyCard from "../components/DailyCard";
-import StreakChip from "../components/StreakChip";
 import AdSlot from "../components/AdSlot";
+import SiteHeader from "../components/SiteHeader";
 import { playTap } from "../lib/sound";
 import { getCountryMeta } from "../data/countries";
 import {
@@ -12,15 +12,12 @@ import {
   type GameType,
   type ModeId,
 } from "../data/modes";
-import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled } from "../lib/supabase";
 import {
   DAILY_LIMIT_SECONDS,
   DAILY_MULTIPLIER,
   dayKey,
   resultFor,
-  streakState,
-  type Streak,
 } from "../lib/daily";
 import { loadMystery } from "../lib/mystery";
 import { loadConnect } from "../lib/connect";
@@ -294,13 +291,11 @@ const icons = {
 
 export default function Home() {
   const navigate = useNavigate();
-  const { profile, session } = useAuth();
   const backdropWanted = useBackdropWanted();
 
   const [gameType, setGameType] = useState<GameType>("name");
   const [modeId, setModeId] = useState<ModeId>("easy");
 
-  const [daily, setDaily] = useState<Streak | null>(null);
   // Which of today's three are finished. Mystery and connect count as done
   // only when solved — one abandoned halfway is still waiting for you.
   const [doneToday, setDoneToday] = useState({
@@ -314,7 +309,6 @@ export default function Home() {
 
   useEffect(() => {
     const today = dayKey();
-    setDaily(streakState(today));
     setDoneToday({
       daily: resultFor(today) !== null,
       mystery: (() => {
@@ -356,104 +350,7 @@ export default function Home() {
         }}
       />
 
-      {/*
-        The masthead spans the window while everything under it is capped and
-        left-aligned: it is the frame of the page rather than part of the
-        column, so the account sits in the corner of the screen and not at the
-        end of a 1180px measure. Three grid tracks with the middle one `auto`
-        put the links on the centre line of the window, which a flex row with
-        two uneven sides cannot do.
-      */}
-      <header className="relative z-10 w-full px-5 py-4 [text-shadow:0_1px_4px_rgba(7,17,28,0.85)] sm:px-8 lg:px-12">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 md:grid md:grid-cols-[1fr_auto_1fr]">
-          <span className="flex items-center gap-2.5">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              className="h-7 w-7 text-teal-300"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-            >
-              <circle cx="12" cy="12" r="9" />
-              <ellipse cx="12" cy="12" rx="4" ry="9" />
-              <path d="M3.3 9h17.4M3.3 15h17.4" />
-            </svg>
-            <span className="text-xl font-semibold tracking-tight text-zinc-50">
-              WorldGuess
-            </span>
-          </span>
-
-          <nav className="flex items-center gap-5 text-sm md:justify-self-center">
-            <span className="border-b-2 border-teal-300 pb-0.5 font-medium text-zinc-100">
-              Play
-            </span>
-            {accountsEnabled && (
-              <Link
-                to="/leaderboard"
-                onClick={playTap}
-                className="text-zinc-400 transition-colors hover:text-zinc-100"
-              >
-                Leaderboard
-              </Link>
-            )}
-            <Link
-              to="/records"
-              onClick={playTap}
-              className="text-zinc-400 transition-colors hover:text-zinc-100"
-            >
-              My progress
-            </Link>
-          </nav>
-
-          <div className="ml-auto flex items-center gap-3 md:ml-0 md:justify-self-end">
-            <Link
-              to="/settings"
-              onClick={playTap}
-              className="flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-zinc-100"
-            >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              >
-                <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
-                <circle cx="16" cy="7" r="2.2" />
-                <circle cx="10" cy="17" r="2.2" />
-              </svg>
-              <span className="hidden sm:inline">Settings</span>
-            </Link>
-            {/* Beside the name and flag, where the player's own things live.
-                Outside the account link rather than inside it, because the
-                streak is kept on the device and stands whether or not anyone
-                is signed in — inside, it would vanish for a signed-out player
-                who has one. */}
-            {daily && <StreakChip streak={daily} />}
-            {accountsEnabled && (
-              <Link
-                to="/account"
-                onClick={playTap}
-                className="flex items-center gap-2 rounded-xl border border-white/15 px-3.5 py-1.5 text-sm text-zinc-100 transition-colors hover:border-white/35"
-              >
-                {profile?.country && (
-                  <img
-                    src={`/flags/${profile.country}.svg`}
-                    alt=""
-                    width={18}
-                    height={14}
-                    className="w-[18px] rounded-[2px]"
-                  />
-                )}
-                {profile ? profile.username : session ? "Finish setup" : "Sign in"}
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <div className="relative flex w-full max-w-[1180px] flex-1 flex-col px-5 sm:px-8 lg:px-12">
         <main className="flex flex-1 flex-col">
@@ -646,18 +543,6 @@ export default function Home() {
       </div>
 
         <footer className="relative z-10 mt-[clamp(0.6rem,1.2vh,1.75rem)] flex w-full flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] px-5 pb-[clamp(0.75rem,2.2vh,1.5rem)] pt-3.5 text-sm text-zinc-500 sm:px-8 lg:px-12">
-          <Link to="/records" className="transition-colors hover:text-zinc-300">
-            Records
-          </Link>
-          <Link to="/stats" className="transition-colors hover:text-zinc-300">
-            Stats
-          </Link>
-          <Link to="/achievements" className="transition-colors hover:text-zinc-300">
-            Badges
-          </Link>
-          <Link to="/levels" className="transition-colors hover:text-zinc-300">
-            Level &amp; themes
-          </Link>
           <Link
             to="/privacy"
             className="ml-auto transition-colors hover:text-zinc-300"
