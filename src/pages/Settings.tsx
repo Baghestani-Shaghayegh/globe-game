@@ -23,6 +23,35 @@ import {
 import { GLOBE_THEMES, activeThemeId } from "../lib/globeTheme";
 import { PageShell } from "../components/SiteHeader";
 
+/**
+ * A speaker, crossed out when the sound is off.
+ *
+ * Drawn rather than an emoji: 🔊 and 🔇 are a different shape, weight and
+ * colour on every platform, and the two of them next to each other on a
+ * toggle read as two unrelated pictures.
+ */
+function SpeakerIcon({ muted }: { muted: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M11 5 6.5 9H3v6h3.5L11 19z" />
+      {muted ? (
+        <path d="m16 9.5 4 5m0-5-4 5" />
+      ) : (
+        <path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" />
+      )}
+    </svg>
+  );
+}
+
 function Row({
   title,
   hint,
@@ -178,7 +207,7 @@ export default function Settings() {
       <Panel>
         <Row
           title="Hints"
-          hint="A nudge towards the answer, paid for in points. Off means you can still be shown an answer to move on."
+          hint="The first letter, or the map narrowed down — either one halves what that country pays. Off removes only those: Pass and Show me are offered either way, so a country you can't get is never a dead end."
         >
           <div className="flex flex-wrap gap-1.5">
             {[true, false].map((on) => (
@@ -197,28 +226,29 @@ export default function Settings() {
           </div>
         </Row>
 
+        {/* One button, not a pair. "On / Off" asks the player to work out
+            which of the two is the state and which is the choice; a speaker
+            with a line through it is the state, and the words beside it are
+            what pressing it does. */}
         <Row
           title="Sound"
           hint="A note for each right answer, rising as your streak grows."
         >
-          <div className="flex flex-wrap gap-1.5">
-            {[true, false].map((on) => (
-              <button
-                key={String(on)}
-                onClick={() => {
-                  setSound(on);
-                  setSoundEnabled(on);
-                  // Turning it on plays one, so the choice is audible rather
-                  // than a promise about the next round.
-                  if (on) playCorrect(3);
-                }}
-                aria-pressed={sound === on}
-                className={choiceClass(sound === on)}
-              >
-                {on ? "On" : "Off"}
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={() => {
+              const next = !sound;
+              setSound(next);
+              setSoundEnabled(next);
+              // Turning it on plays one, so the choice is audible rather
+              // than a promise about the next round.
+              if (next) playCorrect(3);
+            }}
+            aria-pressed={sound}
+            className={`flex items-center gap-2 ${choiceClass(sound)}`}
+          >
+            <SpeakerIcon muted={!sound} />
+            {sound ? "Mute sound" : "Enable sound"}
+          </button>
         </Row>
 
         {/* The palettes are unlocked by levelling, so they are chosen where
