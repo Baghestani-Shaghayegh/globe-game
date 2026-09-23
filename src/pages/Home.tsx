@@ -333,24 +333,25 @@ export default function Home() {
       )}
 
       {/*
-        The globe sits behind the right-hand side, so the scrim runs across
-        rather than down: dense at the left where the words are, gone by the
-        time it reaches the globe. It has to clear early — held over the map it
-        darkens the land past the colour the palette actually asks for, and
-        what is on screen stops being the colour that was chosen. The cards
-        that sit over the globe carry their own backing instead.
+        The scrim used to run across the page — dense at the left where the
+        words were, gone by the time it reached the globe on the right. The
+        column is centred now, so it darkens the middle and clears by the
+        edges, which is where the limb of the sphere still shows. It must
+        clear: held over the whole map it darkens the land past the colour the
+        palette asks for, and what is on screen stops being the colour that
+        was chosen.
       */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "linear-gradient(100deg, rgba(7,17,28,0.97) 0%, rgba(7,17,28,0.88) 26%, rgba(7,17,28,0.44) 41%, rgba(7,17,28,0.1) 55%, transparent 68%)",
+            "radial-gradient(ellipse 70% 60% at 50% 48%, rgba(7,17,28,0.72) 0%, rgba(7,17,28,0.5) 45%, rgba(7,17,28,0.18) 72%, rgba(7,17,28,0.02) 90%, transparent 100%)",
         }}
       />
 
       <SiteHeader />
 
-      <div className="relative flex w-full max-w-[1180px] flex-1 flex-col px-5 sm:px-8 lg:px-12">
+      <div className="relative mx-auto flex w-full max-w-[960px] flex-1 flex-col px-5 sm:px-8">
         <main className="flex flex-1 flex-col">
           <div aria-hidden="true" className="grow-[0.45]" />
 
@@ -359,7 +360,7 @@ export default function Home() {
               three competing lines of prose is how a page starts to read as
               noise before anything on it has been clicked. */}
           <section className="pt-[clamp(0.5rem,2.1vh,2.25rem)]">
-            <h1 className="max-w-lg text-4xl font-semibold leading-[1.08] tracking-tight text-zinc-50 sm:text-[clamp(2rem,4.4vh,2.75rem)]">
+            <h1 className="mx-auto max-w-xl text-center text-4xl font-semibold [text-shadow:0_2px_12px_rgba(7,17,28,0.9)] leading-[1.08] tracking-tight text-zinc-50 sm:text-[clamp(2rem,4.4vh,2.75rem)]">
               How well do you know your world?
             </h1>
           </section>
@@ -370,7 +371,7 @@ export default function Home() {
               form to fill in. Free play is under them, where someone who
               wants a longer round will look for it. */}
           <section className="mt-[clamp(0.75rem,2.4vh,2rem)]">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
               <h2 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
                 Today's challenges
               </h2>
@@ -422,7 +423,7 @@ export default function Home() {
               The map applies to whichever one you press, so it stays a single
               control beside the heading rather than one per card. */}
           <section className="mt-[clamp(0.75rem,2.4vh,2rem)]">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
               <h2 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
                 Play a round
               </h2>
@@ -440,19 +441,19 @@ export default function Home() {
               </div>
             </div>
 
-            <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="mt-4 grid gap-3.5 sm:grid-cols-2">
               {GAME_TYPES.map((type) => (
                 <li key={type.id} className="flex">
                   <Link
                     to={gamePath(type.id, modeId, CLOCK, RULES, ROUND_LENGTH)}
                     onClick={playTap}
-                    className="group flex w-full items-center gap-3 rounded-2xl border border-white/12 bg-[#0a1420]/95 px-4 py-3.5 backdrop-blur-sm transition-colors hover:border-teal-300/50"
+                    className="group flex w-full items-center gap-4 rounded-2xl border border-white/12 bg-[#0a1420]/95 px-5 py-5 backdrop-blur-sm transition-colors hover:border-teal-300/50"
                   >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-300/[0.12] text-teal-200 transition-colors group-hover:bg-teal-300/20">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-300/[0.12] text-teal-200 transition-colors group-hover:bg-teal-300/20 [&_svg]:h-6 [&_svg]:w-6">
                       {GAME_ICONS[type.id]}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block font-medium text-zinc-100">
+                      <span className="block text-lg font-semibold text-zinc-100">
                         {type.label}
                       </span>
                       <span className="mt-0.5 block text-sm leading-snug text-zinc-400">
@@ -472,7 +473,7 @@ export default function Home() {
           </section>
 
           <section className="mt-[clamp(0.75rem,2.4vh,1.75rem)]">
-            <h2 className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+            <h2 className="text-center text-xs uppercase tracking-[0.18em] text-zinc-500">
               More ways to play
             </h2>
             <div className="mt-2.5 grid gap-3 sm:grid-cols-3">
