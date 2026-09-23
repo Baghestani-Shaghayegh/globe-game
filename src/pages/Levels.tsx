@@ -15,8 +15,6 @@ export default function Levels() {
   const xp = useMemo(() => totalXp(allBuckets(), refresh()), []);
   const progress = useMemo(() => progressFor(xp), [xp]);
   const [chosen, setChosen] = useState(activeThemeId);
-  /** The next palette still to come, for the line under the list. */
-  const next = GLOBE_THEMES.find((theme) => theme.level > progress.level);
 
   const choose = (theme: GlobeTheme) => {
     // The one you are already using stays yours. Unlock levels can move, and
@@ -115,15 +113,6 @@ export default function Levels() {
         })}
       </ul>
 
-      {/* What is coming, not where it ends. "Level 20 is the last, at
-          190,000 XP" was shown to a player with none of it: it announced the
-          ceiling before they had seen the floor, in a number with no scale
-          attached to it. The cap is still on the palette that waits there. */}
-      <p className="mt-6 text-sm text-zinc-600">
-        {next
-          ? `${next.name} unlocks at level ${next.level}.`
-          : "Every palette unlocked."}
-      </p>
     </PageShell>
   );
 }
