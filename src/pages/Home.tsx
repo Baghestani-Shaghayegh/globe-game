@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import DailyCard from "../components/DailyCard";
 import AdSlot from "../components/AdSlot";
-import SiteHeader from "../components/SiteHeader";
+import SiteHeader, { SiteFooter } from "../components/SiteHeader";
 import { playTap } from "../lib/sound";
 import { getCountryMeta } from "../data/countries";
 import {
@@ -542,14 +542,7 @@ export default function Home() {
         </main>
       </div>
 
-        <footer className="relative z-10 mt-[clamp(0.6rem,1.2vh,1.75rem)] flex w-full flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] px-5 pb-[clamp(0.75rem,2.2vh,1.5rem)] pt-3.5 text-sm text-zinc-500 sm:px-8 lg:px-12">
-          <Link
-            to="/privacy"
-            className="ml-auto transition-colors hover:text-zinc-300"
-          >
-            Privacy
-          </Link>
-        </footer>
+        <SiteFooter className="mt-[clamp(0.6rem,1.2vh,1.75rem)]" />
     </div>
   );
 }

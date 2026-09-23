@@ -146,6 +146,28 @@ export default function SiteHeader() {
 }
 
 /**
+ * The footer, wherever the masthead is.
+ *
+ * One link now that the progress pages carry their own tabs, but it is the
+ * one every page needs within reach: a privacy policy an ad network can find
+ * from anywhere on the site, not only from the menu.
+ */
+export function SiteFooter({ className = "" }: { className?: string }) {
+  return (
+    <footer
+      className={`relative z-10 flex w-full flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] px-5 pb-[clamp(0.75rem,2.2vh,1.5rem)] pt-3.5 text-sm text-zinc-500 sm:px-8 lg:px-12 ${className}`}
+    >
+      <Link
+        to="/privacy"
+        className="ml-auto transition-colors hover:text-zinc-300"
+      >
+        Privacy
+      </Link>
+    </footer>
+  );
+}
+
+/**
  * The page under the masthead: background, header, and a capped column.
  *
  * Nine pages had this same wrapper copied out by hand, down to the padding
@@ -153,11 +175,12 @@ export default function SiteHeader() {
  */
 export function PageShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#07111c]">
+    <div className="flex min-h-screen flex-col bg-[#07111c]">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-[1180px] px-5 pb-16 pt-4 sm:px-8 lg:px-12">
+      <main className="mx-auto w-full max-w-[1180px] flex-1 px-5 pb-12 pt-4 sm:px-8 lg:px-12">
         {children}
       </main>
+      <SiteFooter />
     </div>
   );
 }

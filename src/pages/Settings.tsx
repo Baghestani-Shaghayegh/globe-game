@@ -58,14 +58,16 @@ function Row({
   children,
 }: {
   title: string;
-  hint: string;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="px-5 py-4">
       <h2 className="text-sm font-medium text-zinc-100">{title}</h2>
-      <p className="mt-1 text-xs leading-relaxed text-zinc-500">{hint}</p>
-      <div className="mt-3">{children}</div>
+      {hint && (
+        <p className="mt-1 text-xs leading-relaxed text-zinc-500">{hint}</p>
+      )}
+      <div className={hint ? "mt-3" : "mt-2.5"}>{children}</div>
     </div>
   );
 }
@@ -207,7 +209,7 @@ export default function Settings() {
       <Panel>
         <Row
           title="Hints"
-          hint="The first letter, or the map narrowed down — either one halves what that country pays. Off removes only those: Pass and Show me are offered either way, so a country you can't get is never a dead end."
+          hint="A nudge towards the answer — it halves what that country pays."
         >
           <div className="flex flex-wrap gap-1.5">
             {[true, false].map((on) => (
@@ -230,10 +232,7 @@ export default function Settings() {
             which of the two is the state and which is the choice; a speaker
             with a line through it is the state, and the words beside it are
             what pressing it does. */}
-        <Row
-          title="Sound"
-          hint="A note for each right answer, rising as your streak grows."
-        >
+        <Row title="Sound">
           <button
             onClick={() => {
               const next = !sound;
