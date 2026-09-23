@@ -160,7 +160,7 @@ export default function Settings() {
             pressing it does. */}
         <Row
           title="Hints"
-          hint="A nudge towards the answer — it halves what that country pays."
+          hint="A nudge towards the answer."
         >
           <button
             onClick={() => {
