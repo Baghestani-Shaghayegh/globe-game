@@ -8,7 +8,7 @@ import {
   setGlobeTheme,
   type GlobeTheme,
 } from "../lib/globeTheme";
-import { PageShell, ProgressTabs } from "../components/SiteHeader";
+import { PageShell } from "../components/SiteHeader";
 
 /** A globe in miniature: enough of the palette to tell them apart at a glance. */
 function Swatch({ theme }: { theme: GlobeTheme }) {
@@ -48,11 +48,13 @@ export default function Levels() {
 
   return (
     <PageShell>
+      {/* No progress tabs here. This page is the level and the palettes and
+          nothing else — records and badges are a different question, and a row
+          of them across the top made this read as a tab of that rather than
+          the place you come to choose how the globe looks. */}
       <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
         Level {progress.level}
       </h1>
-
-      <ProgressTabs />
 
       <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
         <div className="flex items-baseline justify-between gap-3">
