@@ -162,12 +162,9 @@ export default function SiteHeader() {
 export function SiteFooter({ className = "" }: { className?: string }) {
   return (
     <footer
-      className={`relative z-10 flex w-full flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.07] px-5 pb-[clamp(0.75rem,2.2vh,1.5rem)] pt-3.5 text-sm text-zinc-500 sm:px-8 lg:px-12 ${className}`}
+      className={`relative z-10 flex w-full flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-white/[0.07] px-5 pb-[clamp(0.75rem,2.2vh,1.5rem)] pt-3.5 text-sm text-zinc-500 sm:px-8 lg:px-12 ${className}`}
     >
-      <Link
-        to="/privacy"
-        className="ml-auto transition-colors hover:text-zinc-300"
-      >
+      <Link to="/privacy" className="transition-colors hover:text-zinc-300">
         Privacy
       </Link>
     </footer>
