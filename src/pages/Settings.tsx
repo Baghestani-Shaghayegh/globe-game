@@ -15,13 +15,32 @@ import {
   setConsent,
   subscribeToConsent,
 } from "../lib/consent";
-import {
-  LOCAL_SUMMARY,
-  clearLocalData,
-  storedCount,
-} from "../lib/localData";
 import { GLOBE_THEMES, activeThemeId } from "../lib/globeTheme";
 import { PageShell } from "../components/SiteHeader";
+import PaletteSwatch from "../components/PaletteSwatch";
+
+/**
+ * A lightbulb, struck through when hints are off. Drawn to the same weight as
+ * the speaker beside it, so the two toggles read as one pair of controls.
+ */
+function BulbIcon({ off }: { off: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9.5 17.5h5M10 20.5h4" />
+      <path d="M12 3a6 6 0 0 0-3.5 10.9c.3.3.5.7.5 1.1v.5h6v-.5c0-.4.2-.8.5-1.1A6 6 0 0 0 12 3z" />
+      {off && <path d="M4 20 20 4" />}
+    </svg>
+  );
+}
 
 /**
  * A speaker, crossed out when the sound is off.
@@ -123,78 +142,6 @@ function Cookies() {
   );
 }
 
-/** Erasing everything, behind a second press rather than a browser dialog. */
-function ClearData() {
-  const [asking, setAsking] = useState(false);
-  const [cleared, setCleared] = useState(false);
-  const count = storedCount();
-
-  if (cleared) {
-    return (
-      <Row
-        title="Your data"
-        hint="Erased. Reload the page and the game starts over."
-      >
-        <button
-          onClick={() => window.location.reload()}
-          className={choiceClass(false)}
-        >
-          Reload
-        </button>
-      </Row>
-    );
-  }
-
-  return (
-    <Row
-      title="Your data"
-      hint={
-        count === 0
-          ? "Nothing saved on this device yet."
-          : "Everything below lives in this browser and nowhere else. There is no copy to restore from."
-      }
-    >
-      {count > 0 && (
-        <ul className="mb-3 space-y-1 text-xs text-zinc-500">
-          {LOCAL_SUMMARY.map((line) => (
-            <li key={line}>· {line}</li>
-          ))}
-        </ul>
-      )}
-      {asking ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-rose-300">
-            Erase all of it? This can't be undone.
-          </span>
-          <button
-            onClick={() => {
-              clearLocalData();
-              setCleared(true);
-            }}
-            className="rounded-lg border border-rose-400/40 bg-rose-400/15 px-3 py-1.5 text-sm font-medium text-rose-100 transition-colors hover:bg-rose-400/25"
-          >
-            Erase everything
-          </button>
-          <button
-            onClick={() => setAsking(false)}
-            className="px-2 text-xs text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
-          >
-            Cancel
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={() => setAsking(true)}
-          disabled={count === 0}
-          className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-sm font-medium text-zinc-400 transition-all hover:border-rose-400/40 hover:text-rose-200 disabled:opacity-40 disabled:hover:border-white/10 disabled:hover:text-zinc-400"
-        >
-          Clear my data
-        </button>
-      )}
-    </Row>
-  );
-}
-
 export default function Settings() {
   const [hints, setHints] = useState(hintsEnabled);
   const [sound, setSound] = useState(soundEnabled);
@@ -207,31 +154,28 @@ export default function Settings() {
       </h1>
 
       <Panel>
+        {/* One button each, not a pair. "On / Off" asks the player to work
+            out which of the two words is the state and which is the choice on
+            offer; the icon is the state, and the words beside it are what
+            pressing it does. */}
         <Row
           title="Hints"
           hint="A nudge towards the answer — it halves what that country pays."
         >
-          <div className="flex flex-wrap gap-1.5">
-            {[true, false].map((on) => (
-              <button
-                key={String(on)}
-                onClick={() => {
-                  setHints(on);
-                  setHintsEnabled(on);
-                }}
-                aria-pressed={hints === on}
-                className={choiceClass(hints === on)}
-              >
-                {on ? "On" : "Off"}
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={() => {
+              const next = !hints;
+              setHints(next);
+              setHintsEnabled(next);
+            }}
+            aria-pressed={hints}
+            className={`flex items-center gap-2 ${choiceClass(hints)}`}
+          >
+            <BulbIcon off={!hints} />
+            {hints ? "Turn hints off" : "Turn hints on"}
+          </button>
         </Row>
 
-        {/* One button, not a pair. "On / Off" asks the player to work out
-            which of the two is the state and which is the choice; a speaker
-            with a line through it is the state, and the words beside it are
-            what pressing it does. */}
         <Row title="Sound">
           <button
             onClick={() => {
@@ -252,12 +196,22 @@ export default function Settings() {
 
         {/* The palettes are unlocked by levelling, so they are chosen where
             the levels are rather than duplicated here. */}
-        <Row
-          title="Globe palette"
-          hint={`Currently ${palette?.name ?? "Atlantic"}. New palettes unlock as you level up.`}
-        >
-          <Link to="/levels" className={`inline-block ${choiceClass(false)}`}>
-            Choose a palette
+        {/* This was a link wearing `choiceClass(false)` — the same muted grey
+            the page gives a disabled button, on the one control here that
+            goes somewhere. It shows the palette in use and says what pressing
+            it does. */}
+        <Row title="Globe palette" hint="New palettes unlock as you level up.">
+          <Link
+            to="/levels"
+            aria-label={`Change globe palette, currently ${palette?.name ?? "Meridian"}`}
+            className="inline-flex items-center gap-2.5 rounded-lg border border-white/15 bg-white/[0.05] py-1.5 pl-2 pr-3 text-sm font-medium text-zinc-100 transition-colors hover:border-teal-300/50 hover:bg-white/[0.09]"
+          >
+            {palette && <PaletteSwatch theme={palette} className="h-6 w-6" />}
+            {palette?.name ?? "Meridian"}
+            <span className="text-zinc-500">Change</span>
+            <span aria-hidden="true" className="text-zinc-500">
+              ›
+            </span>
           </Link>
         </Row>
       </Panel>
@@ -268,28 +222,6 @@ export default function Settings() {
         </Panel>
       )}
 
-      <Panel>
-        <ClearData />
-      </Panel>
-
-
-      <p className="mt-6 text-sm text-zinc-500">
-        Your account, if you have one, is managed on the{" "}
-        <Link
-          to="/account"
-          className="text-zinc-300 underline underline-offset-4 hover:text-zinc-100"
-        >
-          account page
-        </Link>
-        . What the game stores and why is set out in the{" "}
-        <Link
-          to="/privacy"
-          className="text-zinc-300 underline underline-offset-4 hover:text-zinc-100"
-        >
-          privacy policy
-        </Link>
-        .
-      </p>
     </PageShell>
   );
 }

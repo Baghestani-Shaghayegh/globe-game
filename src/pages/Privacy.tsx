@@ -106,14 +106,9 @@ export default function Privacy() {
 
       <Section title="Deleting your data">
         <p>
-          Everything held on your device can be erased from{" "}
-          <Link
-            to="/settings"
-            className="text-zinc-200 underline underline-offset-4 hover:text-zinc-50"
-          >
-            Settings
-          </Link>
-          , which clears it immediately and without asking us.
+          Everything held on your device is erased by clearing this site&rsquo;s
+          data in your browser — history, settings and all. It goes
+          immediately, and without asking us.
         </p>
         <p>
           To delete an account and the scores attached to it, write to{" "}

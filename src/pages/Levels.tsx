@@ -9,31 +9,7 @@ import {
   type GlobeTheme,
 } from "../lib/globeTheme";
 import { PageShell } from "../components/SiteHeader";
-
-/** A globe in miniature: enough of the palette to tell them apart at a glance. */
-function Swatch({ theme }: { theme: GlobeTheme }) {
-  const { palette } = theme;
-  return (
-    <span
-      aria-hidden="true"
-      className="relative block h-12 w-12 shrink-0 overflow-hidden rounded-full border border-white/15"
-      style={{ backgroundColor: palette.sphere }}
-    >
-      <span
-        className="absolute inset-x-0 top-0 block h-1/2"
-        style={{ backgroundColor: palette.idle }}
-      />
-      <span
-        className="absolute bottom-1 left-1 block h-2.5 w-2.5 rounded-full"
-        style={{ backgroundColor: palette.found }}
-      />
-      <span
-        className="absolute bottom-1 right-1 block h-2.5 w-2.5 rounded-full"
-        style={{ backgroundColor: palette.missed }}
-      />
-    </span>
-  );
-}
+import PaletteSwatch from "../components/PaletteSwatch";
 
 export default function Levels() {
   const xp = useMemo(() => totalXp(allBuckets(), refresh()), []);
@@ -105,7 +81,7 @@ export default function Levels() {
                 }`}
               >
                 <span className={locked ? "opacity-30 grayscale" : ""}>
-                  <Swatch theme={theme} />
+                  <PaletteSwatch theme={theme} />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span
