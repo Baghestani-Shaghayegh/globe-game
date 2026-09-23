@@ -3,7 +3,10 @@ import {
   dayStart,
   describeBucket,
   isDailyBucket,
+  monthPeriod,
+  monthStart,
   untilWeekEnd,
+  weekPeriod,
   weekStart,
 } from "./leaderboard";
 
@@ -115,4 +118,59 @@ describe("isDailyBucket", () => {
       expect(isDailyBucket(bucket)).toBe(false);
     }
   );
+});
+
+describe("weekPeriod", () => {
+  it("measures last week against the seven days before this one", () => {
+    // Wednesday 2026-09-23; its week began Monday the 21st.
+    const period = weekPeriod(new Date("2026-09-23T12:00:00Z"));
+    expect(iso(period.since)).toBe("2026-09-21T00:00:00.000Z");
+    expect(iso(period.prevSince)).toBe("2026-09-14T00:00:00.000Z");
+    expect(iso(period.prevUntil)).toBe("2026-09-21T00:00:00.000Z");
+  });
+
+  it("leaves no gap between the two windows", () => {
+    const period = weekPeriod(new Date("2026-01-01T09:00:00Z"));
+    expect(iso(period.prevUntil)).toBe(iso(period.since));
+  });
+
+  it("crosses a year boundary backwards", () => {
+    // Monday 2026-01-05 -> the week before began Monday, 29 December 2025.
+    const period = weekPeriod(new Date("2026-01-05T00:00:00Z"));
+    expect(iso(period.since)).toBe("2026-01-05T00:00:00.000Z");
+    expect(iso(period.prevSince)).toBe("2025-12-29T00:00:00.000Z");
+  });
+});
+
+describe("monthStart", () => {
+  it("holds still through the month it belongs to", () => {
+    for (const day of ["01", "14", "30"]) {
+      expect(iso(monthStart(new Date(`2026-09-${day}T18:00:00Z`)))).toBe(
+        "2026-09-01T00:00:00.000Z"
+      );
+    }
+  });
+});
+
+describe("monthPeriod", () => {
+  it("measures last month against the calendar month before", () => {
+    const period = monthPeriod(new Date("2026-09-23T12:00:00Z"));
+    expect(iso(period.since)).toBe("2026-09-01T00:00:00.000Z");
+    expect(iso(period.prevSince)).toBe("2026-08-01T00:00:00.000Z");
+    expect(iso(period.prevUntil)).toBe("2026-09-01T00:00:00.000Z");
+  });
+
+  it("steps back into the previous year from January", () => {
+    const period = monthPeriod(new Date("2026-01-17T12:00:00Z"));
+    expect(iso(period.since)).toBe("2026-01-01T00:00:00.000Z");
+    expect(iso(period.prevSince)).toBe("2025-12-01T00:00:00.000Z");
+  });
+
+  it("does not assume every month is the same length", () => {
+    // February 2028 is a leap month; the window before March must still be
+    // the whole of it rather than thirty days back from the first.
+    const period = monthPeriod(new Date("2028-03-10T12:00:00Z"));
+    expect(iso(period.prevSince)).toBe("2028-02-01T00:00:00.000Z");
+    expect(iso(period.prevUntil)).toBe("2028-03-01T00:00:00.000Z");
+  });
 });

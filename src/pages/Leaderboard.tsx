@@ -3,22 +3,41 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled } from "../lib/supabase";
 import {
+  monthPeriod,
+  myStanding,
   overallTop,
   untilWeekEnd,
-  weekStart,
+  weekPeriod,
   type OverallRow,
+  type Period,
 } from "../lib/leaderboard";
 import AdSlot from "../components/AdSlot";
 import CrownWall from "../components/CrownWall";
 import { crowns as fetchCrowns, type Crown } from "../lib/crowns";
+import { playTap } from "../lib/sound";
 import { PageShell } from "../components/SiteHeader";
 
-/** Gold, silver, bronze, then nothing — a podium only reads as one if it's short. */
-function rankColor(rank: number): string {
-  if (rank === 1) return "#fbbf24";
-  if (rank === 2) return "#cbd5e1";
-  if (rank === 3) return "#d97757";
-  return "#52525b";
+/** How many places the board shows before it stops. */
+const BOARD_SIZE = 40;
+
+/**
+ * First, second and third, as the thing itself rather than a tinted number.
+ *
+ * The rank used to be a numeral coloured gold, silver or bronze. At 12px on a
+ * dark page that reads as three slightly different greys — and it asks anyone
+ * who can't separate those hues to take the game's word for who won. A medal
+ * beside the name says it in a glance, and survives a screenshot.
+ */
+const MEDALS = ["🥇", "🥈", "🥉"] as const;
+
+function Medal({ rank }: { rank: number }) {
+  const medal = MEDALS[rank - 1];
+  if (!medal) return null;
+  return (
+    <span aria-label={`rank ${rank}`} className="text-base leading-none">
+      {medal}
+    </span>
+  );
 }
 
 function Flag({ code }: { code: string | null }) {
@@ -35,44 +54,61 @@ function Flag({ code }: { code: string | null }) {
 }
 
 /**
+ * Where this player finished the period before.
+ *
+ * The one thing that turns a table into a story: a row that says "#10 last
+ * week" is a player climbing, and the board reads as something happening
+ * rather than a list of names. Nothing at all for someone who wasn't playing
+ * then — "new" would be a guess, and most of the time a wrong one.
+ */
+function LastTime({ rank, label }: { rank: number | null; label: string }) {
+  if (rank === null) return null;
+  const medal = MEDALS[rank - 1];
+  return (
+    <span className="flex shrink-0 items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-xs text-zinc-400">
+      {medal ? (
+        <span aria-hidden="true">{medal}</span>
+      ) : (
+        <span className="tabular-nums">#{rank}</span>
+      )}
+      {label}
+    </span>
+  );
+}
+
+/**
  * One place on a board: rank, who, and the number they are ranked by.
  *
- * Nothing else. The rows used to carry a second figure — how many rounds the
- * weekly total came from, how many countries the daily score found — and it
- * competed with the number that actually decides the order.
+ * The rows used to carry a second figure — how many rounds the weekly total
+ * came from — and it competed with the number that actually decides the order.
  */
 function Row({
-  rank,
-  username,
-  country,
+  row,
   isYou,
-  headline,
+  prevLabel,
 }: {
-  rank: number;
-  username: string;
-  country: string | null;
+  row: OverallRow;
   isYou: boolean;
-  headline: string;
+  prevLabel: string;
 }) {
   return (
     <li
-      className={`flex items-center gap-3 px-4 py-2.5 text-sm ${
+      className={`flex items-center gap-2.5 px-4 py-2.5 text-sm ${
         isYou ? "bg-sky-400/[0.07]" : ""
       }`}
     >
-      <span
-        className="w-6 shrink-0 text-right font-medium tabular-nums"
-        style={{ color: rankColor(rank) }}
-      >
-        {rank}
+      <span className="w-6 shrink-0 text-right font-medium tabular-nums text-zinc-500">
+        {row.rank}
       </span>
-      <Flag code={country} />
+      <Medal rank={row.rank} />
+      <Flag code={row.country} />
       <span className={`truncate ${isYou ? "text-sky-200" : "text-zinc-100"}`}>
-        {username}
+        {row.username}
         {isYou && <span className="ml-1.5 text-xs text-sky-300/70">you</span>}
       </span>
+      <LastTime rank={row.prev_rank} label={prevLabel} />
       <span className="ml-auto w-20 shrink-0 text-right font-medium tabular-nums text-zinc-200">
-        {headline}
+        {row.points.toLocaleString()}
       </span>
     </li>
   );
@@ -92,25 +128,29 @@ function Empty({ children }: { children: React.ReactNode }) {
   );
 }
 
-
 export default function Leaderboard() {
   const { profile } = useAuth();
   const meId = profile?.id ?? null;
-  const [overall, setOverall] = useState<OverallRow[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  // Only ever this week. An all-time table freezes: whoever played most in the
+  // Never all time. An all-time table freezes: whoever played most in the
   // first month sits on top of it forever, and a board nobody can climb is one
-  // nobody tries at. The weekly reset is the board.
-  const since = useMemo(() => weekStart(), []);
+  // nobody tries at. Both of these turn over.
+  const periods = useMemo(() => [weekPeriod(), monthPeriod()], []);
+  const [periodId, setPeriodId] = useState<Period["id"]>("week");
+  const period = periods.find((p) => p.id === periodId) ?? periods[0];
+
+  const [overall, setOverall] = useState<OverallRow[] | null>(null);
+  const [mine, setMine] = useState<OverallRow | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!accountsEnabled) return;
     let cancelled = false;
     setOverall(null);
+    setMine(null);
     setError(null);
 
-    overallTop(since, 20)
+    overallTop(period, BOARD_SIZE)
       .then((top) => !cancelled && setOverall(top))
       .catch(() => {
         if (cancelled) return;
@@ -118,10 +158,16 @@ export default function Leaderboard() {
         setError("Couldn't reach the leaderboard. Check your connection.");
       });
 
+    // Their own place, for when it is below the end of the board. A failure
+    // here is silent: it costs one row, and the board itself still stands.
+    myStanding(period)
+      .then((row) => !cancelled && setMine(row))
+      .catch(() => {});
+
     return () => {
       cancelled = true;
     };
-  }, [since]);
+  }, [period]);
 
   const [held, setHeld] = useState<Crown[] | null>(null);
   useEffect(() => {
@@ -140,6 +186,20 @@ export default function Leaderboard() {
     };
   }, []);
 
+  // Two columns once there are enough names to fill them, so a board of forty
+  // is one screen rather than a column you scroll past the end of.
+  const columns = useMemo(() => {
+    if (!overall || overall.length <= 12) return [overall ?? []];
+    const half = Math.ceil(overall.length / 2);
+    return [overall.slice(0, half), overall.slice(half)];
+  }, [overall]);
+
+  const players = overall?.[0]?.players ?? 0;
+  const onBoard =
+    mine !== null && overall !== null
+      ? overall.some((row) => row.user_id === mine.user_id)
+      : false;
+
   return (
     <PageShell>
       <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
@@ -147,8 +207,10 @@ export default function Leaderboard() {
       </h1>
 
       <p className="mt-2 text-sm text-zinc-500">
-        Points from every round you play, the daily included. Everyone starts
-        level again in {untilWeekEnd()}.
+        Points from every round you play, the daily included.{" "}
+        {period.id === "week"
+          ? `Everyone starts level again in ${untilWeekEnd()}.`
+          : "Everyone starts level again on the first of the month."}
       </p>
 
       {!accountsEnabled ? (
@@ -165,34 +227,82 @@ export default function Leaderboard() {
             <CrownWall crowns={held} meId={meId} />
           </div>
 
-          <h2 className="mt-9 text-xl font-semibold tracking-tight text-zinc-50">
-            This week
-          </h2>
+          <div className="mt-9 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div role="tablist" aria-label="Board" className="flex gap-1.5">
+              {periods.map((option) => {
+                const active = option.id === periodId;
+                return (
+                  <button
+                    key={option.id}
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => {
+                      playTap();
+                      setPeriodId(option.id);
+                    }}
+                    className={`rounded-lg border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                      active
+                        ? "border-teal-300/60 bg-teal-300/[0.14] text-teal-100"
+                        : "border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/25 hover:bg-white/[0.06] hover:text-zinc-100"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
 
-          <div className="mt-3">
-            <Panel>
-              {overall === null ? (
+            {/* Proof there is a crowd. One number, and it is the number a
+                player is measuring themselves against. */}
+            {players > 0 && (
+              <span className="text-sm tabular-nums text-zinc-500">
+                {players.toLocaleString()}{" "}
+                {players === 1 ? "player" : "players"}
+              </span>
+            )}
+          </div>
+
+          <div className="mt-3 grid gap-3 lg:grid-cols-[repeat(auto-fit,minmax(24rem,1fr))]">
+            {overall === null ? (
+              <Panel>
                 <Empty>Loading…</Empty>
-              ) : overall.length === 0 ? (
+              </Panel>
+            ) : overall.length === 0 ? (
+              <Panel>
                 <Empty>
                   {error ?? "Nobody has played yet. Be the first name here."}
                 </Empty>
-              ) : (
-                <ul className="divide-y divide-white/[0.05]">
-                  {overall.map((row) => (
-                    <Row
-                      key={row.user_id}
-                      rank={row.rank}
-                      username={row.username}
-                      country={row.country}
-                      isYou={row.user_id === meId}
-                      headline={row.points.toLocaleString()}
-                    />
-                  ))}
-                </ul>
-              )}
-            </Panel>
+              </Panel>
+            ) : (
+              columns.map((column, index) => (
+                <Panel key={index}>
+                  <ul className="divide-y divide-white/[0.05]">
+                    {column.map((row) => (
+                      <Row
+                        key={row.user_id}
+                        row={row}
+                        isYou={row.user_id === meId}
+                        prevLabel={period.prevLabel}
+                      />
+                    ))}
+                  </ul>
+                </Panel>
+              ))
+            )}
           </div>
+
+          {/* Below the board, when they are past the end of it. A player in
+              34th used to open this page and find nothing about themselves on
+              it at all — the page quietly told them they weren't in the game. */}
+          {mine && !onBoard && (
+            <div className="mt-3">
+              <Panel>
+                <ul>
+                  <Row row={mine} isYou prevLabel={period.prevLabel} />
+                </ul>
+              </Panel>
+            </div>
+          )}
 
           {!profile && (
             <p className="mt-8 text-sm text-zinc-500">

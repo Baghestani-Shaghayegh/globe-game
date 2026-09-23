@@ -52,6 +52,58 @@ export function dayStart(at: Date = new Date()): Date {
   );
 }
 
+/** Midnight UTC on the first of the month a moment falls in. */
+export function monthStart(at: Date = new Date()): Date {
+  return new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), 1));
+}
+
+/**
+ * A board's window, and the window before it.
+ *
+ * The board is ranked over `since`. The pair before it is what "#10 last week"
+ * is measured against — the same length of time, ending where this one starts.
+ * Both are sent to the database rather than worked out there, because only the
+ * client knows which board is being looked at.
+ */
+export type Period = {
+  id: "week" | "month";
+  label: string;
+  since: Date;
+  prevSince: Date;
+  prevUntil: Date;
+  /** What the chip on a row calls the period before, e.g. "last week". */
+  prevLabel: string;
+};
+
+export function weekPeriod(at: Date = new Date()): Period {
+  const since = weekStart(at);
+  const prevSince = new Date(since);
+  prevSince.setUTCDate(prevSince.getUTCDate() - 7);
+  return {
+    id: "week",
+    label: "This week",
+    since,
+    prevSince,
+    prevUntil: since,
+    prevLabel: "last week",
+  };
+}
+
+export function monthPeriod(at: Date = new Date()): Period {
+  const since = monthStart(at);
+  const prevSince = new Date(
+    Date.UTC(since.getUTCFullYear(), since.getUTCMonth() - 1, 1)
+  );
+  return {
+    id: "month",
+    label: "This month",
+    since,
+    prevSince,
+    prevUntil: since,
+    prevLabel: "last month",
+  };
+}
+
 /** How much of the week is left, for the "resets in" line under a board. */
 export function untilWeekEnd(at: Date = new Date()): string {
   const end = weekStart(at).getTime() + 7 * 24 * 60 * 60 * 1000;
@@ -99,6 +151,11 @@ export async function postScore(
 
 /** A player's standing on the overall board. */
 export type OverallRow = {
+  /**
+   * Shared on a tie: two players on the same points are both 2nd, and the
+   * next one down is 4th. Fewer runs decides which of them prints first, not
+   * which of them is ranked higher.
+   */
   rank: number;
   user_id: string;
   username: string;
@@ -107,6 +164,10 @@ export type OverallRow = {
   runs: number;
   best_run: number;
   last_played: string;
+  /** Where they finished the period before, or null if they weren't playing. */
+  prev_rank: number | null;
+  /** How many players are on this board, not how many rows came back. */
+  players: number;
 };
 
 /** A per-bucket board that actually has someone on it. */
@@ -125,16 +186,36 @@ export type ActiveBoard = {
  * it as soon as anyone has played at all.
  */
 export async function overallTop(
-  since: Date | null,
-  limit = 20
+  period: Period,
+  limit = 40
 ): Promise<OverallRow[]> {
   if (!supabase) return [];
   const { data, error } = await supabase.rpc("overall_leaderboard", {
-    since: since ? since.toISOString() : null,
+    since: period.since.toISOString(),
     limit_to: limit,
+    prev_since: period.prevSince.toISOString(),
+    prev_until: period.prevUntil.toISOString(),
   });
   if (error) throw error;
   return (data ?? []) as OverallRow[];
+}
+
+/**
+ * The signed-in player's own place, however far down it is.
+ *
+ * The board stops at the top of it, so a player in 34th used to open the page
+ * and find nothing about themselves on it at all. Null when nobody is signed
+ * in, or when they haven't scored in this period.
+ */
+export async function myStanding(period: Period): Promise<OverallRow | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("my_overall_standing", {
+    since: period.since.toISOString(),
+    prev_since: period.prevSince.toISOString(),
+    prev_until: period.prevUntil.toISOString(),
+  });
+  if (error) throw error;
+  return ((data ?? [])[0] as OverallRow | undefined) ?? null;
 }
 
 /** Which per-bucket boards are worth listing, busiest first. */
