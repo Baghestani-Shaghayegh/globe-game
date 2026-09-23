@@ -6,7 +6,9 @@ import {
   landShade,
   setGlobeTheme,
   theme,
+  unlockedThemes,
 } from "./globeTheme";
+import { MAX_LEVEL } from "./levels";
 
 /** Rough perceived lightness, enough to order three shades of the same hue. */
 const lightness = (hex: string) =>
@@ -189,5 +191,35 @@ describe("a border that reads on a filled-in answer", () => {
     expect(sr).toBeLessThanOrEqual(fr);
     expect(sg).toBeLessThanOrEqual(fg);
     expect(sb).toBeLessThanOrEqual(fb);
+  });
+});
+
+describe("unlock levels", () => {
+  it("starts at level 1 and ends at the cap", () => {
+    const levels = GLOBE_THEMES.map((theme) => theme.level);
+    expect(levels[0]).toBe(1);
+    expect(levels[levels.length - 1]).toBe(MAX_LEVEL);
+  });
+
+  it("climbs, one palette per level at most", () => {
+    const levels = GLOBE_THEMES.map((theme) => theme.level);
+    for (let i = 1; i < levels.length; i += 1) {
+      expect(levels[i]).toBeGreaterThan(levels[i - 1]);
+    }
+  });
+
+  it("leaves no long stretch of the climb unrewarded", () => {
+    // The spacing used to end at 16, so levels 17-20 — better than a third of
+    // the XP in the game — paid nothing. Four levels is the most that may
+    // pass without something to show for them.
+    const levels = GLOBE_THEMES.map((theme) => theme.level);
+    for (let i = 1; i < levels.length; i += 1) {
+      expect(levels[i] - levels[i - 1]).toBeLessThanOrEqual(4);
+    }
+  });
+
+  it("has them all by the cap", () => {
+    expect(unlockedThemes(MAX_LEVEL)).toHaveLength(GLOBE_THEMES.length);
+    expect(unlockedThemes(1)).toHaveLength(1);
   });
 });

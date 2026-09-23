@@ -20,8 +20,15 @@ import { dayKey, streakState, type Streak } from "../lib/daily";
  * run.
  */
 
-/** Where "My progress" leads, and the pages that count as being under it. */
-const PROGRESS_PATHS = ["/records", "/stats", "/achievements", "/levels"];
+/**
+ * Where "My progress" leads, and the pages that count as being under it.
+ *
+ * Not `/levels`. That page stopped carrying the progress tabs — it is the
+ * level and the palettes, reached from Settings as often as from here — and a
+ * nav item underlined on a page that does not belong to it says the player is
+ * somewhere they are not.
+ */
+const PROGRESS_PATHS = ["/records", "/stats", "/achievements"];
 
 function NavLink({
   to,

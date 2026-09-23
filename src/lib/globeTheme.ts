@@ -23,7 +23,15 @@ export type Palette = {
 export type GlobeTheme = {
   id: string;
   name: string;
-  /** The level that unlocks it. 1 means it is there from the start. */
+  /**
+   * The level that unlocks it. 1 means it is there from the start.
+   *
+   * Spaced evenly up the curve, with the last one at `MAX_LEVEL`. They used
+   * to sit at 1, 2, 3, 5, 8, 12 and 16: four of the seven were earned inside
+   * the first 10,000 XP, about a twentieth of the climb, and the four levels
+   * after the last unlock cost 70,000 XP — better than a third of the whole
+   * thing — for nothing at all.
+   */
   level: number;
   palette: Palette;
 };
@@ -67,7 +75,7 @@ export const GLOBE_THEMES: GlobeTheme[] = [
     name: "Atlantic",
     // Was the palette everyone started on. Meridian took that place, so this
     // becomes the first thing levelling up gives you.
-    level: 2,
+    level: 3,
     palette: {
       page: PAGE,
       sphere: "#0d1b2a",
@@ -83,7 +91,7 @@ export const GLOBE_THEMES: GlobeTheme[] = [
   {
     id: "midnight",
     name: "Midnight",
-    level: 3,
+    level: 6,
     palette: {
       page: PAGE,
       sphere: "#0b1026",
@@ -99,7 +107,7 @@ export const GLOBE_THEMES: GlobeTheme[] = [
   {
     id: "vintage",
     name: "Vintage",
-    level: 5,
+    level: 9,
     palette: {
       page: PAGE,
       sphere: "#1b1710",
@@ -117,7 +125,7 @@ export const GLOBE_THEMES: GlobeTheme[] = [
   {
     id: "emerald",
     name: "Emerald",
-    level: 8,
+    level: 12,
     palette: {
       page: PAGE,
       sphere: "#04201c",
@@ -133,7 +141,7 @@ export const GLOBE_THEMES: GlobeTheme[] = [
   {
     id: "ember",
     name: "Ember",
-    level: 12,
+    level: 16,
     palette: {
       page: PAGE,
       sphere: "#22110c",
@@ -151,7 +159,7 @@ export const GLOBE_THEMES: GlobeTheme[] = [
   {
     id: "mono",
     name: "Mono",
-    level: 16,
+    level: 20,
     palette: {
       page: PAGE,
       sphere: "#141414",

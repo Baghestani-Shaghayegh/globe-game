@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { allBuckets } from "../lib/records";
 import { refresh } from "../lib/achievements";
-import { MAX_LEVEL, progressFor, totalXp, xpToReach } from "../lib/levels";
+import { progressFor, totalXp } from "../lib/levels";
 import {
   GLOBE_THEMES,
   activeThemeId,
@@ -15,9 +15,14 @@ export default function Levels() {
   const xp = useMemo(() => totalXp(allBuckets(), refresh()), []);
   const progress = useMemo(() => progressFor(xp), [xp]);
   const [chosen, setChosen] = useState(activeThemeId);
+  /** The next palette still to come, for the line under the list. */
+  const next = GLOBE_THEMES.find((theme) => theme.level > progress.level);
 
   const choose = (theme: GlobeTheme) => {
-    if (theme.level > progress.level) return;
+    // The one you are already using stays yours. Unlock levels can move, and
+    // a player who woke up below the new level for their own palette should
+    // not be told they may not have it.
+    if (theme.level > progress.level && theme.id !== chosen) return;
     setGlobeTheme(theme.id);
     setChosen(theme.id);
   };
@@ -64,7 +69,7 @@ export default function Levels() {
       </h2>
       <ul className="mt-3 grid gap-3 sm:grid-cols-2">
         {GLOBE_THEMES.map((theme) => {
-          const locked = theme.level > progress.level;
+          const locked = theme.level > progress.level && theme.id !== chosen;
           const active = chosen === theme.id;
           return (
             <li key={theme.id}>
@@ -110,8 +115,14 @@ export default function Levels() {
         })}
       </ul>
 
+      {/* What is coming, not where it ends. "Level 20 is the last, at
+          190,000 XP" was shown to a player with none of it: it announced the
+          ceiling before they had seen the floor, in a number with no scale
+          attached to it. The cap is still on the palette that waits there. */}
       <p className="mt-6 text-sm text-zinc-600">
-        Level {MAX_LEVEL} is the last, at {xpToReach(MAX_LEVEL).toLocaleString()} XP.
+        {next
+          ? `${next.name} unlocks at level ${next.level}.`
+          : "Every palette unlocked."}
       </p>
     </PageShell>
   );
