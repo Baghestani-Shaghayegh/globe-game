@@ -14,7 +14,7 @@ export default function DailyCard({
   done = false,
 }: {
   to: string;
-  icon: string;
+  icon: React.ReactNode;
   title: string;
   note: string;
   /** Tailwind colour stem, e.g. "sky" — the card's border, wash and glow. */
@@ -54,7 +54,7 @@ export default function DailyCard({
       <span className="flex items-center gap-2">
         <span
           aria-hidden="true"
-          className={`text-lg leading-none ${done ? "opacity-40 grayscale" : ""}`}
+          className={done ? "text-zinc-600" : "text-zinc-300"}
         >
           {icon}
         </span>
