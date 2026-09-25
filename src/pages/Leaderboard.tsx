@@ -121,8 +121,13 @@ function Row({
 
   return (
     <li
-      className={`flex items-center gap-2.5 px-4 py-2.5 text-sm ${sheen} ${
-        isYou ? "bg-sky-400/[0.07]" : ""
+      className={`flex items-center gap-2.5 py-2.5 pr-4 text-sm ${sheen} ${
+        isYou
+          ? // A tint alone was not enough to find yourself in a page of forty
+            // — it reads as a slightly different grey at arm's length. The bar
+            // down the left edge is what the eye catches when scanning.
+            "border-l-[3px] border-sky-400 bg-sky-400/[0.10] pl-[calc(1rem-3px)]"
+          : "border-l-[3px] border-transparent pl-[calc(1rem-3px)]"
       }`}
     >
       <Rank rank={row.rank} />
@@ -137,6 +142,13 @@ function Row({
       </span>
     </li>
   );
+}
+
+/** 1st, 2nd, 3rd, 4th — and 11th through 13th, which break the rule. */
+function ordinal(n: number): string {
+  const tens = n % 100;
+  if (tens >= 11 && tens <= 13) return `${n}th`;
+  return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
 }
 
 function Panel({ children }: { children: React.ReactNode }) {
@@ -400,6 +412,18 @@ export default function Leaderboard() {
               <p className="mt-1 text-sm tabular-nums text-zinc-500">
                 {players.toLocaleString()}{" "}
                 {players === 1 ? "player" : "players"}
+              </p>
+            )}
+            {/* Where you are, whichever page is open. The row itself may be
+                on this page, on the fourth, or pinned under the board; this
+                answers the question without any of that mattering. */}
+            {tab !== "fame" && mine && (
+              <p className="mt-1.5 text-sm text-sky-300/80">
+                You&rsquo;re{" "}
+                <span className="font-medium tabular-nums">
+                  {ordinal(mine.rank)}
+                </span>{" "}
+                of {players.toLocaleString()}
               </p>
             )}
           </div>
