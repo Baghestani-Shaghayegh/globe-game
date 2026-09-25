@@ -92,27 +92,37 @@ function CrownMark({ held, id }: { held: boolean; id: string }) {
  * isn't, highest wins. Returned as a bare number either way, since the only
  * thing the card does with it is compare and format.
  */
-function myBest(crown: Crown, buckets: Bucket[]): number | null {
+function myBest(
+  crown: Crown,
+  buckets: Bucket[]
+): { best: number | null; hintedOnly: boolean } {
   // Hinted runs are out, the same as they are on the server. A card that says
   // "2:56 off it" about a run that could never hold the crown is a lie with a
-  // number in it.
+  // number in it. But having played and having played clean are two different
+  // answers, so the card is told which one this is.
   const unaided = (run: { hintsUsed?: number }) => (run.hintsUsed ?? 0) === 0;
+  const runs = buckets.flatMap((bucket) =>
+    crown.metric === "streak" || new Set(crown.buckets).has(bucket.key)
+      ? bucket.runs
+      : []
+  );
 
   if (crown.metric === "streak") {
-    const best = buckets
-      .flatMap((bucket) => bucket.runs)
-      .filter(unaided)
-      .reduce((most, run) => Math.max(most, run.bestStreak ?? 0), 0);
-    return best > 0 ? best : null;
+    const streaked = runs.filter((run) => (run.bestStreak ?? 0) > 0);
+    const clean = streaked.filter(unaided);
+    const best = clean.reduce((most, run) => Math.max(most, run.bestStreak ?? 0), 0);
+    return {
+      best: best > 0 ? best : null,
+      hintedOnly: best === 0 && streaked.length > 0,
+    };
   }
 
-  const wanted = new Set(crown.buckets);
-  const times = buckets
-    .filter((bucket) => wanted.has(bucket.key))
-    .flatMap((bucket) => bucket.runs)
-    .filter((run) => isComplete(run) && unaided(run))
-    .map((run) => run.ms);
-  return times.length ? Math.min(...times) : null;
+  const cleared = runs.filter(isComplete);
+  const clean = cleared.filter(unaided);
+  return {
+    best: clean.length ? Math.min(...clean.map((run) => run.ms)) : null,
+    hintedOnly: clean.length === 0 && cleared.length > 0,
+  };
 }
 
 /** A record, in whatever it is measured in. */
@@ -131,10 +141,12 @@ function reading(crown: Crown, value: number): string {
 function Standing({
   crown,
   mine,
+  hintedOnly,
   meId,
 }: {
   crown: Crown;
   mine: number | null;
+  hintedOnly: boolean;
   meId: string | null;
 }) {
   const holder = crown.holder;
@@ -158,11 +170,23 @@ function Standing({
     );
   }
   if (mine === null) {
+    // Having played it and having played it clean are different answers, and
+    // the second is the one where somebody would otherwise wonder why their
+    // run isn't counted.
+    if (hintedOnly) {
+      return (
+        <span className="text-zinc-500">
+          {crown.metric === "streak"
+            ? "Your streaks were set with hints — crowns don't count those."
+            : "You cleared it with hints — crowns don't count those."}
+        </span>
+      );
+    }
     return (
       <span className="text-zinc-500">
         {crown.metric === "streak"
-          ? "No streak on this device yet."
-          : "You haven't finished one yet."}
+          ? "No streak of yours yet."
+          : "You haven't cleared this map yet."}
       </span>
     );
   }
@@ -206,7 +230,7 @@ function Card({
 }) {
   const holder = crown.holder;
   const yours = meId !== null && holder?.user_id === meId;
-  const mine = myBest(crown, buckets);
+  const { best: mine, hintedOnly } = myBest(crown, buckets);
 
   // Where the card sends you. A world crown is its own game type; a continent
   // is contested in all six, so it opens the one it is named for in the
@@ -266,8 +290,19 @@ function Card({
                 {crown.heldIn}
               </span>
             )}
-            <span className="ml-auto shrink-0 font-mono text-sm tabular-nums text-amber-200">
-              {reading(crown, crown.metric === "streak" ? (holder.best_streak ?? 0) : holder.ms)}
+            {/* Labelled, because a bare "8:32" beside a name is a number
+                without a noun — it could be how long ago they played, or how
+                long they have held it. */}
+            <span className="ml-auto flex shrink-0 items-baseline gap-1.5">
+              <span className="text-[10px] uppercase tracking-wide text-zinc-600">
+                Record
+              </span>
+              <span className="font-mono text-sm tabular-nums text-amber-200">
+                {reading(
+                  crown,
+                  crown.metric === "streak" ? (holder.best_streak ?? 0) : holder.ms
+                )}
+              </span>
             </span>
           </>
         ) : (
@@ -279,7 +314,12 @@ function Card({
         {loading ? (
           <span className="block h-3 w-40 animate-pulse rounded bg-white/[0.05]" />
         ) : (
-          <Standing crown={crown} mine={mine} meId={meId} />
+          <Standing
+            crown={crown}
+            mine={mine}
+            hintedOnly={hintedOnly}
+            meId={meId}
+          />
         )}
       </p>
     </Link>
