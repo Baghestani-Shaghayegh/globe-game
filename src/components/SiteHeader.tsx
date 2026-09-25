@@ -160,8 +160,20 @@ export default function SiteHeader() {
               {/* "My profile" rather than "Sign in" while signed out. The
                   button led to a page that is a profile either way, and a
                   bare "Sign in" asks for something before it has said what
-                  for — the page behind it is where the case gets made. */}
-              {profile ? profile.username : session ? "Finish setup" : "My profile"}
+                  for — the page behind it is where the case gets made.
+                  
+                  The placeholder label goes on a narrow screen, as the
+                  Settings label does: the header already wraps onto three
+                  rows at 390px, and a glyph is enough for a button nobody has
+                  put a name in yet. A name, once there is one, stays — that
+                  is the player's, not a label. */}
+              {profile ? (
+                profile.username
+              ) : (
+                <span className="hidden sm:inline">
+                  {session ? "Finish setup" : "My profile"}
+                </span>
+              )}
             </Link>
           )}
         </div>
