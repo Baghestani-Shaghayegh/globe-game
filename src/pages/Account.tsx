@@ -425,7 +425,11 @@ function Stats() {
             className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center transition-colors hover:border-white/25"
           >
             <span className="flex items-center justify-center gap-2">
-              <span className="text-teal-300/90 [&_svg]:h-6 [&_svg]:w-6">
+              {/* `flex`, not an inline span: an inline SVG sits on the text
+                  baseline, so the span it lives in is a glyph's descender
+                  taller than the drawing and centring the box leaves the
+                  drawing riding high. */}
+              <span className="flex items-center text-teal-300/90 [&_svg]:h-6 [&_svg]:w-6">
                 {tile.icon}
               </span>
               <span className="text-2xl font-semibold tabular-nums text-zinc-50">
