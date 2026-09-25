@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { bestTime, formatDuration } from "../lib/records";
 import { CROWN_RUN, type Crown } from "../lib/crowns";
 import { gamePath, type GameType } from "../data/modes";
-import { Medallion } from "./BadgeMedal";
 
 /**
  * The hall of fame: one holder per crown, held until somebody is faster.
@@ -23,13 +22,62 @@ import { Medallion } from "./BadgeMedal";
  * picture closing.
  */
 
-/** A crown, for the medal's face. */
-const CROWN_GLYPH = (
-  <>
-    <path d="M4 17.5h16M4.6 6.2l3.9 3.3L12 4.2l3.5 5.3 3.9-3.3-1.4 9.3H6z" />
-    <circle cx="12" cy="2.9" r="1.2" fill="currentColor" stroke="none" />
-  </>
-);
+/**
+ * The crown itself, with no disc behind it.
+ *
+ * Badges are struck medals, and a crown sitting inside one was a crown
+ * pretending to be a badge — the same object twice, on two pages that hand out
+ * different things. A crown is already a shape; it does not need a coin to sit
+ * on to be read as an award.
+ *
+ * Gold and filled when somebody holds it, drawn in outline when nobody does —
+ * the same "here but not yours yet" the locked badges use, minus the metal.
+ */
+function CrownMark({ held, id }: { held: boolean; id: string }) {
+  const gold = `crown-${id}`;
+
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-9 w-9 shrink-0"
+      fill="none"
+    >
+      {held && (
+        <defs>
+          <linearGradient id={gold} x1="0" y1="0" x2="0.3" y2="1">
+            <stop offset="0%" stopColor="#fde68a" />
+            <stop offset="55%" stopColor="#f0b429" />
+            <stop offset="100%" stopColor="#b45309" />
+          </linearGradient>
+        </defs>
+      )}
+
+      <path
+        d="M2.4 6.6 7 11.3 12 3.4l5 7.9 4.6-4.7-1.5 11.1H3.9z"
+        fill={held ? `url(#${gold})` : "none"}
+        stroke={held ? "#fef3c7" : "#4b5563"}
+        strokeWidth={held ? 0.9 : 1.6}
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4.6 20.4h14.8"
+        stroke={held ? "#fde68a" : "#4b5563"}
+        strokeWidth={held ? 2 : 1.6}
+        strokeLinecap="round"
+      />
+
+      {/* Three stones, only on a crown somebody actually holds. */}
+      {held && (
+        <>
+          <circle cx="7" cy="14.4" r="1" fill="#7c2d12" opacity="0.5" />
+          <circle cx="12" cy="13.8" r="1.2" fill="#7c2d12" opacity="0.5" />
+          <circle cx="17" cy="14.4" r="1" fill="#7c2d12" opacity="0.5" />
+        </>
+      )}
+    </svg>
+  );
+}
 
 /** Your own best over every bucket a crown is contested in. */
 function myBest(buckets: string[]): number | null {
@@ -120,13 +168,7 @@ function Card({
       }`}
     >
       <div className="flex items-start gap-3">
-        <Medallion
-          id={`crown-${crown.id}`}
-          lit={holder !== null}
-          className="h-12 w-12"
-        >
-          {CROWN_GLYPH}
-        </Medallion>
+        <CrownMark id={crown.id} held={holder !== null} />
 
         <div className="min-w-0 flex-1">
           <p
