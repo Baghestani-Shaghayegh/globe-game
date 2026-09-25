@@ -89,19 +89,10 @@ export default function Achievements() {
         </span>
       </div>
 
+      {/* The count stays; the bar that used to sit here did not. It drew the
+          same fraction a second time, unlabelled, eight pixels under the
+          words that already said it precisely. */}
       <ProgressTabs />
-
-      <div className="mt-4 flex items-center gap-3">
-        <span
-          aria-hidden="true"
-          className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-white/[0.07]"
-        >
-          <span
-            className="block h-full rounded-full bg-amber-300/70"
-            style={{ width: `${(counts.unlocked / counts.total) * 100}%` }}
-          />
-        </span>
-      </div>
 
       <ul className="mt-7 grid gap-3 sm:grid-cols-2">
         {ordered.map((badge) => (
