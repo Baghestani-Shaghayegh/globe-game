@@ -1,7 +1,7 @@
 import { allBuckets, isComplete, type Bucket, type Run } from "./records";
 import { allCountries, totals, type CountryRow } from "./countryStats";
 import { dayKey, perfectDays, playedDays, streak } from "./daily";
-import { GAME_TYPES, MODES, type GameType } from "../data/modes";
+import { BLITZ_SECONDS, GAME_TYPES, MODES, type GameType } from "../data/modes";
 
 /**
  * Everything an achievement can be measured against, gathered once.
@@ -272,14 +272,20 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: "daily-50",
     name: "Fifty dailies",
-    desc: "Play fifty daily challenges, in a row or not.",
+    // The two badges above it want days running, so this one has to say that
+    // it doesn't. "In a row or not" said so at the cost of reading like a
+    // riddle.
+    desc: "Play fifty daily challenges in total — no streak needed.",
     icon: "🗓️",
     measure: ({ dailyPlayed }) => ({ have: dailyPlayed, need: 50 }),
   },
   {
     id: "sudden-death",
     name: "Nerves of steel",
-    desc: "Reach a streak of 25 under sudden death.",
+    // Named settings a player may never have opened, so each says what the
+    // setting does. "Under sudden death" means nothing until you know that
+    // one miss ends the round.
+    desc: "Get 25 right in a row with Sudden death on — one miss ends the round.",
     icon: "💀",
     measure: ({ buckets }) => ({
       have: bestStreak(buckets.filter((b) => b.ruleset === "sudden")),
@@ -289,7 +295,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: "blitz",
     name: "Against the clock",
-    desc: "Score 1,250 points in a blitz round.",
+    desc: `Score 1,250 points in a Blitz round — ${BLITZ_SECONDS} seconds a country.`,
     icon: "⏱️",
     measure: ({ buckets }) => ({
       have: buckets
