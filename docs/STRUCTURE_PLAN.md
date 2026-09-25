@@ -292,6 +292,14 @@ Ranks are `rank()`, not `row_number()`: two players on the same points are
 both 2nd and the next one is 4th. Fewer runs still decides which of a tied
 pair prints first — it orders the rows, it no longer decides who outranks whom.
 
+`today_since` adds one more column, `today_points`: what that player has put
+on the board since that moment, which the rows print under the total as a
+green `+203`. Passed in rather than taken from `now()` in SQL for the same
+reason the previous window is, and it is `dayStart()` — the UTC midnight the
+daily challenge already turns over on, so "today" means one thing across the
+game. Null means the column comes back 0 rather than the whole total being
+passed off as today's.
+
 `limit_to` is clamped to 100 a page, and `offset_by` walks the pages —
 `BOARD_SIZE` in `pages/Leaderboard.tsx` sets both, at forty a page. The count
 the pager divides by is the `players` column, which is the whole board rather

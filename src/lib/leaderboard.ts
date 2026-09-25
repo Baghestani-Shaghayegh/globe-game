@@ -168,6 +168,8 @@ export type OverallRow = {
   prev_rank: number | null;
   /** How many players are on this board, not how many rows came back. */
   players: number;
+  /** Points added today, or 0. What makes the table read as moving. */
+  today_points: number;
 };
 
 /** A per-bucket board that actually has someone on it. */
@@ -197,6 +199,9 @@ export async function overallTop(
     prev_since: period.prevSince.toISOString(),
     prev_until: period.prevUntil.toISOString(),
     offset_by: offset,
+    // The same UTC midnight the daily challenge turns over on, so "today"
+    // means one thing across the game rather than one thing per feature.
+    today_since: dayStart().toISOString(),
   });
   if (error) throw error;
   return (data ?? []) as OverallRow[];
@@ -220,6 +225,7 @@ export async function myStanding(period: Period): Promise<OverallRow | null> {
     since: period.since.toISOString(),
     prev_since: period.prevSince.toISOString(),
     prev_until: period.prevUntil.toISOString(),
+    today_since: dayStart().toISOString(),
   });
   if (error) throw error;
   return ((data ?? [])[0] as OverallRow | undefined) ?? null;
