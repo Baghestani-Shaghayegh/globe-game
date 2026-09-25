@@ -105,21 +105,22 @@ export type CrownHolder = {
 /**
  * What each crown is called.
  *
- * One pattern across the six: the thing you mastered, then what you did with
- * it. They were half "King of X" and half nickname, which read as one trophy
- * and five also-rans — and three of them were kings, which is a needless thing
- * to hand half the people who play a game about the whole world.
+ * Sara picked these. They are not one pattern — three kings and three
+ * nicknames — and that is the point: "King of the Globe" is a thing somebody
+ * would say out loud about themselves, which a tidier "World Namer" is not.
+ * A hall of fame is allowed a bit of swagger.
+ *
+ * The one that changed is the find crown. It was "Pathfinder", which is a
+ * person who finds paths; this is the game that names a country and asks you
+ * to go and find it, which the daily already calls a Country hunt.
  */
 const TITLES: Record<GameType, string> = {
-  name: "World Namer",
-  // Was "Pathfinder", which is a person who finds paths. This crown is for
-  // the game that names a country and asks you to go and find it — the same
-  // thing the daily calls a Country hunt, so it borrows that word.
+  name: "King of the Globe",
   find: "Country Hunter",
-  flag: "Flag Reader",
-  capital: "Capital Master",
+  flag: "King of Flags",
+  capital: "Capital King",
   outline: "Shape Reader",
-  famous: "Clue Solver",
+  famous: "Know-it-all",
 };
 
 /** What the holder had to do, for the line under the title. */

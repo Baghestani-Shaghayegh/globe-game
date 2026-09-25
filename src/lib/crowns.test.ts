@@ -72,8 +72,8 @@ describe("what the crowns are called", () => {
   });
 
   it("makes the globe the headline one", () => {
-    expect(crownTitle("name")).toBe("World Namer");
-    expect(crownTitle("flag")).toBe("Flag Reader");
+    expect(crownTitle("name")).toBe("King of the Globe");
+    expect(crownTitle("flag")).toBe("King of Flags");
   });
 });
 
@@ -143,13 +143,6 @@ describe("the catalogue", () => {
     expect(crownCatalogue().every((c) => c.holder === null && c.heldIn === null)).toBe(
       true
     );
-  });
-
-  // Half of them used to be kings, in a game about the whole world.
-  it("crowns nobody a king", () => {
-    for (const title of crownCatalogue().map((c) => c.title)) {
-      expect(title).not.toMatch(/\b(king|queen|lord|lady)\b/i);
-    }
   });
 
   it("gets the possessive right on a continent that ends in s", () => {
