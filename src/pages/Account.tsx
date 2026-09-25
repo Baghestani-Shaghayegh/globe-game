@@ -11,8 +11,6 @@ import {
 import { FLAG_CODE } from "../data/flags";
 import { getCountryMeta } from "../data/countries";
 import { PageShell } from "../components/SiteHeader";
-import { allBuckets } from "../lib/records";
-import { refresh, tally } from "../lib/achievements";
 
 /** Every country the game ships a flag for, by the name a player would look for. */
 function flagOptions(): { code: string; name: string }[] {
@@ -88,16 +86,12 @@ function oauthErrorFromUrl(): string | null {
  * carrying your records to another device, which sounds like the obvious one
  * and is not true: records, streaks, badges and the practice deck live in this
  * browser, and an account does not move them.
+ *
+ * No count of what the player has already done, either. A tally of rounds and
+ * badges under the heading read as leverage — look what you stand to miss —
+ * where the four lines below simply say what the thing is.
  */
 function WhySignIn() {
-  // Read once, from the history the game already keeps. A player who has been
-  // at this a while should see their own numbers rather than a sales pitch.
-  const played = useMemo(() => {
-    const buckets = allBuckets();
-    const runs = buckets.reduce((sum, bucket) => sum + bucket.runs.length, 0);
-    return { runs, badges: tally(refresh()).unlocked };
-  }, []);
-
   const lines = [
     "Your name and flag on the weekly and monthly boards",
     "A crown in the hall of fame, if you clear the map fastest",
@@ -110,15 +104,6 @@ function WhySignIn() {
       <h2 className="text-lg font-semibold text-zinc-50">
         Create a free account
       </h2>
-
-      {played.runs > 0 && (
-        <p className="mt-1.5 text-sm text-zinc-400">
-          {played.runs === 1 ? "One round" : `${played.runs} rounds`}
-          {played.badges > 0 &&
-            ` and ${played.badges === 1 ? "one badge" : `${played.badges} badges`}`}{" "}
-          so far — none of it is on a board yet.
-        </p>
-      )}
 
       <ul className="mt-4 space-y-2.5">
         {lines.map((line) => (
