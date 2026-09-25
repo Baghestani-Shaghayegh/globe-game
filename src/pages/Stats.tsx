@@ -5,7 +5,6 @@ import {
   allCountries,
   byContinent,
   mastery,
-  mostMissed,
   totals,
   type ContinentRow,
   type CountryRow,
@@ -39,7 +38,13 @@ function Tile({
   label,
 }: {
   value: string;
-  /** What the figure is counted in, small and quiet beside it — "pts". */
+  /**
+   * What the figure is counted in, small and quiet beside it.
+   *
+   * Spelled out rather than abbreviated: the hint buttons in a round say
+   * "½ points" and "0 points", and the menu says "2× points", so "pts" here
+   * would be the only abbreviation in the game.
+   */
   unit?: string;
   label: string;
 }) {
@@ -86,35 +91,6 @@ function ContinentBar({ row }: { row: ContinentRow }) {
       </span>
       <span className="hidden w-28 shrink-0 text-right text-xs tabular-nums text-zinc-600 sm:block">
         {row.countries} {row.countries === 1 ? "country" : "countries"}
-      </span>
-    </li>
-  );
-}
-
-function MissedRow({ row }: { row: CountryRow }) {
-  return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm">
-      <span className="text-zinc-100">{row.displayName}</span>
-      <span className="text-xs text-zinc-600">
-        {row.continents.map(continentName).join(" · ")}
-      </span>
-      <span className="ml-auto flex items-center gap-3 tabular-nums">
-        {row.missed > 0 && (
-          <span className="text-rose-300/80">
-            {row.missed} missed
-          </span>
-        )}
-        {row.fumbled > 0 && (
-          <span className="text-amber-300/70">
-            {row.fumbled} on the retry
-          </span>
-        )}
-        <span
-          className="w-9 text-right"
-          style={{ color: gradeColor(row.accuracy) }}
-        >
-          {row.accuracy}%
-        </span>
       </span>
     </li>
   );
@@ -221,7 +197,6 @@ export default function Stats() {
   const [rows] = useState<CountryRow[]>(() => allCountries());
   const summary = useMemo(() => totals(rows), [rows]);
   const continents = useMemo(() => byContinent(rows), [rows]);
-  const missed = useMemo(() => mostMissed(10, rows), [rows]);
   const played = useMemo(() => {
     const runs = allBuckets().flatMap((b) => b.runs);
     return {
@@ -261,7 +236,7 @@ export default function Stats() {
             />
             <Tile
               value={best ? best.points.toLocaleString() : "—"}
-              unit={best ? "pts" : undefined}
+              unit={best ? "points" : undefined}
               label={best ? "Best round" : "No scored round yet"}
             />
             {/* Two tiles, the way Wordle counts a streak: the one you are on
@@ -307,19 +282,6 @@ export default function Stats() {
               ))}
             </ul>
           </Section>
-
-          {missed.length > 0 && (
-            <Section
-              title="Keeps beating you"
-              hint="missed · got on the retry · first-try accuracy"
-            >
-              <ul className="divide-y divide-white/[0.05]">
-                {missed.map((row) => (
-                  <MissedRow key={row.geoName} row={row} />
-                ))}
-              </ul>
-            </Section>
-          )}
 
           <p className="mt-6 text-sm tabular-nums text-zinc-600">
             {summary.seen} {summary.seen === 1 ? "country" : "countries"} put
