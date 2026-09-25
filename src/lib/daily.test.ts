@@ -12,6 +12,7 @@ import {
   dayKey,
   dayNumber,
   playedDays,
+  recentDays,
   resultFor,
   saveResult,
   streak,
@@ -283,5 +284,34 @@ describe("the daily's time limit", () => {
     expect(isDailyBucket(bucket)).toBe(true);
     expect(describeBucket(bucket)).toContain("Daily");
     expect(describeBucket(bucket)).toContain("5 min");
+  });
+});
+
+describe("recentDays", () => {
+  it("returns a fortnight, oldest first, ending today", () => {
+    const days = recentDays(14, "2026-09-25");
+    expect(days).toHaveLength(14);
+    expect(days[0].day).toBe("2026-09-12");
+    expect(days[13].day).toBe("2026-09-25");
+  });
+
+  it("marks the days that were not played", () => {
+    saveResult({
+      day: "2026-09-24",
+      number: 1,
+      type: "name",
+      points: 900,
+      found: 9,
+      total: 10,
+      ms: 120_000,
+      outcomes: [],
+    });
+
+    const days = recentDays(3, "2026-09-25");
+    expect(days.map((day) => day.found)).toEqual([null, 9, null]);
+  });
+
+  it("crosses a month boundary backwards", () => {
+    expect(recentDays(3, "2026-10-01")[0].day).toBe("2026-09-29");
   });
 });

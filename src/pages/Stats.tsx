@@ -10,7 +10,7 @@ import {
   type CountryRow,
 } from "../lib/countryStats";
 import { bestRun } from "../lib/records";
-import { dayKey, scoreSpread, streakState } from "../lib/daily";
+import { dayKey, recentDays, streakState, type DailyDay } from "../lib/daily";
 import { MODES } from "../data/modes";
 import type { Continent } from "../data/continents";
 import { PageShell, ProgressTabs } from "../components/SiteHeader";
@@ -125,45 +125,67 @@ function MasteryBar({ mastered, total }: { mastered: number; total: number }) {
 }
 
 /**
- * Every daily you have played, by how many of the ten you found.
+ * The last fortnight of dailies, one square a day, oldest on the left.
  *
- * One row per score, ten at the top, so a good run of days leans the bars
- * upward — the shape is the point, which is why the bars are all one colour
- * and only the counts are labelled. Today's score is not marked out: the row
- * it lands in is the mark.
+ * GitHub's contribution squares, for a fortnight rather than a year: a row of
+ * days where the gaps are as legible as the fills, which is what a daily is
+ * about. It replaced a distribution of scores — Wordle's chart — which needs
+ * bins that are all plausible, and ours are not: eleven of them, nine always
+ * empty, and everything piled at the top.
+ *
+ * One hue, four steps. A day played and scored nought is grey rather than a
+ * faint teal: it is not a small score, it is a different thing from a good
+ * day, and it must not read as "nearly nothing".
  */
-function DailySpread({ spread }: { spread: { found: number; days: number }[] }) {
-  const most = Math.max(...spread.map((bin) => bin.days), 1);
+function DailyStrip({ days }: { days: DailyDay[] }) {
+  const tone = (day: DailyDay) => {
+    if (day.found === null) return "border border-white/10 bg-transparent";
+    if (day.found === 0) return "bg-white/[0.12]";
+    const share = day.total > 0 ? day.found / day.total : 0;
+    if (share >= 1) return "bg-teal-300";
+    if (share >= 0.8) return "bg-teal-300/70";
+    if (share >= 0.5) return "bg-teal-300/45";
+    return "bg-teal-300/25";
+  };
 
-  // Eleven rows of which seven are empty is not a shape, it is a gap. The
-  // chart runs from ten down to the worst day there has been, and never
-  // shows fewer than five rows — a week of tens would otherwise be a single
-  // bar with nothing to be better than.
-  const worst = spread.reduce(
-    (last, bin, index) => (bin.days > 0 ? index : last),
-    0
-  );
-  const rows = spread.slice(0, Math.max(worst, 4) + 1);
+  const dayLabel = (day: DailyDay) => {
+    const when = new Date(`${day.day}T00:00:00Z`).toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    });
+    return day.found === null
+      ? `${when} · not played`
+      : `${when} · ${day.found}/${day.total}`;
+  };
+
+  const first = days[0];
+  const opening = first
+    ? new Date(`${first.day}T00:00:00Z`).toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC",
+      })
+    : "";
 
   return (
-    <ul className="space-y-1 px-4 py-3">
-      {rows.map((bin) => (
-        <li key={bin.found} className="flex items-center gap-3 text-xs">
-          <span className="w-5 shrink-0 text-right tabular-nums text-zinc-500">
-            {bin.found}
-          </span>
-          <span className="flex h-4 min-w-0 flex-1 items-center">
+    <div className="px-4 py-3.5">
+      <ul className="flex flex-wrap gap-1.5">
+        {days.map((day) => (
+          <li key={day.day}>
             <span
-              className="h-full rounded-[3px] bg-teal-300/70"
-              style={{ width: `${Math.max(bin.days > 0 ? 3 : 0, (bin.days / most) * 100)}%` }}
+              title={dayLabel(day)}
+              aria-label={dayLabel(day)}
+              className={`block h-7 w-7 rounded-md ${tone(day)}`}
             />
-            {bin.days > 0 && (
-              <span className="ml-2 tabular-nums text-zinc-400">{bin.days}</span>
-            )}
-          </span>
-        </li>
-      ))}
-    </ul>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-2 flex items-baseline justify-between text-xs text-zinc-600">
+        <span>{opening}</span>
+        <span>Today</span>
+      </div>
+    </div>
   );
 }
 
@@ -200,7 +222,7 @@ export default function Stats() {
   const [run] = useState(() => streakState(dayKey()));
   const learned = useMemo(() => mastery(rows), [rows]);
   const best = useMemo(() => bestRun(), []);
-  const spread = useMemo(() => scoreSpread(), []);
+  const days = useMemo(() => recentDays(), []);
 
   return (
     <PageShell>
@@ -249,11 +271,12 @@ export default function Stats() {
 
           <MasteryBar mastered={learned.mastered} total={learned.total} />
 
-          {spread.some((bin) => bin.days > 0) && (
-            <Section title="Daily scores" hint="how each day has gone">
-              <DailySpread spread={spread} />
-            </Section>
-          )}
+          <Section
+            title="The last fortnight"
+            hint="one square a day · fuller means more found"
+          >
+            <DailyStrip days={days} />
+          </Section>
 
           <h2 className="mt-10 text-xl font-semibold tracking-tight text-zinc-50">
             Where you're weak
