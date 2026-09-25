@@ -103,11 +103,6 @@ export default function Achievements() {
         </span>
       </div>
 
-      <p className="mt-4 text-sm text-zinc-500">
-        Counted from everything you've already played — badges you'd earned
-        before this page existed are here too.
-      </p>
-
       <ul className="mt-7 grid gap-3 sm:grid-cols-2">
         {ordered.map((badge) => (
           <Badge key={badge.id} badge={badge} />
