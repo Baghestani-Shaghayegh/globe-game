@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled, supabase, urlAuthError } from "../lib/supabase";
 import {
@@ -10,6 +11,10 @@ import {
 import { FLAG_CODE } from "../data/flags";
 import { getCountryMeta } from "../data/countries";
 import { PageShell } from "../components/SiteHeader";
+import { allBuckets } from "../lib/records";
+import { refresh, tally } from "../lib/achievements";
+import { dayKey, playedDays, streakState } from "../lib/daily";
+import { progressFor, totalXp } from "../lib/levels";
 
 /** Every country the game ships a flag for, by the name a player would look for. */
 function flagOptions(): { code: string; name: string }[] {
@@ -361,6 +366,132 @@ function memberSince(iso?: string): string | null {
 }
 
 /**
+ * The four numbers worth a glance, read from the history in this browser.
+ *
+ * Deliberately a summary and not a second Records page: each tile is a link
+ * to the page that goes into it. They are local figures on a page about the
+ * account, which is the honest arrangement while the account does not hold
+ * them — see the note on `WhySignIn`.
+ */
+function Stats() {
+  const figures = useMemo(() => {
+    const earned = refresh();
+    return {
+      streak: streakState(dayKey()).days,
+      level: progressFor(totalXp(allBuckets(), earned)).level,
+      days: playedDays().length,
+      badges: tally(earned),
+    };
+  }, []);
+
+  const tiles = [
+    { to: "/records", label: "Day streak", value: String(figures.streak) },
+    { to: "/levels", label: "Level", value: String(figures.level) },
+    { to: "/stats", label: "Days played", value: String(figures.days) },
+    {
+      to: "/achievements",
+      label: "Badges",
+      value: `${figures.badges.unlocked}/${figures.badges.total}`,
+    },
+  ];
+
+  return (
+    <section className="mt-8">
+      <h2 className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+        Your play
+      </h2>
+      <div className="mt-2.5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {tiles.map((tile) => (
+          <Link
+            key={tile.label}
+            to={tile.to}
+            className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center transition-colors hover:border-white/25"
+          >
+            <span className="block text-2xl font-semibold tabular-nums text-zinc-50">
+              {tile.value}
+            </span>
+            <span className="mt-0.5 block text-xs text-zinc-500">
+              {tile.label}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Closing the account, behind a second press rather than a browser dialog.
+ *
+ * `delete_my_account` takes no arguments: the only account it can delete is
+ * the one calling it. Everything held against that account goes with it —
+ * profile, posted scores, any rooms — because all of it cascades from the
+ * user row. What stays is what was never on the server: the records, streak
+ * and badges in this browser, which is said here rather than discovered.
+ */
+function DeleteAccount() {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const [asking, setAsking] = useState(false);
+  const [working, setWorking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const remove = async () => {
+    if (!supabase || working) return;
+    setWorking(true);
+    setError(null);
+    const { error: failed } = await supabase.rpc("delete_my_account");
+    if (failed) {
+      setError(failed.message);
+      setWorking(false);
+      return;
+    }
+    await signOut();
+    navigate("/");
+  };
+
+  return (
+    <section className="mt-10 border-t border-white/[0.07] pt-6">
+      {asking ? (
+        <div className="rounded-2xl border border-rose-400/30 bg-rose-400/[0.06] p-5">
+          <p className="text-sm text-zinc-100">
+            Delete your account for good?
+          </p>
+          <p className="mt-1.5 text-sm text-zinc-400">
+            Your name, your flag and every score you have posted go with it,
+            and the name is free for someone else to take. Your records,
+            streak and badges are in this browser and stay there.
+          </p>
+          {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => void remove()}
+              disabled={working}
+              className="rounded-lg border border-rose-400/40 bg-rose-400/15 px-4 py-2 text-sm font-medium text-rose-100 transition-colors hover:bg-rose-400/25 disabled:opacity-50"
+            >
+              {working ? "Deleting…" : "Yes, delete it"}
+            </button>
+            <button
+              onClick={() => setAsking(false)}
+              className="text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+            >
+              Keep my account
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setAsking(true)}
+          className="text-sm text-zinc-600 underline underline-offset-4 transition-colors hover:text-rose-300"
+        >
+          Delete my account
+        </button>
+      )}
+    </section>
+  );
+}
+
+/**
  * The signed-in half: who you are, and a pencil beside each part of it.
  *
  * It was a form — two fields and a Save button, shown in full whether or not
@@ -523,19 +654,36 @@ function ProfileForm({
           <label htmlFor="country" className="block text-sm text-zinc-400">
             Your flag <span className="text-zinc-600">(optional)</span>
           </label>
-          <select
-            id="country"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            className={`mt-1.5 ${inputClass}`}
-          >
-            <option value="">No flag</option>
-            {options.map((option) => (
-              <option key={option.code} value={option.code}>
-                {option.name}
-              </option>
-            ))}
-          </select>
+          {/* The browser's own arrow sits hard against the border of a
+              full-width select. Ours is drawn instead, with room around it,
+              the way the map picker on the menu does it. */}
+          <div className="relative mt-1.5">
+            <select
+              id="country"
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              className={`appearance-none pr-11 ${inputClass}`}
+            >
+              <option value="">No flag</option>
+              {options.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
           {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -556,12 +704,16 @@ function ProfileForm({
         </div>
       )}
 
+      <Stats />
+
       <button
         onClick={() => void signOut()}
         className="mt-8 text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
       >
         Sign out
       </button>
+
+      <DeleteAccount />
     </>
   );
 }
@@ -586,7 +738,7 @@ export default function Account() {
   return (
     <Shell>
       <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
-        "My profile"
+        My profile
       </h1>
 
       {loading ? (
