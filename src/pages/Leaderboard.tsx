@@ -6,7 +6,6 @@ import {
   monthPeriod,
   myStanding,
   overallTop,
-  untilWeekEnd,
   weekPeriod,
   type OverallRow,
   type Period,
@@ -228,19 +227,18 @@ export default function Leaderboard() {
   // Named after the window it covers, not after the tab. The month reads off
   // the period's own start date in UTC — the same midnight the board is
   // ranked from, so the name can't drift a day either side of the first.
-  const board = useMemo(() => {
+  const board = useMemo((): { title: string; blurb?: string } => {
     if (tab === "fame") {
       return {
         title: "Hall of fame",
         blurb: "Fastest to clear all 167 — held until somebody is quicker.",
       };
     }
-    if (period.id === "week") {
-      return {
-        title: "This week's leaderboard",
-        blurb: `Cumulative rankings since Monday. Everyone starts level again in ${untilWeekEnd()}.`,
-      };
-    }
+    // No line under this one. A board headed "This week" has said everything
+    // a second sentence was going to: where the points come from is the same
+    // on every board, and when the week turns over is not what anyone came
+    // here to read.
+    if (period.id === "week") return { title: "This week" };
     const month = period.since.toLocaleDateString(undefined, {
       month: "long",
       timeZone: "UTC",
@@ -292,7 +290,9 @@ export default function Leaderboard() {
             <h2 className="text-lg font-semibold tracking-tight text-zinc-100">
               {board.title}
             </h2>
-            <p className="mt-1 text-sm text-zinc-500">{board.blurb}</p>
+            {board.blurb && (
+              <p className="mt-1 text-sm text-zinc-500">{board.blurb}</p>
+            )}
             {tab !== "fame" && players > 0 && (
               <p className="mt-1 text-sm tabular-nums text-zinc-500">
                 {players.toLocaleString()}{" "}
