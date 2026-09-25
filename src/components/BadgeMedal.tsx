@@ -182,14 +182,25 @@ const FALLBACK = (
   <path d="M12 3.2 13.9 9l5.9.2-4.7 3.6 1.7 5.7-4.8-3.3-4.8 3.3 1.7-5.7L4.2 9.2 10.1 9z" />
 );
 
-export default function BadgeMedal({
+/**
+ * The struck disc on its own, for anything that wants one.
+ *
+ * Badges are not the only awards in the game — the hall of fame hands out
+ * crowns — and two objects that are meant to read as the same kind of thing
+ * should not be two drawings that happen to look alike.
+ */
+export function Medallion({
   id,
-  unlocked,
+  lit,
   className = "h-14 w-14",
+  children,
 }: {
+  /** Unique on the page: the gradient is defined per medal. */
   id: string;
-  unlocked: boolean;
+  /** Gold and struck, or cast in the page's own dark. */
+  lit: boolean;
   className?: string;
+  children: React.ReactNode;
 }) {
   const gradient = `medal-${id}`;
 
@@ -199,7 +210,7 @@ export default function BadgeMedal({
       viewBox="0 0 64 64"
       className={`${className} shrink-0`}
     >
-      {unlocked && (
+      {lit && (
         <defs>
           <linearGradient id={gradient} x1="0" y1="0" x2="0.35" y2="1">
             <stop offset="0%" stopColor="#fde68a" />
@@ -212,8 +223,8 @@ export default function BadgeMedal({
       {/* The milled edge, behind the face. */}
       <path
         d={EDGE}
-        fill={unlocked ? "#f59e0b" : "#ffffff"}
-        opacity={unlocked ? 0.4 : 0.05}
+        fill={lit ? "#f59e0b" : "#ffffff"}
+        opacity={lit ? 0.4 : 0.05}
       />
 
       {/* The face, and the line struck just inside its rim. */}
@@ -221,8 +232,8 @@ export default function BadgeMedal({
         cx="32"
         cy="32"
         r="25"
-        fill={unlocked ? `url(#${gradient})` : "#121a25"}
-        stroke={unlocked ? "#fef3c7" : "rgba(255,255,255,0.10)"}
+        fill={lit ? `url(#${gradient})` : "#121a25"}
+        stroke={lit ? "#fef3c7" : "rgba(255,255,255,0.10)"}
         strokeWidth="1.4"
       />
       <circle
@@ -230,20 +241,36 @@ export default function BadgeMedal({
         cy="32"
         r="20.8"
         fill="none"
-        stroke={unlocked ? "rgba(120,53,15,0.32)" : "rgba(255,255,255,0.07)"}
+        stroke={lit ? "rgba(120,53,15,0.32)" : "rgba(255,255,255,0.07)"}
         strokeWidth="1"
       />
 
       <g
         transform="translate(20 20)"
         fill="none"
-        stroke={unlocked ? "#4a2c05" : "#4b5563"}
+        stroke={lit ? "#4a2c05" : "#4b5563"}
         strokeWidth="1.9"
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        {BADGE_GLYPHS[id] ?? FALLBACK}
+        {children}
       </g>
     </svg>
+  );
+}
+
+export default function BadgeMedal({
+  id,
+  unlocked,
+  className = "h-14 w-14",
+}: {
+  id: string;
+  unlocked: boolean;
+  className?: string;
+}) {
+  return (
+    <Medallion id={id} lit={unlocked} className={className}>
+      {BADGE_GLYPHS[id] ?? FALLBACK}
+    </Medallion>
   );
 }

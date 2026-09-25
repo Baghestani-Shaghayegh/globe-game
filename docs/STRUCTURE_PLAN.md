@@ -322,6 +322,24 @@ and filters after ranking. The two functions therefore repeat the same three
 CTEs — worth watching if the ranking rule ever changes, since it has to change
 in both.
 
+### Crowns
+
+`public.crowns(boards text[], min_totals int[])` returns the fastest complete
+run in each of those buckets — one row per bucket, quickest first, ties to
+whoever got there first so a record has to be beaten rather than matched.
+
+The two arrays are matched by position. `min_totals` is the smallest `total` a
+run may claim and still count as whole: 100 for the 167-country world boards,
+and a floor per continent (Oceania is fourteen countries, so a flat 100 would
+have rejected every continent record). It is only an anti-forgery guard — a
+short round already writes its length into its bucket key (`europe#10`), so it
+cannot be compared against a full one whatever it claims.
+
+`lib/crowns.ts` builds the catalogue: six world crowns, one per game type, in
+one bucket each; then five continent crowns, each contested across all six
+game types, which take the quickest of their six buckets client-side. Thirty-six
+buckets, one round trip.
+
 RLS: anyone reads; a signed-in player with a profile may insert their own runs
 and nothing else. No update or delete policy — a posted run is history.
 

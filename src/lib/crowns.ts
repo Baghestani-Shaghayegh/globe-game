@@ -1,5 +1,10 @@
 import { supabase } from "./supabase";
-import { BUCKET_PREFIX, GAME_TYPES, type GameType } from "../data/modes";
+import {
+  BUCKET_PREFIX,
+  GAME_TYPES,
+  MODES,
+  type GameType,
+} from "../data/modes";
 
 /**
  * Crowns: one holder each, for the fastest complete run over the whole map.
@@ -33,16 +38,57 @@ export const CROWN_RUN = {
   count: null,
 } as const;
 
-export function crownBucket(type: GameType): string {
-  return BUCKET_PREFIX[type] + CROWN_RUN.mode;
+export function crownBucket(type: GameType, mode: string = CROWN_RUN.mode): string {
+  return BUCKET_PREFIX[type] + mode;
 }
 
+/**
+ * The five continents, contested in any game type.
+ *
+ * The world crowns are the headline and they are also, for almost everybody, a
+ * wall: a hundred and sixty-seven countries in one sitting is not a thing a
+ * new player is going to do this week, so a hall of six of them is six things
+ * you cannot have. These are the same idea at a size somebody might actually
+ * reach — Oceania is fourteen countries — and they are what gives the page a
+ * bottom rung.
+ *
+ * Any game type counts. A player will pick whichever they are quickest at,
+ * which is the point: the record is the continent, not the format.
+ */
+export const CROWN_REGIONS = MODES.filter((mode) => mode.regional);
+
+/**
+ * The smallest `total` a run may claim and still be considered whole.
+ *
+ * A floor rather than the exact list size: the real count comes from the map
+ * data, which this page has no reason to load, and the bucket key already
+ * carries a short round's length (`europe#10`) so it cannot be compared with a
+ * full one. This is only here to reject a forged total.
+ */
+const FLOORS: Record<string, number> = {
+  easy: 100,
+  europe: 30,
+  africa: 35,
+  asia: 30,
+  americas: 22,
+  oceania: 10,
+};
+
 export type Crown = {
-  type: GameType;
+  /** Unique across both tiers: a game type for the world, a mode id for a region. */
+  id: string;
+  /** Which shelf it sits on. */
+  tier: "world" | "region";
   /** The title, for the card. */
   title: string;
+  /** What the holder had to do, under the title. */
+  feat: string;
+  /** Every bucket this crown is contested in — one for the world, six for a region. */
+  buckets: string[];
   /** Who holds it, or null while nobody has finished a full run. */
   holder: CrownHolder | null;
+  /** Which game type the holder set it in, for a region crown. */
+  heldIn: GameType | null;
 };
 
 export type CrownHolder = {
@@ -91,35 +137,88 @@ export function crownFeat(type: GameType): string {
   return FEATS[type];
 }
 
+/** Europe's, but Americas'. */
+function possessive(name: string): string {
+  return name.endsWith("s") ? `${name}'` : `${name}'s`;
+}
+
 /** Every crown, in the order the page shows them. */
 export const CROWN_TYPES: GameType[] = GAME_TYPES.map((option) => option.id);
 
 /**
+ * The catalogue: six world crowns, then five continents.
+ *
+ * Built rather than written out, so a new game type or a sixth continent
+ * arrives on the wall without anybody remembering to add it here.
+ */
+export function crownCatalogue(): Crown[] {
+  const world: Crown[] = CROWN_TYPES.map((type) => ({
+    id: type,
+    tier: "world" as const,
+    title: TITLES[type],
+    feat: FEATS[type],
+    buckets: [crownBucket(type)],
+    holder: null,
+    heldIn: null,
+  }));
+
+  const regions: Crown[] = CROWN_REGIONS.map((mode) => ({
+    id: mode.id,
+    tier: "region" as const,
+    // "Americas's fastest" is what a plain apostrophe-s gives you.
+    title: `${possessive(mode.name)} fastest`,
+    feat: `Cleared ${mode.name}, quicker than anyone`,
+    // Any game type: the record is the continent, not the format.
+    buckets: CROWN_TYPES.map((type) => crownBucket(type, mode.id)),
+    holder: null,
+    heldIn: null,
+  }));
+
+  return [...world, ...regions];
+}
+
+/**
  * Reads the holders.
  *
- * One round trip for all six rather than six boards fetched separately: the
+ * One round trip for all of them rather than a board fetched per crown: the
  * page shows them together, and a card that pops in after the others is worse
- * than all of them arriving a moment later.
+ * than all of them arriving a moment later. Thirty-six buckets go up, and the
+ * region crowns take the quickest of their six.
  */
 export async function crowns(): Promise<Crown[]> {
-  const empty = CROWN_TYPES.map((type) => ({
-    type,
-    title: TITLES[type],
-    holder: null,
-  }));
-  if (!supabase) return empty;
+  const catalogue = crownCatalogue();
+  if (!supabase) return catalogue;
 
+  const boards = catalogue.flatMap((crown) => crown.buckets);
   const { data, error } = await supabase.rpc("crowns", {
-    boards: CROWN_TYPES.map(crownBucket),
+    boards,
+    // Matched to `boards` by position. The mode is the tail of the bucket,
+    // after whatever prefix the game type put on the front.
+    min_totals: boards.map((bucket) => {
+      const mode = bucket.includes(":") ? bucket.split(":")[1] : bucket;
+      return FLOORS[mode] ?? 100;
+    }),
   });
   if (error) throw error;
 
   const held = new Map<string, CrownHolder>();
   for (const row of (data ?? []) as CrownHolder[]) held.set(row.bucket, row);
 
-  return CROWN_TYPES.map((type) => ({
-    type,
-    title: TITLES[type],
-    holder: held.get(crownBucket(type)) ?? null,
-  }));
+  return catalogue.map((crown) => {
+    let best: CrownHolder | null = null;
+    let heldIn: GameType | null = null;
+
+    crown.buckets.forEach((bucket, index) => {
+      const row = held.get(bucket);
+      if (!row) return;
+      // A tie goes to whoever set it first, the same rule the SQL uses within
+      // a single bucket — so a record has to be beaten, not matched.
+      if (best === null || row.ms < best.ms) {
+        best = row;
+        heldIn = CROWN_TYPES[index] ?? null;
+      }
+    });
+
+    return { ...crown, holder: best, heldIn };
+  });
 }

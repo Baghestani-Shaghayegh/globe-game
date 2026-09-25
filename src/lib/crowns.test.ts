@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  CROWN_REGIONS,
   CROWN_RUN,
   CROWN_TYPES,
   crownBucket,
+  crownCatalogue,
   crownFeat,
   crownTitle,
 } from "./crowns";
@@ -39,7 +41,7 @@ describe("the bucket a crown is contested in", () => {
   });
 
   it("is a different bucket per game type, so six crowns cannot collide", () => {
-    const buckets = CROWN_TYPES.map(crownBucket);
+    const buckets = CROWN_TYPES.map((type) => crownBucket(type));
     expect(new Set(buckets).size).toBe(buckets.length);
   });
 
@@ -103,5 +105,50 @@ describe("the link on a crown card", () => {
       expect(recordKey(type, CROWN_RUN.mode, CROWN_RUN.limit, CROWN_RUN.rules, CROWN_RUN.count))
         .toBe(crownBucket(type));
     }
+  });
+});
+
+describe("the catalogue", () => {
+  it("is the six world crowns and one per continent", () => {
+    const all = crownCatalogue();
+    expect(all.filter((c) => c.tier === "world")).toHaveLength(CROWN_TYPES.length);
+    expect(all.filter((c) => c.tier === "region")).toHaveLength(CROWN_REGIONS.length);
+  });
+
+  it("has no two crowns sharing an id", () => {
+    const ids = crownCatalogue().map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("contests a world crown in one bucket and a continent in every game type", () => {
+    for (const crown of crownCatalogue()) {
+      expect(crown.buckets.length).toBe(
+        crown.tier === "world" ? 1 : CROWN_TYPES.length
+      );
+      expect(new Set(crown.buckets).size).toBe(crown.buckets.length);
+    }
+  });
+
+  it("never lets a continent bucket collide with a world one", () => {
+    const world = new Set(
+      crownCatalogue().filter((c) => c.tier === "world").flatMap((c) => c.buckets)
+    );
+    const regional = crownCatalogue()
+      .filter((c) => c.tier === "region")
+      .flatMap((c) => c.buckets);
+    expect(regional.filter((bucket) => world.has(bucket))).toEqual([]);
+  });
+
+  it("starts every crown unheld", () => {
+    expect(crownCatalogue().every((c) => c.holder === null && c.heldIn === null)).toBe(
+      true
+    );
+  });
+
+  it("gets the possessive right on a continent that ends in s", () => {
+    const titles = crownCatalogue().map((c) => c.title);
+    expect(titles).toContain("Americas' fastest");
+    expect(titles).toContain("Europe's fastest");
+    expect(titles.some((t) => t.includes("s's"))).toBe(false);
   });
 });
