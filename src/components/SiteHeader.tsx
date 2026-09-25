@@ -164,11 +164,17 @@ export default function SiteHeader() {
 }
 
 /**
+ * Sara's Ko-fi page. Empty hides the link, so the footer never points at a
+ * page that isn't there.
+ */
+const KOFI_URL: string = "";
+
+/**
  * The footer, wherever the masthead is.
  *
- * One link now that the progress pages carry their own tabs, but it is the
- * one every page needs within reach: a privacy policy an ad network can find
- * from anywhere on the site, not only from the menu.
+ * The links every page needs within reach: a privacy policy an ad network
+ * can find from anywhere on the site, not only from the menu, and a way to
+ * chip in that asks nothing of anyone who scrolls past it.
  */
 export function SiteFooter({ className = "" }: { className?: string }) {
   return (
@@ -178,6 +184,16 @@ export function SiteFooter({ className = "" }: { className?: string }) {
       <Link to="/privacy" className="transition-colors hover:text-zinc-300">
         Privacy
       </Link>
+      {KOFI_URL && (
+        <a
+          href={KOFI_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="transition-colors hover:text-zinc-300"
+        >
+          Support on Ko-fi
+        </a>
+      )}
     </footer>
   );
 }
