@@ -145,10 +145,10 @@ describe("the catalogue", () => {
     );
   });
 
-  it("gets the possessive right on a continent that ends in s", () => {
+  it("gives the Americas its article and the rest none", () => {
     const titles = crownCatalogue().map((c) => c.title);
-    expect(titles).toContain("Americas' fastest");
-    expect(titles).toContain("Europe's fastest");
-    expect(titles.some((t) => t.includes("s's"))).toBe(false);
+    expect(titles).toContain("King of the Americas");
+    expect(titles).toContain("King of Europe");
+    expect(titles).not.toContain("King of Americas");
   });
 });

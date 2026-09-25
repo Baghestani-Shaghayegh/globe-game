@@ -141,9 +141,9 @@ export function crownFeat(type: GameType): string {
   return FEATS[type];
 }
 
-/** Europe's, but Americas'. */
-function possessive(name: string): string {
-  return name.endsWith("s") ? `${name}'` : `${name}'s`;
+/** Europe, but the Americas. */
+function named(region: string): string {
+  return region.endsWith("s") ? `the ${region}` : region;
 }
 
 /** Every crown, in the order the page shows them. */
@@ -169,9 +169,10 @@ export function crownCatalogue(): Crown[] {
   const regions: Crown[] = CROWN_REGIONS.map((mode) => ({
     id: mode.id,
     tier: "region" as const,
-    // "Americas's fastest" is what a plain apostrophe-s gives you.
-    title: `${possessive(mode.name)} fastest`,
-    feat: `Cleared ${mode.name}, quicker than anyone`,
+    // The same title the world crowns carry, so the two shelves read as one
+    // set of eleven rather than six trophies and five report lines.
+    title: `King of ${named(mode.name)}`,
+    feat: `Cleared ${named(mode.name)}, quicker than anyone`,
     // Any game type: the record is the continent, not the format.
     buckets: CROWN_TYPES.map((type) => crownBucket(type, mode.id)),
     holder: null,

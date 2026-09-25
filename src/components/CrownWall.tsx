@@ -227,26 +227,23 @@ function Card({
 
 function Shelf({
   title,
-  blurb,
   crowns,
   meId,
   loading,
 }: {
   title: string;
-  /** Only where the cards don't already say it. */
-  blurb?: string;
   crowns: Crown[];
   meId: string | null;
   loading: boolean;
 }) {
   return (
     <section>
-      <div className="flex flex-wrap items-baseline gap-x-3">
-        <h3 className="text-base font-semibold tracking-tight text-zinc-100">
-          {title}
-        </h3>
-        {blurb && <p className="text-sm text-zinc-500">{blurb}</p>}
-      </div>
+      {/* A heading and the cards. Both shelves carried a line explaining
+          themselves, and both were explaining six cards that say it on their
+          own faces. */}
+      <h3 className="text-base font-semibold tracking-tight text-zinc-100">
+        {title}
+      </h3>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {crowns.map((crown) => (
@@ -279,7 +276,6 @@ export default function CrownWall({
       />
       <Shelf
         title="The continents"
-        blurb="One continent, any game type. Where a first crown comes from."
         crowns={all.filter((crown) => crown.tier === "region")}
         meId={meId}
         loading={loading}
