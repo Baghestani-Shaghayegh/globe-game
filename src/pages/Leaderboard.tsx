@@ -38,11 +38,15 @@ const MEDALS = ["🥇", "🥈", "🥉"] as const;
  * louder of the two and the one that survives a screenshot, so it takes the
  * whole cell and grows into it. The label keeps the rank readable to a screen
  * reader, which an emoji on its own is not.
+ *
+ * Both are centred in the cell rather than flushed right, so a numeral sits
+ * under the middle of the medals above it. Right-aligned, a "4" landed under
+ * the medal's right edge and the column read as two columns.
  */
 function Rank({ rank }: { rank: number }) {
   const medal = MEDALS[rank - 1];
   return (
-    <span className="flex w-9 shrink-0 items-center justify-end">
+    <span className="flex w-9 shrink-0 items-center justify-center">
       {medal ? (
         <span aria-label={`rank ${rank}`} className="text-2xl leading-none">
           {medal}
