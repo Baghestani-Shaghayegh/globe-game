@@ -339,7 +339,7 @@ export default function Stats() {
 
           <Section
             title="Your daily history"
-            hint="a square a day for the last year · brighter means more found"
+            hint="a square a day · brighter means more countries found that day"
           >
             <DailyYear days={days} />
           </Section>
