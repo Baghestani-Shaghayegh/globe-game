@@ -112,13 +112,17 @@ function Row({ row, isYou }: { row: OverallRow; isYou: boolean }) {
       </span>
       {/* The total for the window, and under it what they have added today.
           The total says who is ahead; the gain says who is moving, which is
-          the half that makes a table worth opening twice in a day. Absent
-          rather than zero on a day somebody hasn't played. */}
+          the half that makes a table worth opening twice in a day.
+
+          Nothing on a day somebody hasn't played, and nothing when the gain
+          is the whole total either: on a Monday morning everything in the
+          weekly window was earned today, and a board where every row reads
+          "3,364" over "+3,364" has printed one number twice. */}
       <span className="ml-auto w-24 shrink-0 text-right">
         <span className="block font-medium tabular-nums text-zinc-200">
           {row.points.toLocaleString()}
         </span>
-        {row.today_points > 0 && (
+        {row.today_points > 0 && row.today_points < row.points && (
           <span className="block text-xs font-medium tabular-nums text-emerald-400/90">
             +{row.today_points.toLocaleString()}
           </span>
