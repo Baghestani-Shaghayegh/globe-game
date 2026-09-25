@@ -93,9 +93,18 @@ function oauthErrorFromUrl(): string | null {
  */
 function WhySignIn() {
   const lines = [
-    "Your name and flag on the weekly and monthly boards",
-    "A crown in the hall of fame, if you clear the map fastest",
-    "Private rooms — play a friend head to head",
+    {
+      title: "Get on the leaderboard",
+      body: "Your name and your flag, ranked against everyone else — this week's board and this month's.",
+    },
+    {
+      title: "Claim a crown",
+      body: "The hall of fame holds one name per game: whoever cleared all 167 countries fastest. It stays yours until somebody beats it.",
+    },
+    {
+      title: "Play a friend",
+      body: "Open a private room, send the six-letter code, and you both get the same questions at the same time.",
+    },
   ];
 
   return (
@@ -104,9 +113,9 @@ function WhySignIn() {
         Create a free account
       </h2>
 
-      <ul className="mt-4 space-y-2.5">
+      <ul className="mt-4 space-y-3.5">
         {lines.map((line) => (
-          <li key={line} className="flex items-start gap-2.5 text-sm text-zinc-200">
+          <li key={line.title} className="flex items-start gap-2.5">
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
@@ -119,7 +128,14 @@ function WhySignIn() {
             >
               <path d="m5 12.5 4.5 4.5L19 7" />
             </svg>
-            {line}
+            <span className="min-w-0">
+              <span className="block text-sm font-medium text-zinc-100">
+                {line.title}
+              </span>
+              <span className="mt-0.5 block text-sm leading-snug text-zinc-400">
+                {line.body}
+              </span>
+            </span>
           </li>
         ))}
       </ul>
