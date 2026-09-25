@@ -343,7 +343,7 @@ export default function Leaderboard() {
         // Its own line. Buried in the blurb as "set without hints" it read as
         // a description of the holders rather than the rule you are playing
         // under, and it is the rule that costs somebody a record.
-        note: "A round only counts here if you finish it without hints.",
+        note: "A round only counts here if you finish it without using hints.",
       };
     }
     // No line under this one. A board headed "This week" has said everything
