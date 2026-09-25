@@ -96,7 +96,6 @@ function WhySignIn() {
     "Your name and flag on the weekly and monthly boards",
     "A crown in the hall of fame, if you clear the map fastest",
     "Private rooms — play a friend head to head",
-    "No password: a link in your email, or Google",
   ];
 
   return (
