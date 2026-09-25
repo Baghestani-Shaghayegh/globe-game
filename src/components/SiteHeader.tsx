@@ -28,7 +28,7 @@ import { dayKey, streakState, type Streak } from "../lib/daily";
  * nav item underlined on a page that does not belong to it says the player is
  * somewhere they are not.
  */
-const PROGRESS_PATHS = ["/records", "/stats", "/achievements"];
+const PROGRESS_PATHS = ["/stats", "/achievements"];
 
 function NavLink({
   to,
@@ -97,7 +97,7 @@ export default function SiteHeader() {
               Leaderboard
             </NavLink>
           )}
-          <NavLink to="/records" active={PROGRESS_PATHS.includes(pathname)}>
+          <NavLink to="/stats" active={PROGRESS_PATHS.includes(pathname)}>
             My progress
           </NavLink>
         </nav>
@@ -229,7 +229,6 @@ export function PageShell({ children }: { children: React.ReactNode }) {
 export function ProgressTabs() {
   const { pathname } = useLocation();
   const tabs = [
-    { to: "/records", label: "Records" },
     { to: "/stats", label: "Stats" },
     { to: "/achievements", label: "Badges" },
     { to: "/levels", label: "Level & themes" },

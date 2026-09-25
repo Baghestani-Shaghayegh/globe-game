@@ -387,7 +387,7 @@ function Stats() {
 
   const tiles = [
     {
-      to: "/records",
+      to: "/stats",
       label: "Day streak",
       value: String(figures.streak),
       icon: STAT_ICONS.streak,
@@ -425,7 +425,9 @@ function Stats() {
             className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center transition-colors hover:border-white/25"
           >
             <span className="flex items-center justify-center gap-2">
-              <span className="text-teal-300/80">{tile.icon}</span>
+              <span className="text-teal-300/90 [&_svg]:h-6 [&_svg]:w-6">
+                {tile.icon}
+              </span>
               <span className="text-2xl font-semibold tabular-nums text-zinc-50">
                 {tile.value}
               </span>
@@ -441,7 +443,7 @@ function Stats() {
 }
 
 /**
- * Closing the account, behind a second press rather than a browser dialog.
+ * The foot of the page: signing out, and closing the account for good.
  *
  * `delete_my_account` takes no arguments: the only account it can delete is
  * the one calling it. Everything held against that account goes with it —
@@ -449,7 +451,7 @@ function Stats() {
  * user row. What stays is what was never on the server: the records, streak
  * and badges in this browser, which is said here rather than discovered.
  */
-function DeleteAccount() {
+function AccountFooter() {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const [asking, setAsking] = useState(false);
@@ -504,8 +506,15 @@ function DeleteAccount() {
           </div>
         </div>
       ) : (
-        // Off in the corner, where the thing you are not looking for lives.
-        <div className="flex justify-end">
+        // The two ways out of an account, on one line: the ordinary one on
+        // the left, and the one nobody is looking for off in the corner.
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <button
+            onClick={() => void signOut()}
+            className="text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+          >
+            Sign out
+          </button>
           <button
             onClick={() => setAsking(true)}
             className="text-sm text-zinc-600 underline underline-offset-4 transition-colors hover:text-rose-300"
@@ -535,7 +544,7 @@ function ProfileForm({
   email?: string;
   createdAt?: string;
 }) {
-  const { profile, refresh, signOut } = useAuth();
+  const { profile, refresh } = useAuth();
   const options = useMemo(flagOptions, []);
   const [editing, setEditing] = useState<"name" | "flag" | null>(null);
   const [username, setUsername] = useState("");
@@ -733,14 +742,7 @@ function ProfileForm({
 
       <Stats />
 
-      <button
-        onClick={() => void signOut()}
-        className="mt-8 text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
-      >
-        Sign out
-      </button>
-
-      <DeleteAccount />
+      <AccountFooter />
     </>
   );
 }

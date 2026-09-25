@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   allCountries,
   byContinent,
@@ -211,12 +210,6 @@ export default function Stats() {
         </>
       )}
 
-      <Link
-        to="/records"
-        className="mt-8 inline-block text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
-      >
-        Your records
-      </Link>
     </PageShell>
   );
 }

@@ -13,7 +13,7 @@ import { clearStats } from "../lib/countryStats";
 import { clearAchievements } from "../lib/achievements";
 import { clearPractice } from "../lib/practice";
 import { GAME_TYPES, MODES, TIME_LIMITS, gamePath } from "../data/modes";
-import { PageShell, ProgressTabs } from "../components/SiteHeader";
+import { PageShell } from "../components/SiteHeader";
 
 function modeName(modeId: string): string {
   return MODES.find((m) => m.id === modeId)?.name ?? modeId;
@@ -141,7 +141,6 @@ function BucketCard({ bucket }: { bucket: Bucket }) {
         </Link>
       </div>
 
-      <ProgressTabs />
     </div>
   );
 }
