@@ -309,6 +309,21 @@ and filters after ranking. The two functions therefore repeat the same three
 CTEs — worth watching if the ranking rule ever changes, since it has to change
 in both.
 
+### Demo players on the board
+
+There are 130 of them, added on 25 September 2026 so the paging and the pinned
+own-row could be seen with a crowd on them rather than one name. Every one is
+an `auth.users` row whose email ends `@worldguess.test`, and profiles and
+scores cascade from there, so all of it goes in one statement:
+
+```sql
+delete from auth.users where email like 'demo%@worldguess.test';
+```
+
+**They are on the live board until that runs.** Three of them hold crowns —
+their scores were promoted to a full 167 clear, since the crown query ignores
+anything under a hundred countries — and the same delete takes those with them.
+
 RLS: anyone reads; a signed-in player with a profile may insert their own runs
 and nothing else. No update or delete policy — a posted run is history.
 
