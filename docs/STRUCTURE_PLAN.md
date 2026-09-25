@@ -279,8 +279,8 @@ player's *best* run, ranked by points, ties broken by the quicker run then by
 whoever got there first. `since` is what makes a board weekly.
 
 The board everyone lands on is the overall one:
-`public.overall_leaderboard(since, limit_to, prev_since, prev_until)` sums
-every bucket per player. It answers three things at once — where each player
+`public.overall_leaderboard(since, limit_to, prev_since, prev_until, offset_by)`
+sums every bucket per player. It answers three things at once — where each player
 ranks now, where they ranked in the window `prev_since … prev_until` (what the
 "#10 last week" chip on a row is), and how many players are on the board at
 all. The previous window is passed in rather than worked out in SQL, because
@@ -292,10 +292,22 @@ Ranks are `rank()`, not `row_number()`: two players on the same points are
 both 2nd and the next one is 4th. Fewer runs still decides which of a tied
 pair prints first — it orders the rows, it no longer decides who outranks whom.
 
+`limit_to` is clamped to 100 a page, and `offset_by` walks the pages —
+`BOARD_SIZE` in `pages/Leaderboard.tsx` sets both, at forty a page. The count
+the pager divides by is the `players` column, which is the whole board rather
+than the rows returned.
+
 `public.my_overall_standing(since, prev_since, prev_until)` is the same row
-for `auth.uid()` alone, ranked against everybody. The board stops at forty, so
-without it a player in 63rd opened the page and found nothing about themselves
-on it.
+for `auth.uid()` alone, ranked against everybody, and pinned under whichever
+page is open. The board shows forty at a time, so without it a player in 63rd
+opened the page and found nothing about themselves on it.
+
+It used to be `overall_leaderboard` asked for 100000 rows and filtered to the
+caller, which the clamp quietly cut to 100: the row went missing for anyone
+past 100th, which is exactly who it exists for. It ranks without a limit now
+and filters after ranking. The two functions therefore repeat the same three
+CTEs — worth watching if the ranking rule ever changes, since it has to change
+in both.
 
 RLS: anyone reads; a signed-in player with a profile may insert their own runs
 and nothing else. No update or delete policy — a posted run is history.

@@ -13,10 +13,11 @@ import {
 import AdSlot from "../components/AdSlot";
 import CrownWall from "../components/CrownWall";
 import { crowns as fetchCrowns, type Crown } from "../lib/crowns";
+import { playTap } from "../lib/sound";
 import { PageShell } from "../components/SiteHeader";
 import { TabButton, TabRow } from "../components/Tabs";
 
-/** How many places the board shows before it stops. */
+/** How many places one page of the board holds. */
 const BOARD_SIZE = 40;
 
 /**
@@ -142,6 +143,90 @@ function Panel({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Back and forward through a board too long to print at once.
+ *
+ * Only the two arrows and the count. Numbered page links are for a board you
+ * would jump around in; a leaderboard is read from the top, and the one page
+ * anybody wants that isn't this one is the one with them on it — which is
+ * pinned under the board whatever page is open.
+ */
+function Pager({
+  page,
+  pages,
+  onGo,
+}: {
+  page: number;
+  pages: number;
+  onGo: (next: number) => void;
+}) {
+  const step = (delta: number) => () => {
+    playTap();
+    onGo(Math.min(pages - 1, Math.max(0, page + delta)));
+  };
+
+  const arrow = (disabled: boolean) =>
+    `flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+      disabled
+        ? "cursor-not-allowed border-white/[0.07] text-zinc-700"
+        : "border-white/15 text-zinc-300 hover:border-white/35 hover:text-zinc-100"
+    }`;
+
+  return (
+    <nav
+      aria-label="Board pages"
+      className="mt-4 flex items-center justify-center gap-3 text-sm"
+    >
+      <button
+        onClick={step(-1)}
+        disabled={page === 0}
+        aria-label="Previous page"
+        className={arrow(page === 0)}
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m14.5 5-7 7 7 7" />
+        </svg>
+      </button>
+
+      <p aria-live="polite" className="tabular-nums text-zinc-400">
+        <span className="rounded-lg border border-white/15 px-3 py-1.5 text-zinc-100">
+          {page + 1}
+        </span>{" "}
+        <span className="text-zinc-600">/</span> {pages}
+      </p>
+
+      <button
+        onClick={step(1)}
+        disabled={page >= pages - 1}
+        aria-label="Next page"
+        className={arrow(page >= pages - 1)}
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m9.5 5 7 7-7 7" />
+        </svg>
+      </button>
+    </nav>
+  );
+}
+
 function Empty({ children }: { children: React.ReactNode }) {
   return (
     <p className="px-4 py-6 text-center text-sm text-zinc-500">{children}</p>
@@ -166,15 +251,19 @@ export default function Leaderboard() {
   const [overall, setOverall] = useState<OverallRow[] | null>(null);
   const [mine, setMine] = useState<OverallRow | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+
+  // A new board starts at its own top. Without this, switching from page 4 of
+  // the month to the week asks for an offset the week may not have.
+  useEffect(() => setPage(0), [periodId]);
 
   useEffect(() => {
     if (!accountsEnabled) return;
     let cancelled = false;
     setOverall(null);
-    setMine(null);
     setError(null);
 
-    overallTop(period, BOARD_SIZE)
+    overallTop(period, BOARD_SIZE, page * BOARD_SIZE)
       .then((top) => !cancelled && setOverall(top))
       .catch(() => {
         if (cancelled) return;
@@ -182,12 +271,21 @@ export default function Leaderboard() {
         setError("Couldn't reach the leaderboard. Check your connection.");
       });
 
-    // Their own place, for when it is below the end of the board. A failure
-    // here is silent: it costs one row, and the board itself still stands.
+    return () => {
+      cancelled = true;
+    };
+  }, [period, page]);
+
+  // Their own place, whichever page is open. Fetched once per board rather
+  // than once per page, because it does not change as you turn them. A
+  // failure here is silent: it costs one row, and the board still stands.
+  useEffect(() => {
+    if (!accountsEnabled) return;
+    let cancelled = false;
+    setMine(null);
     myStanding(period)
       .then((row) => !cancelled && setMine(row))
       .catch(() => {});
-
     return () => {
       cancelled = true;
     };
@@ -223,6 +321,7 @@ export default function Leaderboard() {
   }, [overall]);
 
   const players = overall?.[0]?.players ?? 0;
+  const pages = Math.max(1, Math.ceil(players / BOARD_SIZE));
 
   // Named after the window it covers, not after the tab. The month reads off
   // the period's own start date in UTC — the same midnight the board is
@@ -339,11 +438,20 @@ export default function Leaderboard() {
             </div>
           )}
 
+          {tab !== "fame" && pages > 1 && (
+            <Pager page={page} pages={pages} onGo={setPage} />
+          )}
+
           {/* Below the board, when they are past the end of it. A player in
               34th used to open this page and find nothing about themselves on
               it at all — the page quietly told them they weren't in the game. */}
           {tab !== "fame" && mine && !onBoard && (
             <div className="mt-3">
+              {/* The gap between the end of this page and wherever they are.
+                  Without it the row reads as the next place along. */}
+              <p aria-hidden="true" className="pb-2 text-center text-zinc-700">
+                · · ·
+              </p>
               <Panel>
                 <ul>
                   <Row row={mine} isYou prevLabel={period.prevLabel} />

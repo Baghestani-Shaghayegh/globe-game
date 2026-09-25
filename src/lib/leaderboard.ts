@@ -187,7 +187,8 @@ export type ActiveBoard = {
  */
 export async function overallTop(
   period: Period,
-  limit = 40
+  limit = 40,
+  offset = 0
 ): Promise<OverallRow[]> {
   if (!supabase) return [];
   const { data, error } = await supabase.rpc("overall_leaderboard", {
@@ -195,6 +196,7 @@ export async function overallTop(
     limit_to: limit,
     prev_since: period.prevSince.toISOString(),
     prev_until: period.prevUntil.toISOString(),
+    offset_by: offset,
   });
   if (error) throw error;
   return (data ?? []) as OverallRow[];
@@ -203,9 +205,14 @@ export async function overallTop(
 /**
  * The signed-in player's own place, however far down it is.
  *
- * The board stops at the top of it, so a player in 34th used to open the page
- * and find nothing about themselves on it at all. Null when nobody is signed
- * in, or when they haven't scored in this period.
+ * The board shows one page of it, so a player in 341st would otherwise open
+ * the page and find nothing about themselves on it at all. Null when nobody is
+ * signed in, or when they haven't scored in this period.
+ *
+ * This used to be `overall_leaderboard` asked for 100000 rows and filtered to
+ * the caller — but that function clamps its limit to 100, so the row went
+ * missing for anyone past 100th, which is exactly who it exists for. The
+ * function now ranks without a limit and filters after ranking.
  */
 export async function myStanding(period: Period): Promise<OverallRow | null> {
   if (!supabase) return null;
