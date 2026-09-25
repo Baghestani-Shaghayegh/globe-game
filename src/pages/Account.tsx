@@ -3,7 +3,6 @@ import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled, supabase, urlAuthError } from "../lib/supabase";
 import {
   describeSaveError,
-  hasUnsavedChanges,
   saveProfile,
   usernameFree,
   usernameProblem,
@@ -267,10 +266,120 @@ function SignIn() {
   );
 }
 
-/** The signed-in half: pick a name and a flag, or change them later. */
-function ProfileForm({ userId, email }: { userId: string; email?: string }) {
+/** The pencil that opens an editor, small and unlabelled beside what it edits. */
+function EditButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-white/[0.06] hover:text-zinc-200"
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        className="h-4 w-4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3z" />
+      </svg>
+    </button>
+  );
+}
+
+/**
+ * Your flag, worn as the avatar.
+ *
+ * A player picks a country and it shows up beside their name on every board;
+ * here it is the biggest thing on the page, because it is the one piece of
+ * identity this game gives out. No flag chosen yet leaves the ring empty
+ * rather than filling it with a stranger's face.
+ */
+function FlagAvatar({ code, onEdit }: { code: string | null; onEdit: () => void }) {
+  return (
+    <span className="relative inline-block">
+      <span className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 border-teal-300/40 bg-[#0a1420]">
+        {code ? (
+          <img
+            src={`/flags/${code}.svg`}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="h-10 w-10 text-zinc-600"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="8" r="3.4" />
+            <path d="M5 20a7 7 0 0 1 14 0" />
+          </svg>
+        )}
+      </span>
+      <button
+        onClick={onEdit}
+        aria-label="Change your flag"
+        title="Change your flag"
+        className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border border-[#07111c] bg-teal-300 text-[#07111c] transition-colors hover:bg-teal-200"
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3z" />
+        </svg>
+      </button>
+    </span>
+  );
+}
+
+/** The day the account was opened, as a person would write it. */
+function memberSince(iso?: string): string | null {
+  if (!iso) return null;
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return null;
+  return at.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+/**
+ * The signed-in half: who you are, and a pencil beside each part of it.
+ *
+ * It was a form — two fields and a Save button, shown in full whether or not
+ * anything was being changed. Almost nobody changes their name twice, so the
+ * page now shows the name, the flag and the day you joined, and asks for the
+ * form only when a pencil is pressed.
+ */
+function ProfileForm({
+  userId,
+  email,
+  createdAt,
+}: {
+  userId: string;
+  email?: string;
+  createdAt?: string;
+}) {
   const { profile, refresh, signOut } = useAuth();
   const options = useMemo(flagOptions, []);
+  const [editing, setEditing] = useState<"name" | "flag" | null>(null);
   const [username, setUsername] = useState("");
   const [country, setCountry] = useState("");
   const [saving, setSaving] = useState(false);
@@ -281,12 +390,14 @@ function ProfileForm({ userId, email }: { userId: string; email?: string }) {
     setCountry(profile?.country ?? "");
   }, [profile]);
 
-  const dirty = hasUnsavedChanges(username, country, profile);
+  // A fresh account has no name, and the boards cannot list one without it —
+  // so the name editor opens itself rather than waiting to be found.
+  const naming = editing === "name" || !profile;
+  const joined = memberSince(createdAt);
 
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
+  const commit = async (nextName: string, nextCountry: string) => {
     if (saving) return;
-    const problem = usernameProblem(username);
+    const problem = usernameProblem(nextName);
     if (problem) {
       setError(problem);
       return;
@@ -295,16 +406,22 @@ function ProfileForm({ userId, email }: { userId: string; email?: string }) {
     setSaving(true);
     setError(null);
     try {
-      if (!(await usernameFree(username, userId))) {
+      // Only worth asking about a name that is actually changing: checking
+      // your own name against the table is a round trip to be told yes.
+      if (
+        nextName !== profile?.username &&
+        !(await usernameFree(nextName, userId))
+      ) {
         setError("That name is taken. Try another.");
         return;
       }
       await saveProfile({
         id: userId,
-        username,
-        country: country || null,
+        username: nextName,
+        country: nextCountry || null,
       });
       await refresh();
+      setEditing(null);
     } catch (caught) {
       setError(describeSaveError(caught));
     } finally {
@@ -312,43 +429,105 @@ function ProfileForm({ userId, email }: { userId: string; email?: string }) {
     }
   };
 
+  const cancel = () => {
+    setUsername(profile?.username ?? "");
+    setCountry(profile?.country ?? "");
+    setError(null);
+    setEditing(null);
+  };
+
   return (
     <>
-      <p className="mt-2 text-sm text-zinc-500">
-        Signed in{email ? ` as ${email}` : ""}
-      </p>
+      <div className="mt-7 flex flex-wrap items-center gap-5">
+        <FlagAvatar
+          code={profile?.country ?? null}
+          onEdit={() => {
+            setError(null);
+            setEditing("flag");
+          }}
+        />
 
-      {!profile && (
-        <p className="mt-6 rounded-xl border border-sky-400/25 bg-sky-400/[0.07] px-4 py-3 text-sm text-zinc-300">
-          One thing left: pick the name other players will see.
-        </p>
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <h2 className="truncate text-2xl font-semibold tracking-tight text-zinc-50">
+              {profile?.username ?? "No name yet"}
+            </h2>
+            {profile && (
+              <EditButton
+                label="Change your name"
+                onClick={() => {
+                  setError(null);
+                  setEditing("name");
+                }}
+              />
+            )}
+          </div>
+
+          {joined && (
+            <p className="mt-1 text-sm text-zinc-500">Member since {joined}</p>
+          )}
+          {email && (
+            <p className="mt-0.5 truncate text-sm text-zinc-600">{email}</p>
+          )}
+        </div>
+      </div>
+
+      {naming && (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void commit(username, country);
+          }}
+          className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+        >
+          <label htmlFor="username" className="block text-sm text-zinc-400">
+            {profile ? "Change your name" : "Pick the name other players see"}
+          </label>
+          <input
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="worldwalker"
+            autoComplete="off"
+            autoFocus
+            className={`mt-1.5 ${inputClass}`}
+          />
+          <p className="mt-1.5 text-xs text-zinc-600">
+            3–16 characters. Letters, numbers and underscores.
+          </p>
+          {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="submit"
+              disabled={saving || username === profile?.username}
+              className="rounded-lg bg-teal-300 px-4 py-2 text-sm font-semibold text-[#07111c] transition-colors hover:bg-teal-200 disabled:opacity-40"
+            >
+              {saving ? "Saving…" : profile ? "Save name" : "Claim this name"}
+            </button>
+            {profile && (
+              <button
+                type="button"
+                onClick={cancel}
+                className="text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
       )}
 
-      <form onSubmit={submit} className="mt-6">
-        <label htmlFor="username" className="block text-sm text-zinc-400">
-          Player name
-        </label>
-        <input
-          id="username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="worldwalker"
-          autoComplete="off"
-          className={`mt-1.5 ${inputClass}`}
-        />
-        <p className="mt-1.5 text-xs text-zinc-600">
-          3–16 characters. Letters, numbers and underscores.
-        </p>
-
-        <label htmlFor="country" className="mt-5 block text-sm text-zinc-400">
-          Flag <span className="text-zinc-600">(optional)</span>
-        </label>
-        <div className="mt-1.5 flex items-center gap-3">
+      {editing === "flag" && (
+        <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+          <label htmlFor="country" className="block text-sm text-zinc-400">
+            Your flag <span className="text-zinc-600">(optional)</span>
+          </label>
           <select
             id="country"
             value={country}
             onChange={(e) => setCountry(e.target.value)}
-            className={inputClass}
+            className={`mt-1.5 ${inputClass}`}
           >
             <option value="">No flag</option>
             {options.map((option) => (
@@ -357,37 +536,29 @@ function ProfileForm({ userId, email }: { userId: string; email?: string }) {
               </option>
             ))}
           </select>
-          {country && (
-            <img
-              src={`/flags/${country}.svg`}
-              alt=""
-              width={40}
-              height={30}
-              className="w-10 shrink-0 rounded border border-white/15"
-            />
-          )}
+          {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => void commit(username, country)}
+              disabled={saving || country === (profile?.country ?? "")}
+              className="rounded-lg bg-teal-300 px-4 py-2 text-sm font-semibold text-[#07111c] transition-colors hover:bg-teal-200 disabled:opacity-40"
+            >
+              {saving ? "Saving…" : "Save flag"}
+            </button>
+            <button
+              onClick={cancel}
+              className="text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
-
-        {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={saving || !dirty}
-          className="mt-6 w-full rounded-lg bg-sky-500/20 py-2.5 text-sm font-medium text-sky-200 transition-colors hover:bg-sky-500/30 disabled:opacity-50"
-        >
-          {saving
-            ? "Saving…"
-            : !profile
-              ? "Claim this name"
-              : dirty
-                ? "Save changes"
-                : "Saved"}
-        </button>
-      </form>
+      )}
 
       <button
         onClick={() => void signOut()}
-        className="mt-6 text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+        className="mt-8 text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
       >
         Sign out
       </button>
@@ -415,13 +586,17 @@ export default function Account() {
   return (
     <Shell>
       <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
-        {session ? "Your account" : "My profile"}
+        "My profile"
       </h1>
 
       {loading ? (
         <p className="mt-6 text-zinc-500">One moment…</p>
       ) : session ? (
-        <ProfileForm userId={session.user.id} email={session.user.email} />
+        <ProfileForm
+          userId={session.user.id}
+          email={session.user.email}
+          createdAt={session.user.created_at}
+        />
       ) : (
         <SignIn />
       )}
