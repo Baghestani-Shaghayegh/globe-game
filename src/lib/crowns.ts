@@ -112,7 +112,10 @@ export type CrownHolder = {
  */
 const TITLES: Record<GameType, string> = {
   name: "King of the Globe",
-  find: "Pathfinder",
+  // Was "Pathfinder", which is a person who finds paths. This crown is for
+  // the game that names a country and asks you to go and find it — the same
+  // thing the daily calls a Country hunt, so it borrows that word.
+  find: "Country Hunter",
   flag: "King of Flags",
   capital: "Capital King",
   outline: "Shape Reader",
