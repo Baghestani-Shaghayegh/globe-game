@@ -120,7 +120,7 @@ const TITLES: Record<GameType, string> = {
   flag: "King of Flags",
   capital: "Capital King",
   outline: "Shape Reader",
-  famous: "Know-it-all",
+  famous: "Clue Solver",
 };
 
 /** What the holder had to do, for the line under the title. */
