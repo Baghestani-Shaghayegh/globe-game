@@ -233,7 +233,8 @@ function Shelf({
   loading,
 }: {
   title: string;
-  blurb: string;
+  /** Only where the cards don't already say it. */
+  blurb?: string;
   crowns: Crown[];
   meId: string | null;
   loading: boolean;
@@ -244,7 +245,7 @@ function Shelf({
         <h3 className="text-base font-semibold tracking-tight text-zinc-100">
           {title}
         </h3>
-        <p className="text-sm text-zinc-500">{blurb}</p>
+        {blurb && <p className="text-sm text-zinc-500">{blurb}</p>}
       </div>
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -272,7 +273,6 @@ export default function CrownWall({
     <div className="space-y-8">
       <Shelf
         title="The whole world"
-        blurb="All 167 countries in one run. Six ways to be asked."
         crowns={all.filter((crown) => crown.tier === "world")}
         meId={meId}
         loading={loading}

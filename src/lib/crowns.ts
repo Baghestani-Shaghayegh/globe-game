@@ -105,21 +105,21 @@ export type CrownHolder = {
 /**
  * What each crown is called.
  *
- * The globe one carries the weight — it is the headline, and the reason
- * anybody grinds a hundred and sixty-seven countries in one sitting. The rest
- * are named in the same shape so the set reads as one idea rather than one
- * trophy and five also-rans.
+ * One pattern across the six: the thing you mastered, then what you did with
+ * it. They were half "King of X" and half nickname, which read as one trophy
+ * and five also-rans — and three of them were kings, which is a needless thing
+ * to hand half the people who play a game about the whole world.
  */
 const TITLES: Record<GameType, string> = {
-  name: "King of the Globe",
+  name: "World Namer",
   // Was "Pathfinder", which is a person who finds paths. This crown is for
   // the game that names a country and asks you to go and find it — the same
   // thing the daily calls a Country hunt, so it borrows that word.
   find: "Country Hunter",
-  flag: "King of Flags",
-  capital: "Capital King",
+  flag: "Flag Reader",
+  capital: "Capital Master",
   outline: "Shape Reader",
-  famous: "Know-it-all",
+  famous: "Clue Solver",
 };
 
 /** What the holder had to do, for the line under the title. */
