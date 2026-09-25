@@ -67,6 +67,9 @@ export const CROWN_REGIONS = MODES.filter((mode) => mode.regional);
  */
 const FLOORS: Record<string, number> = {
   easy: 100,
+  // The full map is the bigger list — territories, islands, disputed regions —
+  // so its floor sits above the countries-only one.
+  hard: 150,
   europe: 30,
   africa: 35,
   asia: 30,
@@ -75,10 +78,12 @@ const FLOORS: Record<string, number> = {
 };
 
 export type Crown = {
-  /** Unique across both tiers: a game type for the world, a mode id for a region. */
+  /** Unique across the shelves: a game type, a mode id, or the streak's own. */
   id: string;
   /** Which shelf it sits on. */
-  tier: "world" | "region";
+  tier: "world" | "region" | "streak";
+  /** What the record is measured in. */
+  metric: "time" | "streak";
   /** The title, for the card. */
   title: string;
   /** What the holder had to do, under the title. */
@@ -87,12 +92,14 @@ export type Crown = {
   buckets: string[];
   /** Who holds it, or null while nobody has finished a full run. */
   holder: CrownHolder | null;
-  /** Which game type the holder set it in, for a region crown. */
+  /** Which game type the holder set it in, where a crown spans several. */
   heldIn: GameType | null;
 };
 
 export type CrownHolder = {
   bucket: string;
+  /** Only on the streak crown; null on every run posted before it existed. */
+  best_streak?: number | null;
   user_id: string;
   username: string;
   country: string | null;
@@ -159,6 +166,7 @@ export function crownCatalogue(): Crown[] {
   const world: Crown[] = CROWN_TYPES.map((type) => ({
     id: type,
     tier: "world" as const,
+    metric: "time" as const,
     title: TITLES[type],
     feat: FEATS[type],
     buckets: [crownBucket(type)],
@@ -166,11 +174,26 @@ export function crownCatalogue(): Crown[] {
     heldIn: null,
   }));
 
+  // The biggest thing anybody can do in this game, and it had no crown at all.
+  // Any game type, like the continents: six more cards for one list would make
+  // the shelf longer than it is interesting.
+  const fullMap: Crown = {
+    id: "hard",
+    tier: "world",
+    metric: "time",
+    title: "King of the Full Map",
+    feat: "Cleared every place on earth — territories and all",
+    buckets: CROWN_TYPES.map((type) => crownBucket(type, "hard")),
+    holder: null,
+    heldIn: null,
+  };
+
   const regions: Crown[] = CROWN_REGIONS.map((mode) => ({
     id: mode.id,
     tier: "region" as const,
+    metric: "time" as const,
     // The same title the world crowns carry, so the two shelves read as one
-    // set of eleven rather than six trophies and five report lines.
+    // set rather than trophies and report lines.
     title: `King of ${named(mode.name)}`,
     feat: `Cleared ${named(mode.name)}, quicker than anyone`,
     // Any game type: the record is the continent, not the format.
@@ -179,37 +202,60 @@ export function crownCatalogue(): Crown[] {
     heldIn: null,
   }));
 
-  return [...world, ...regions];
+  // The one crown that is not a stopwatch. No buckets: it is contested
+  // everywhere at once, and its own function finds it.
+  const streak: Crown = {
+    id: "streak",
+    tier: "streak",
+    metric: "streak",
+    title: "Streak King",
+    feat: "The longest run of right answers, without a miss",
+    buckets: [],
+    holder: null,
+    heldIn: null,
+  };
+
+  return [...world, fullMap, ...regions, streak];
 }
 
 /**
  * Reads the holders.
  *
- * One round trip for all of them rather than a board fetched per crown: the
- * page shows them together, and a card that pops in after the others is worse
- * than all of them arriving a moment later. Thirty-six buckets go up, and the
- * region crowns take the quickest of their six.
+ * Two round trips at most, in parallel: one that finds the fastest run in each
+ * of the buckets a timed crown is contested in, and one that finds the single
+ * longest streak anybody has posted anywhere. The page shows them together,
+ * and a card that pops in after the others is worse than all of them arriving
+ * a moment later.
  */
 export async function crowns(): Promise<Crown[]> {
   const catalogue = crownCatalogue();
   if (!supabase) return catalogue;
 
   const boards = catalogue.flatMap((crown) => crown.buckets);
-  const { data, error } = await supabase.rpc("crowns", {
-    boards,
-    // Matched to `boards` by position. The mode is the tail of the bucket,
-    // after whatever prefix the game type put on the front.
-    min_totals: boards.map((bucket) => {
-      const mode = bucket.includes(":") ? bucket.split(":")[1] : bucket;
-      return FLOORS[mode] ?? 100;
+  const [timed, streak] = await Promise.all([
+    supabase.rpc("crowns", {
+      boards,
+      // Matched to `boards` by position. The mode is the tail of the bucket,
+      // after whatever prefix the game type put on the front.
+      min_totals: boards.map((bucket) => {
+        const mode = bucket.includes(":") ? bucket.split(":")[1] : bucket;
+        return FLOORS[mode] ?? 100;
+      }),
     }),
-  });
-  if (error) throw error;
+    supabase.rpc("streak_crown"),
+  ]);
+  if (timed.error) throw timed.error;
+  if (streak.error) throw streak.error;
 
   const held = new Map<string, CrownHolder>();
-  for (const row of (data ?? []) as CrownHolder[]) held.set(row.bucket, row);
+  for (const row of (timed.data ?? []) as CrownHolder[]) held.set(row.bucket, row);
+  const longest = ((streak.data ?? []) as CrownHolder[])[0] ?? null;
 
   return catalogue.map((crown) => {
+    if (crown.metric === "streak") {
+      return { ...crown, holder: longest, heldIn: null };
+    }
+
     let best: CrownHolder | null = null;
     let heldIn: GameType | null = null;
 

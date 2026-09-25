@@ -55,7 +55,13 @@ describe("what a perfect round pays", () => {
 describe("scoring a round", () => {
   it("counts a streak of correct answers", () => {
     const score = run(emptyScore, 3);
-    expect(score).toEqual({ points: 330, streak: 3, bestStreak: 3, hints: null });
+    expect(score).toEqual({
+      points: 330,
+      streak: 3,
+      bestStreak: 3,
+      hints: null,
+      hintsUsed: 0,
+    });
   });
 
   it("breaks the streak on a wrong answer, and charges for it", () => {
@@ -236,5 +242,27 @@ describe("speed", () => {
 
   it("is what scoreCorrect pays", () => {
     expect(scoreCorrect(emptyScore, "Peru", SLOW_MS).points).toBe(50);
+  });
+});
+
+describe("hints across a round", () => {
+  it("counts every hint bought, not just the one on this country", () => {
+    let score = scoreHint(emptyScore, "letter", "Chad");
+    score = scoreCorrect(score, "Chad");
+    score = scoreHint(score, "region", "Peru");
+    expect(score.hintsUsed).toBe(2);
+    // Cleared per country, which is why the round needs its own count.
+    expect(score.hints).toEqual({ name: "Peru", count: 1 });
+  });
+
+  it("counts being shown the answer, the strongest hint there is", () => {
+    expect(scoreHint(emptyScore, "answer", "Chad").hintsUsed).toBe(1);
+  });
+
+  it("leaves an unaided round at nothing", () => {
+    let score = scoreCorrect(emptyScore, "Chad");
+    score = scoreWrong(score);
+    score = scorePass(score);
+    expect(score.hintsUsed).toBe(0);
   });
 });

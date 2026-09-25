@@ -336,9 +336,22 @@ short round already writes its length into its bucket key (`europe#10`), so it
 cannot be compared against a full one whatever it claims.
 
 `lib/crowns.ts` builds the catalogue: six world crowns, one per game type, in
-one bucket each; then five continent crowns, each contested across all six
-game types, which take the quickest of their six buckets client-side. Thirty-six
-buckets, one round trip.
+one bucket each; the full map, contested across all six; five continent crowns,
+likewise; and the streak, which has no buckets at all. A crown spanning several
+buckets takes the quickest of them client-side. Two functions, called in
+parallel.
+
+`public.streak_crown()` is the one crown that is not a stopwatch: the single
+longest unbroken run of right answers anybody has posted, in any mode. It reads
+`scores.best_streak`, which the client posts with every run. A short round caps
+at its own length, so it cannot out-streak a full map without a rule saying so.
+
+Both crown functions ignore a run with `hints_used > 0`. A crown is a claim to
+have known the map rather than to have been told it, and hints cost points —
+which no crown looks at. `hints_used` and `best_streak` are both nullable: runs
+posted before the columns existed are read as unaided and streakless, because
+inventing numbers for them, or disqualifying them under a rule that did not
+exist, would both be worse than saying nothing.
 
 RLS: anyone reads; a signed-in player with a profile may insert their own runs
 and nothing else. No update or delete policy — a posted run is history.

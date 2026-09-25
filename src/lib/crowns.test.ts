@@ -109,10 +109,22 @@ describe("the link on a crown card", () => {
 });
 
 describe("the catalogue", () => {
-  it("is the six world crowns and one per continent", () => {
+  it("is a crown per game type, one for the full map, one per continent and the streak", () => {
     const all = crownCatalogue();
-    expect(all.filter((c) => c.tier === "world")).toHaveLength(CROWN_TYPES.length);
+    // The six game types plus the full map, which is contested in all of them.
+    expect(all.filter((c) => c.tier === "world")).toHaveLength(
+      CROWN_TYPES.length + 1
+    );
     expect(all.filter((c) => c.tier === "region")).toHaveLength(CROWN_REGIONS.length);
+    expect(all.filter((c) => c.tier === "streak")).toHaveLength(1);
+  });
+
+  it("measures one crown in streaks and the rest on the clock", () => {
+    const all = crownCatalogue();
+    expect(all.filter((c) => c.metric === "streak").map((c) => c.id)).toEqual([
+      "streak",
+    ]);
+    expect(all.filter((c) => c.metric === "time").length).toBe(all.length - 1);
   });
 
   it("has no two crowns sharing an id", () => {
@@ -120,13 +132,26 @@ describe("the catalogue", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("contests a world crown in one bucket and a continent in every game type", () => {
+  it("contests a single-format crown in one bucket and the rest in every game type", () => {
     for (const crown of crownCatalogue()) {
-      expect(crown.buckets.length).toBe(
-        crown.tier === "world" ? 1 : CROWN_TYPES.length
-      );
+      const expected =
+        crown.metric === "streak"
+          ? 0 // Contested everywhere at once; its own function finds it.
+          : crown.tier === "region" || crown.id === "hard"
+            ? CROWN_TYPES.length
+            : 1;
+      expect(crown.buckets.length).toBe(expected);
       expect(new Set(crown.buckets).size).toBe(crown.buckets.length);
     }
+  });
+
+  it("keeps the full map out of the countries-only buckets", () => {
+    const full = crownCatalogue().find((c) => c.id === "hard")!;
+    const world = crownCatalogue()
+      .filter((c) => c.tier === "world" && c.id !== "hard")
+      .flatMap((c) => c.buckets);
+    expect(full.buckets.every((b) => b.endsWith("hard"))).toBe(true);
+    expect(full.buckets.filter((b) => world.includes(b))).toEqual([]);
   });
 
   it("never lets a continent bucket collide with a world one", () => {

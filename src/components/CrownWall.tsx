@@ -1,5 +1,11 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { bestTime, formatDuration } from "../lib/records";
+import {
+  allBuckets,
+  formatDuration,
+  isComplete,
+  type Bucket,
+} from "../lib/records";
 import { CROWN_RUN, type Crown } from "../lib/crowns";
 import { gamePath, type GameType } from "../data/modes";
 
@@ -79,12 +85,41 @@ function CrownMark({ held, id }: { held: boolean; id: string }) {
   );
 }
 
-/** Your own best over every bucket a crown is contested in. */
-function myBest(buckets: string[]): number | null {
+/**
+ * Your own best against a crown, from the runs already on this device.
+ *
+ * A time for the eleven stopwatches, lowest wins; a streak for the one that
+ * isn't, highest wins. Returned as a bare number either way, since the only
+ * thing the card does with it is compare and format.
+ */
+function myBest(crown: Crown, buckets: Bucket[]): number | null {
+  // Hinted runs are out, the same as they are on the server. A card that says
+  // "2:56 off it" about a run that could never hold the crown is a lie with a
+  // number in it.
+  const unaided = (run: { hintsUsed?: number }) => (run.hintsUsed ?? 0) === 0;
+
+  if (crown.metric === "streak") {
+    const best = buckets
+      .flatMap((bucket) => bucket.runs)
+      .filter(unaided)
+      .reduce((most, run) => Math.max(most, run.bestStreak ?? 0), 0);
+    return best > 0 ? best : null;
+  }
+
+  const wanted = new Set(crown.buckets);
   const times = buckets
-    .map((bucket) => bestTime(bucket)?.ms)
-    .filter((ms): ms is number => typeof ms === "number");
+    .filter((bucket) => wanted.has(bucket.key))
+    .flatMap((bucket) => bucket.runs)
+    .filter((run) => isComplete(run) && unaided(run))
+    .map((run) => run.ms);
   return times.length ? Math.min(...times) : null;
+}
+
+/** A record, in whatever it is measured in. */
+function reading(crown: Crown, value: number): string {
+  return crown.metric === "streak"
+    ? `${value} in a row`
+    : formatDuration(value);
 }
 
 /**
@@ -104,6 +139,11 @@ function Standing({
 }) {
   const holder = crown.holder;
   const yours = meId !== null && holder?.user_id === meId;
+  const theirs = holder
+    ? crown.metric === "streak"
+      ? (holder.best_streak ?? 0)
+      : holder.ms
+    : 0;
 
   if (yours) {
     return <span className="text-amber-200/90">This one is yours.</span>;
@@ -118,23 +158,37 @@ function Standing({
     );
   }
   if (mine === null) {
-    return <span className="text-zinc-500">You haven't finished one yet.</span>;
-  }
-  if (mine <= holder.ms) {
-    // Their run stands until it is beaten outright, so an equal time is not a
-    // take — and a faster one that hasn't been posted is a sign-in problem,
-    // not a ranking one.
     return (
       <span className="text-zinc-500">
-        Your best {formatDuration(mine)} — sign in to put it up.
+        {crown.metric === "streak"
+          ? "No streak on this device yet."
+          : "You haven't finished one yet."}
       </span>
     );
   }
+
+  // Beaten outright or not at all: a matched record stays with whoever set it
+  // first. Anything better than theirs that isn't on the board is a sign-in
+  // problem rather than a ranking one.
+  const ahead = crown.metric === "streak" ? mine > theirs : mine < theirs;
+  if (ahead) {
+    return (
+      <span className="text-zinc-500">
+        Your best {reading(crown, mine)} — sign in to put it up.
+      </span>
+    );
+  }
+
+  const gap =
+    crown.metric === "streak"
+      ? `${theirs - mine + 1} more`
+      : `${formatDuration(mine - theirs)} off it`;
+
   return (
     <span className="text-zinc-400">
-      Your best {formatDuration(mine)} —{" "}
-      <span className="text-teal-300">{formatDuration(mine - holder.ms)}</span>{" "}
-      off it.
+      Your best {reading(crown, mine)} —{" "}
+      <span className="text-teal-300">{gap}</span>
+      {crown.metric === "streak" ? " to beat it." : "."}
     </span>
   );
 }
@@ -143,20 +197,27 @@ function Card({
   crown,
   meId,
   loading,
+  buckets,
 }: {
   crown: Crown;
   meId: string | null;
   loading: boolean;
+  buckets: Bucket[];
 }) {
   const holder = crown.holder;
   const yours = meId !== null && holder?.user_id === meId;
-  const mine = myBest(crown.buckets);
+  const mine = myBest(crown, buckets);
 
   // Where the card sends you. A world crown is its own game type; a continent
   // is contested in all six, so it opens the one it is named for in the
   // plainest of them.
-  const type: GameType = crown.tier === "world" ? (crown.id as GameType) : "name";
-  const mode = crown.tier === "world" ? CROWN_RUN.mode : crown.id;
+  // Where the card sends you. A world crown for one game type is its own; the
+  // full map, a continent and the streak are contested everywhere, so they
+  // open the plainest game type on the list they are named for.
+  const spans = crown.buckets.length !== 1;
+  const type: GameType = spans ? "name" : (crown.id as GameType);
+  const mode =
+    crown.tier === "region" ? crown.id : crown.id === "hard" ? "hard" : CROWN_RUN.mode;
 
   return (
     <Link
@@ -200,13 +261,13 @@ function Card({
             <span className="truncate font-medium text-zinc-50">
               {holder.username}
             </span>
-            {crown.tier === "region" && crown.heldIn && (
+            {crown.heldIn && crown.buckets.length > 1 && (
               <span className="shrink-0 rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-500">
                 {crown.heldIn}
               </span>
             )}
             <span className="ml-auto shrink-0 font-mono text-sm tabular-nums text-amber-200">
-              {formatDuration(holder.ms)}
+              {reading(crown, crown.metric === "streak" ? (holder.best_streak ?? 0) : holder.ms)}
             </span>
           </>
         ) : (
@@ -230,11 +291,13 @@ function Shelf({
   crowns,
   meId,
   loading,
+  buckets,
 }: {
   title: string;
   crowns: Crown[];
   meId: string | null;
   loading: boolean;
+  buckets: Bucket[];
 }) {
   return (
     <section>
@@ -247,7 +310,13 @@ function Shelf({
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {crowns.map((crown) => (
-          <Card key={crown.id} crown={crown} meId={meId} loading={loading} />
+          <Card
+            key={crown.id}
+            crown={crown}
+            meId={meId}
+            loading={loading}
+            buckets={buckets}
+          />
         ))}
       </div>
     </section>
@@ -265,6 +334,10 @@ export default function CrownWall({
   // while they load rather than appearing all at once after them.
   const all = crowns ?? [];
   const loading = crowns === null;
+  // Read once for the whole wall rather than once per card: eleven cards
+  // parsing the same store eleven times would also be eleven chances to
+  // disagree with each other mid-render.
+  const buckets = useMemo(() => allBuckets(), []);
 
   return (
     <div className="space-y-8">
@@ -273,12 +346,21 @@ export default function CrownWall({
         crowns={all.filter((crown) => crown.tier === "world")}
         meId={meId}
         loading={loading}
+        buckets={buckets}
       />
       <Shelf
         title="The continents"
         crowns={all.filter((crown) => crown.tier === "region")}
         meId={meId}
         loading={loading}
+        buckets={buckets}
+      />
+      <Shelf
+        title="The longest run"
+        crowns={all.filter((crown) => crown.tier === "streak")}
+        meId={meId}
+        loading={loading}
+        buckets={buckets}
       />
     </div>
   );

@@ -181,5 +181,8 @@ export function postConnectScore(result: ConnectResult): Promise<boolean> {
     found: 1,
     total: 1,
     ms: elapsedMs(result.startedAt),
+    // Neither a streak nor a hint exists in this game; the crowns pass over it.
+    bestStreak: 0,
+    hintsUsed: 0,
   });
 }

@@ -26,6 +26,10 @@ export type PostedRun = {
   found: number;
   total: number;
   ms: number;
+  /** Longest unbroken run of correct answers, for the streak crown. */
+  bestStreak: number;
+  /** Hints bought across the round. A crown wants none. */
+  hintsUsed: number;
 };
 
 /**
@@ -136,6 +140,8 @@ export async function postScore(
     found: Math.round(run.found),
     total: Math.round(run.total),
     ms: Math.round(run.ms),
+    best_streak: Math.round(run.bestStreak),
+    hints_used: Math.round(run.hintsUsed),
   });
 
   // Callers deliberately don't await this — a summary screen should never wait

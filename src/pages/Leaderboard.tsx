@@ -334,7 +334,7 @@ export default function Leaderboard() {
     if (tab === "fame") {
       return {
         title: "Hall of fame",
-        blurb: "One holder each, until somebody goes quicker.",
+        blurb: "One holder each, set without hints, until somebody goes quicker.",
       };
     }
     // No line under this one. A board headed "This week" has said everything

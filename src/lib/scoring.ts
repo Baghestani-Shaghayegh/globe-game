@@ -104,6 +104,14 @@ export type Score = {
   bestStreak: number;
   /** Hints bought for the country being answered, and which country. */
   hints: { name: string; count: number } | null;
+  /**
+   * Hints bought across the whole round.
+   *
+   * `hints` is cleared on every answer, so it cannot say whether a run was
+   * unaided by the time it ends — and the hall of fame asks exactly that: a
+   * crown is a claim to have known the map, not to have been told it.
+   */
+  hintsUsed: number;
 };
 
 export const emptyScore: Score = {
@@ -111,6 +119,7 @@ export const emptyScore: Score = {
   streak: 0,
   bestStreak: 0,
   hints: null,
+  hintsUsed: 0,
 };
 
 /**
@@ -121,6 +130,7 @@ export function scoreCorrect(score: Score, name = "", ms = 0): Score {
   const hints = hintsOn(score, name);
   const streak = hints > 0 ? 0 : score.streak + 1;
   return {
+    ...score,
     points: score.points + pointsFor(score.streak, hints, ms),
     streak,
     bestStreak: Math.max(score.bestStreak, streak),
@@ -166,7 +176,13 @@ export function scoreHint(score: Score, hint: HintKind, name: string): Score {
       points: Math.max(0, score.points - WRONG_COST),
       streak: 0,
       hints: null,
+      // Counted like any other hint. It is the strongest one there is.
+      hintsUsed: score.hintsUsed + 1,
     };
   }
-  return { ...score, hints: { name, count: hintsOn(score, name) + 1 } };
+  return {
+    ...score,
+    hints: { name, count: hintsOn(score, name) + 1 },
+    hintsUsed: score.hintsUsed + 1,
+  };
 }

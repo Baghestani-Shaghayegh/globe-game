@@ -20,6 +20,11 @@ export type Run = {
   points?: number;
   /** Longest run of correct answers. Absent on older runs. */
   bestStreak?: number;
+  /**
+   * Hints bought across the round. Absent on runs recorded before the crowns
+   * asked — those are read as unaided, the same as the server reads them.
+   */
+  hintsUsed?: number;
   /** Which scoring rules the points were earned under. Absent before v2. */
   scoring?: number;
 };

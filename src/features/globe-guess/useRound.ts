@@ -178,11 +178,19 @@ export function useRound(
           total,
           points,
           bestStreak: score.bestStreak,
+          hintsUsed: score.hintsUsed,
         });
         // Onto the weekly board too, if there's an account behind this run.
         // Deliberately not awaited: the summary shouldn't wait on the network,
         // and the run is already saved locally whether or not this lands.
-        void postScore(recordKey, { points, found, total, ms });
+        void postScore(recordKey, {
+          points,
+          found,
+          total,
+          ms,
+          bestStreak: score.bestStreak,
+          hintsUsed: score.hintsUsed,
+        });
       }
 
       const isBest = completed
