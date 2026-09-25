@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   MASTERY_ACCURACY,
   MASTERY_CLEAN,
@@ -124,23 +124,47 @@ function MasteryBar({ mastered, total }: { mastered: number; total: number }) {
   );
 }
 
+/** Monday first, the way a calendar column reads. */
+const WEEKDAY_LABELS = ["Mon", "", "Wed", "", "Fri", "", ""];
+
+/** Which column of the grid a day belongs to, with Monday starting a week. */
+function weekdayIndex(day: string): number {
+  const at = new Date(`${day}T00:00:00Z`);
+  return (at.getUTCDay() + 6) % 7;
+}
+
+function shortDate(day: string): string {
+  return new Date(`${day}T00:00:00Z`).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+}
+
 /**
- * The last fortnight of dailies, one square a day, oldest on the left.
+ * A year of dailies, one square a day, as GitHub draws a year of commits.
  *
- * GitHub's contribution squares, for a fortnight rather than a year: a row of
- * days where the gaps are as legible as the fills, which is what a daily is
- * about. It replaced a distribution of scores — Wordle's chart — which needs
- * bins that are all plausible, and ours are not: eleven of them, nine always
- * empty, and everything piled at the top.
+ * Seven rows and a column a week, so a habit shows up as a run of filled
+ * columns and a lapse as a hole you can see from across the room. It replaced
+ * a distribution of scores, which needs bins that are all plausible — ours
+ * were eleven, nine of them always empty.
  *
- * One hue, four steps. A day played and scored nought is grey rather than a
- * faint teal: it is not a small score, it is a different thing from a good
- * day, and it must not read as "nearly nothing".
+ * One hue in four steps. A day played and scored nought is grey rather than
+ * the faintest teal: it is not a small score, it is a different thing from a
+ * good day, and it should not read as "nearly nothing".
  */
-function DailyStrip({ days }: { days: DailyDay[] }) {
+function DailyYear({ days }: { days: DailyDay[] }) {
+  // Narrow screens scroll, and a year opens on the end nobody is asking
+  // about. Start at today and let them push back through the year.
+  const scroller = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const box = scroller.current;
+    if (box) box.scrollLeft = box.scrollWidth;
+  }, []);
+
   const tone = (day: DailyDay) => {
-    if (day.found === null) return "border border-white/10 bg-transparent";
-    if (day.found === 0) return "bg-white/[0.12]";
+    if (day.found === null) return "bg-white/[0.04]";
+    if (day.found === 0) return "bg-white/[0.14]";
     const share = day.total > 0 ? day.found / day.total : 0;
     if (share >= 1) return "bg-teal-300";
     if (share >= 0.8) return "bg-teal-300/70";
@@ -148,42 +172,75 @@ function DailyStrip({ days }: { days: DailyDay[] }) {
     return "bg-teal-300/25";
   };
 
-  const dayLabel = (day: DailyDay) => {
-    const when = new Date(`${day.day}T00:00:00Z`).toLocaleDateString(undefined, {
-      day: "numeric",
-      month: "short",
-      timeZone: "UTC",
-    });
-    return day.found === null
-      ? `${when} · not played`
-      : `${when} · ${day.found}/${day.total}`;
-  };
+  const label = (day: DailyDay) =>
+    day.found === null
+      ? `${shortDate(day.day)} · not played`
+      : `${shortDate(day.day)} · ${day.found}/${day.total}`;
 
-  const first = days[0];
-  const opening = first
-    ? new Date(`${first.day}T00:00:00Z`).toLocaleDateString(undefined, {
-        day: "numeric",
-        month: "short",
-        timeZone: "UTC",
-      })
-    : "";
+  // The first column has to start on a Monday or the rows stop meaning a
+  // weekday. Blanks hold the shape before the first real day.
+  const lead = days.length > 0 ? weekdayIndex(days[0].day) : 0;
+  const cells: (DailyDay | null)[] = [...Array<null>(lead).fill(null), ...days];
+
+  // A month's name sits over the column its first day lands in.
+  const months: { column: number; name: string }[] = [];
+  cells.forEach((cell, index) => {
+    if (!cell) return;
+    const at = new Date(`${cell.day}T00:00:00Z`);
+    if (at.getUTCDate() !== 1) return;
+    months.push({
+      column: Math.floor(index / 7),
+      name: at.toLocaleDateString(undefined, { month: "short", timeZone: "UTC" }),
+    });
+  });
+  const columns = Math.ceil(cells.length / 7);
 
   return (
-    <div className="px-4 py-3.5">
-      <ul className="flex flex-wrap gap-1.5">
-        {days.map((day) => (
-          <li key={day.day}>
-            <span
-              title={dayLabel(day)}
-              aria-label={dayLabel(day)}
-              className={`block h-7 w-7 rounded-md ${tone(day)}`}
-            />
-          </li>
-        ))}
-      </ul>
-      <div className="mt-2 flex items-baseline justify-between text-xs text-zinc-600">
-        <span>{opening}</span>
-        <span>Today</span>
+    <div ref={scroller} className="overflow-x-auto px-4 py-3.5">
+      <div className="inline-block min-w-full">
+        {/* The month strip is its own grid over the same columns, so a name
+            cannot drift off the week it belongs to. */}
+        <div
+          aria-hidden="true"
+          className="ml-8 grid gap-[3px] text-[10px] text-zinc-600"
+          style={{ gridTemplateColumns: `repeat(${columns}, 0.625rem)` }}
+        >
+          {Array.from({ length: columns }, (_, column) => (
+            <span key={column} className="h-4 whitespace-nowrap">
+              {months.find((month) => month.column === column)?.name ?? ""}
+            </span>
+          ))}
+        </div>
+
+        <div className="flex gap-1.5">
+          <div className="grid grid-rows-7 gap-[3px] text-[10px] leading-[0.625rem] text-zinc-600">
+            {WEEKDAY_LABELS.map((day, index) => (
+              <span key={index} className="h-2.5 w-6 text-right">
+                {day}
+              </span>
+            ))}
+          </div>
+
+          <div
+            className="grid grid-flow-col grid-rows-7 gap-[3px]"
+            role="img"
+            aria-label={`Dailies over the last year: ${
+              days.filter((day) => day.found !== null).length
+            } days played`}
+          >
+            {cells.map((cell, index) =>
+              cell ? (
+                <span
+                  key={cell.day}
+                  title={label(cell)}
+                  className={`h-2.5 w-2.5 rounded-[2px] ${tone(cell)}`}
+                />
+              ) : (
+                <span key={`blank-${index}`} className="h-2.5 w-2.5" />
+              )
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -222,7 +279,7 @@ export default function Stats() {
   const [run] = useState(() => streakState(dayKey()));
   const learned = useMemo(() => mastery(rows), [rows]);
   const best = useMemo(() => bestRun(), []);
-  const days = useMemo(() => recentDays(), []);
+  const days = useMemo(() => recentDays(365), []);
 
   return (
     <PageShell>
@@ -272,10 +329,10 @@ export default function Stats() {
           <MasteryBar mastered={learned.mastered} total={learned.total} />
 
           <Section
-            title="The last fortnight"
+            title="The last year"
             hint="one square a day · fuller means more found"
           >
-            <DailyStrip days={days} />
+            <DailyYear days={days} />
           </Section>
 
           <h2 className="mt-10 text-xl font-semibold tracking-tight text-zinc-50">
