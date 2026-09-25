@@ -109,9 +109,11 @@ function Standing({
     return <span className="text-amber-200/90">This one is yours.</span>;
   }
   if (!holder) {
+    // Two words, where there were nine. The row above already says there is no
+    // holder, so this line only has to be the thing you press.
     return (
-      <span className="text-teal-300/90">
-        Unclaimed — finish one and it is yours.
+      <span className="font-medium text-teal-300 group-hover:underline">
+        Claim it
       </span>
     );
   }
