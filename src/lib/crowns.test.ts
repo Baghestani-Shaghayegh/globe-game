@@ -139,16 +139,11 @@ describe("the catalogue", () => {
     }
   });
 
-  it("contests a single-format crown in one bucket and the full map in every game type", () => {
+  // Every crown is one race now. A crown open to several formats is one that
+  // silently only counts the quickest of them.
+  it("contests every timed crown in exactly one bucket", () => {
     for (const crown of crownCatalogue()) {
-      const expected =
-        crown.metric === "streak"
-          ? 0 // Contested everywhere at once; its own function finds it.
-          : crown.id === "hard"
-            ? CROWN_TYPES.length
-            : 1;
-      expect(crown.buckets.length).toBe(expected);
-      expect(new Set(crown.buckets).size).toBe(crown.buckets.length);
+      expect(crown.buckets.length).toBe(crown.metric === "streak" ? 0 : 1);
     }
   });
 
@@ -157,7 +152,7 @@ describe("the catalogue", () => {
     const world = crownCatalogue()
       .filter((c) => c.tier === "world" && c.id !== "hard")
       .flatMap((c) => c.buckets);
-    expect(full.buckets.every((b) => b.endsWith("hard"))).toBe(true);
+    expect(full.buckets).toEqual([crownBucket(REGION_TYPE, "hard")]);
     expect(full.buckets.filter((b) => world.includes(b))).toEqual([]);
   });
 
@@ -172,9 +167,7 @@ describe("the catalogue", () => {
   });
 
   it("starts every crown unheld", () => {
-    expect(crownCatalogue().every((c) => c.holder === null && c.heldIn === null)).toBe(
-      true
-    );
+    expect(crownCatalogue().every((c) => c.holder === null)).toBe(true);
   });
 
   it("gives the Americas its article and the rest none", () => {

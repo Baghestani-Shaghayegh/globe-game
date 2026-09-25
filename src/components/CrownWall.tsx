@@ -2,12 +2,12 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   allBuckets,
-  formatDuration,
+  formatPrecise,
   isComplete,
   type Bucket,
 } from "../lib/records";
 import { CROWN_RUN, REGION_TYPE, type Crown } from "../lib/crowns";
-import { GAME_TYPES, gamePath, type GameType } from "../data/modes";
+import { gamePath, type GameType } from "../data/modes";
 
 /**
  * The hall of fame: one holder per crown, held until somebody is faster.
@@ -125,16 +125,17 @@ function myBest(
   };
 }
 
-/** "Find it", not "FIND": the tag names a game type, so it uses its name. */
-function typeLabel(type: GameType): string {
-  return GAME_TYPES.find((option) => option.id === type)?.label ?? type;
-}
-
-/** A record, in whatever it is measured in. */
+/**
+ * A record, in whatever it is measured in.
+ *
+ * To the hundredth here and nowhere else: a tie stays with whoever set it
+ * first, so two players a tenth apart both reading "8:32" would look like a
+ * board that had got it wrong.
+ */
 function reading(crown: Crown, value: number): string {
   return crown.metric === "streak"
     ? `${value} in a row`
-    : formatDuration(value);
+    : formatPrecise(value);
 }
 
 /**
@@ -208,10 +209,13 @@ function Standing({
     );
   }
 
+  // To the hundredth as well, or the arithmetic on the card does not add up:
+  // 11:28.23 against 8:32.41 is 2:55.82, and a bare "2:55" invites somebody to
+  // check it and find it wrong.
   const gap =
     crown.metric === "streak"
       ? `${theirs - mine + 1} more`
-      : `${formatDuration(mine - theirs)} off it`;
+      : `${formatPrecise(mine - theirs)} off it`;
 
   return (
     <span className="text-zinc-400">
@@ -245,9 +249,9 @@ function Card({
   // opens the plainest), the streak anywhere at all, and a world crown is its
   // own game type over the countries list.
   const type: GameType =
-    crown.tier === "region"
+    crown.tier === "region" || crown.id === "hard"
       ? REGION_TYPE
-      : crown.id === "hard" || crown.metric === "streak"
+      : crown.metric === "streak"
         ? "name"
         : (crown.id as GameType);
   const mode =
@@ -299,18 +303,6 @@ function Card({
             <span className="truncate font-medium text-zinc-50">
               {holder.username}
             </span>
-            {/* Which game type the record was set in. Only on a crown that
-                spans several — the full map and the continents are contested
-                in all six, so "whose record is this, exactly" is a real
-                question there and nowhere else. */}
-            {crown.heldIn && crown.buckets.length > 1 && (
-              <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] text-zinc-400">
-                {typeLabel(crown.heldIn)}
-              </span>
-            )}
-            {/* Labelled, because a bare "8:32" beside a name is a number
-                without a noun — it could be how long ago they played, or how
-                long they have held it. */}
             <span className="ml-auto flex shrink-0 items-baseline gap-1.5">
               <span className="text-[10px] uppercase tracking-wide text-zinc-600">
                 Record

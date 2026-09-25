@@ -8,6 +8,7 @@ import {
   bestTime,
   clearAll,
   formatDuration,
+  formatPrecise,
   getRuns,
   isComplete,
   SCORING_VERSION,
@@ -324,5 +325,28 @@ describe("bestPoints", () => {
     );
     addRun("easy", { ms: 1000, found: 10, total: 196, points: 1200 });
     expect(getRuns("easy")).toHaveLength(2);
+  });
+});
+
+describe("formatPrecise", () => {
+  it("adds hundredths to the clock a summary screen shows", () => {
+    expect(formatPrecise(512_410)).toBe("8:32.41");
+    expect(formatPrecise(48_000)).toBe("0:48.00");
+  });
+
+  it("pads a hundredth below ten so the column stays straight", () => {
+    expect(formatPrecise(90_070)).toBe("1:30.07");
+  });
+
+  it("truncates rather than rounds, so a record is never flattered", () => {
+    expect(formatPrecise(59_999)).toBe("0:59.99");
+  });
+
+  it("widens past the hour, like the plain one", () => {
+    expect(formatPrecise(3_661_500)).toBe("1:01:01.50");
+  });
+
+  it("never prints a negative clock", () => {
+    expect(formatPrecise(-5)).toBe("0:00.00");
   });
 });

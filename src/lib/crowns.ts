@@ -61,7 +61,16 @@ export function crownBucket(type: GameType, mode: string = CROWN_RUN.mode): stri
  */
 export const CROWN_REGIONS = MODES.filter((mode) => mode.regional);
 
-/** The one game type a continent is raced in. */
+/**
+ * The one game type a crown over a partial or extended list is raced in.
+ *
+ * Find it beats the other five by a margin no amount of skill closes: you are
+ * told the name and you click it, with no typing and no shape to recognise. A
+ * crown open to every format is not generous, it is a crown that silently only
+ * counts this one — so the ones that would have spanned say so instead. The
+ * six world crowns keep a format each, where the whole 167-country list makes
+ * each worth contesting on its own.
+ */
 export const REGION_TYPE: GameType = "find";
 
 /**
@@ -99,8 +108,6 @@ export type Crown = {
   buckets: string[];
   /** Who holds it, or null while nobody has finished a full run. */
   holder: CrownHolder | null;
-  /** Which game type the holder set it in, where a crown spans several. */
-  heldIn: GameType | null;
 };
 
 export type CrownHolder = {
@@ -137,14 +144,21 @@ const TITLES: Record<GameType, string> = {
   famous: "Clue Solver",
 };
 
-/** What the holder had to do, for the line under the title. */
+/**
+ * What the holder had to do, for the line under the title.
+ *
+ * Each of these used to end ", fastest" — eight lines, eight commas, eight
+ * times the same adverb, saying what the row underneath already says in a
+ * stopwatch: RECORD 8:32. Without it they read as the thing you are being
+ * asked to go and do, which is what a card with "Claim it" on it wants.
+ */
 const FEATS: Record<GameType, string> = {
-  name: "Named every country, fastest",
-  find: "Found every country, fastest",
-  flag: "Matched every flag, fastest",
-  capital: "Placed every capital, fastest",
-  outline: "Knew every outline, fastest",
-  famous: "Solved every clue, fastest",
+  name: "Name every country",
+  find: "Find every country",
+  flag: "Match every flag",
+  capital: "Place every capital",
+  outline: "Know every outline",
+  famous: "Solve every clue",
 };
 
 export function crownTitle(type: GameType): string {
@@ -178,21 +192,18 @@ export function crownCatalogue(): Crown[] {
     feat: FEATS[type],
     buckets: [crownBucket(type)],
     holder: null,
-    heldIn: null,
   }));
 
   // The biggest thing anybody can do in this game, and it had no crown at all.
-  // Any game type, like the continents: six more cards for one list would make
-  // the shelf longer than it is interesting.
+  // One format, like the continents, and for the same reason.
   const fullMap: Crown = {
     id: "hard",
     tier: "world",
     metric: "time",
     title: "King of the Full Map",
-    feat: "Cleared every place on earth — territories and all",
-    buckets: CROWN_TYPES.map((type) => crownBucket(type, "hard")),
+    feat: "Find the full map, including territories",
+    buckets: [crownBucket(REGION_TYPE, "hard")],
     holder: null,
-    heldIn: null,
   };
 
   const regions: Crown[] = CROWN_REGIONS.map((mode) => ({
@@ -202,10 +213,9 @@ export function crownCatalogue(): Crown[] {
     // The same title the world crowns carry, so the two shelves read as one
     // set rather than trophies and report lines.
     title: `King of ${named(mode.name)}`,
-    feat: `Found every country in ${named(mode.name)}, fastest`,
+    feat: `Find every country in ${named(mode.name)}`,
     buckets: [crownBucket(REGION_TYPE, mode.id)],
     holder: null,
-    heldIn: null,
   }));
 
   // The one crown that is not a stopwatch. No buckets: it is contested
@@ -215,10 +225,9 @@ export function crownCatalogue(): Crown[] {
     tier: "streak",
     metric: "streak",
     title: "Streak King",
-    feat: "The longest run of right answers, without a miss",
+    feat: "Get the most right in a row, without a miss",
     buckets: [],
     holder: null,
-    heldIn: null,
   };
 
   return [...world, fullMap, ...regions, streak];
@@ -257,25 +266,9 @@ export async function crowns(): Promise<Crown[]> {
   for (const row of (timed.data ?? []) as CrownHolder[]) held.set(row.bucket, row);
   const longest = ((streak.data ?? []) as CrownHolder[])[0] ?? null;
 
-  return catalogue.map((crown) => {
-    if (crown.metric === "streak") {
-      return { ...crown, holder: longest, heldIn: null };
-    }
-
-    let best: CrownHolder | null = null;
-    let heldIn: GameType | null = null;
-
-    crown.buckets.forEach((bucket, index) => {
-      const row = held.get(bucket);
-      if (!row) return;
-      // A tie goes to whoever set it first, the same rule the SQL uses within
-      // a single bucket — so a record has to be beaten, not matched.
-      if (best === null || row.ms < best.ms) {
-        best = row;
-        heldIn = CROWN_TYPES[index] ?? null;
-      }
-    });
-
-    return { ...crown, holder: best, heldIn };
-  });
+  return catalogue.map((crown) => ({
+    ...crown,
+    holder:
+      crown.metric === "streak" ? longest : (held.get(crown.buckets[0]) ?? null),
+  }));
 }

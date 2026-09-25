@@ -238,6 +238,22 @@ export function formatDuration(ms: number): string {
 }
 
 /**
+ * The same clock, to the hundredth, for a record that has to be beaten.
+ *
+ * Whole seconds are right for a summary screen — nobody reads their own round
+ * to two decimals. A crown is different: the rule is that a tie stays with
+ * whoever set it first, so two players a tenth apart would both see "8:32" and
+ * one of them would think the board was wrong. Hundredths, not thousandths:
+ * the clock stops on a state update, so the third digit would be precision the
+ * measurement has not got.
+ */
+export function formatPrecise(ms: number): string {
+  const safe = Math.max(0, ms);
+  const hundredths = String(Math.floor((safe % 1000) / 10)).padStart(2, "0");
+  return `${formatDuration(safe)}.${hundredths}`;
+}
+
+/**
  * The best round you have played, across every mode and map.
  *
  * The number a player actually wants to beat. Runs from before scoring
