@@ -336,10 +336,17 @@ short round already writes its length into its bucket key (`europe#10`), so it
 cannot be compared against a full one whatever it claims.
 
 `lib/crowns.ts` builds the catalogue: six world crowns, one per game type, in
-one bucket each; the full map, contested across all six; five continent crowns,
-likewise; and the streak, which has no buckets at all. A crown spanning several
-buckets takes the quickest of them client-side. Two functions, called in
-parallel.
+one bucket each; the full map, contested across all six; five continent crowns
+raced in Find it alone (`REGION_TYPE`); and the streak, which has no buckets at
+all. A crown spanning several buckets takes the quickest of them client-side.
+Two functions, called in parallel.
+
+The continents were contested in every game type at first, which sounded
+generous and was not: you are told the name and you click it, with no typing
+and no shape to recognise, so Find it beats the rest by a margin no amount of
+skill at Outlines makes up. The crown went to whoever picked the fastest
+format and the other five were decoration. One format is a race; six is a
+vote on which format is quickest.
 
 `public.streak_crown()` is the one crown that is not a stopwatch: the single
 longest unbroken run of right answers anybody has posted, in any mode. It reads

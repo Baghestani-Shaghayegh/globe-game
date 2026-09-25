@@ -52,10 +52,17 @@ export function crownBucket(type: GameType, mode: string = CROWN_RUN.mode): stri
  * reach — Oceania is fourteen countries — and they are what gives the page a
  * bottom rung.
  *
- * Any game type counts. A player will pick whichever they are quickest at,
- * which is the point: the record is the continent, not the format.
+ * Contested in Find it alone. Every game type used to count, which sounded
+ * generous and was not: you are told the name and you click it, with no typing
+ * and no shape to recognise, so Find it is quicker than the rest by a margin
+ * no amount of skill at Outlines makes up. The crown went to whoever picked
+ * the fastest format, and the other five were decoration. The five formats
+ * already have crowns of their own, at world scale.
  */
 export const CROWN_REGIONS = MODES.filter((mode) => mode.regional);
+
+/** The one game type a continent is raced in. */
+export const REGION_TYPE: GameType = "find";
 
 /**
  * The smallest `total` a run may claim and still be considered whole.
@@ -195,9 +202,8 @@ export function crownCatalogue(): Crown[] {
     // The same title the world crowns carry, so the two shelves read as one
     // set rather than trophies and report lines.
     title: `King of ${named(mode.name)}`,
-    feat: `Cleared ${named(mode.name)}, quicker than anyone`,
-    // Any game type: the record is the continent, not the format.
-    buckets: CROWN_TYPES.map((type) => crownBucket(type, mode.id)),
+    feat: `Found every country in ${named(mode.name)}, fastest`,
+    buckets: [crownBucket(REGION_TYPE, mode.id)],
     holder: null,
     heldIn: null,
   }));

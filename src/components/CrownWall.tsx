@@ -6,7 +6,7 @@ import {
   isComplete,
   type Bucket,
 } from "../lib/records";
-import { CROWN_RUN, type Crown } from "../lib/crowns";
+import { CROWN_RUN, REGION_TYPE, type Crown } from "../lib/crowns";
 import { GAME_TYPES, gamePath, type GameType } from "../data/modes";
 
 /**
@@ -240,13 +240,22 @@ function Card({
   // Where the card sends you. A world crown is its own game type; a continent
   // is contested in all six, so it opens the one it is named for in the
   // plainest of them.
-  // Where the card sends you. A world crown for one game type is its own; the
-  // full map, a continent and the streak are contested everywhere, so they
-  // open the plainest game type on the list they are named for.
-  const spans = crown.buckets.length !== 1;
-  const type: GameType = spans ? "name" : (crown.id as GameType);
+  // Where the card sends you: the round this crown is actually contested in.
+  // A continent is raced in one game type, the full map in all six (so it
+  // opens the plainest), the streak anywhere at all, and a world crown is its
+  // own game type over the countries list.
+  const type: GameType =
+    crown.tier === "region"
+      ? REGION_TYPE
+      : crown.id === "hard" || crown.metric === "streak"
+        ? "name"
+        : (crown.id as GameType);
   const mode =
-    crown.tier === "region" ? crown.id : crown.id === "hard" ? "hard" : CROWN_RUN.mode;
+    crown.tier === "region"
+      ? crown.id
+      : crown.id === "hard"
+        ? "hard"
+        : CROWN_RUN.mode;
 
   return (
     <Link

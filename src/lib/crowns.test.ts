@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CROWN_REGIONS,
   CROWN_RUN,
+  REGION_TYPE,
   CROWN_TYPES,
   crownBucket,
   crownCatalogue,
@@ -132,12 +133,18 @@ describe("the catalogue", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("contests a single-format crown in one bucket and the rest in every game type", () => {
+  it("races every continent in the same game type, or it is not a race", () => {
+    for (const crown of crownCatalogue().filter((c) => c.tier === "region")) {
+      expect(crown.buckets).toEqual([crownBucket(REGION_TYPE, crown.id)]);
+    }
+  });
+
+  it("contests a single-format crown in one bucket and the full map in every game type", () => {
     for (const crown of crownCatalogue()) {
       const expected =
         crown.metric === "streak"
           ? 0 // Contested everywhere at once; its own function finds it.
-          : crown.tier === "region" || crown.id === "hard"
+          : crown.id === "hard"
             ? CROWN_TYPES.length
             : 1;
       expect(crown.buckets.length).toBe(expected);
