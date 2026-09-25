@@ -1,7 +1,7 @@
 import { allBuckets, isComplete, type Bucket, type Run } from "./records";
 import { allCountries, totals, type CountryRow } from "./countryStats";
 import { dayKey, perfectDays, playedDays, streak } from "./daily";
-import { BLITZ_SECONDS, GAME_TYPES, MODES, type GameType } from "../data/modes";
+import { GAME_TYPES, MODES, type GameType } from "../data/modes";
 
 /**
  * Everything an achievement can be measured against, gathered once.
@@ -219,6 +219,12 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: "💯",
     measure: ({ buckets }) => ({ have: allRuns(buckets).length, need: 100 }),
   },
+  // There were two more here — a streak under Sudden death, and a score under
+  // Blitz. Both rulesets are still implemented and still honoured by a link
+  // that carries `?rules=`, but the control that set them went with the
+  // "Customize round" panel in a444ad9, so nothing in the game can reach
+  // either one. A badge nobody can earn is worse than a badge that is merely
+  // hard. They come back with the control, not before it.
   {
     id: "met-100",
     name: "Well travelled",
@@ -278,38 +284,6 @@ export const ACHIEVEMENTS: Achievement[] = [
     desc: "Play fifty daily challenges in total — no streak needed.",
     icon: "🗓️",
     measure: ({ dailyPlayed }) => ({ have: dailyPlayed, need: 50 }),
-  },
-  {
-    id: "sudden-death",
-    name: "Nerves of steel",
-    // Named settings a player may never have opened, so each says what the
-    // setting does. "Under sudden death" means nothing until you know that
-    // one miss ends the round.
-    desc: "Get 25 right in a row with Sudden death on — one miss ends the round.",
-    icon: "💀",
-    measure: ({ buckets }) => ({
-      have: bestStreak(buckets.filter((b) => b.ruleset === "sudden")),
-      need: 25,
-    }),
-  },
-  {
-    id: "blitz",
-    name: "Against the clock",
-    desc: `Score 1,250 points in a Blitz round — ${BLITZ_SECONDS} seconds a country.`,
-    icon: "⏱️",
-    measure: ({ buckets }) => ({
-      have: buckets
-        .filter((b) => b.ruleset === "blitz")
-        .reduce(
-          (best, b) =>
-            b.runs.reduce((inner, run) => Math.max(inner, run.points ?? 0), best),
-          0
-        ),
-      // Was 2,000, about ten answers in a row when the streak paid up to
-      // 3.5x. At 1.5x the same ten answers come to 1,350, so the bar moves
-      // with the scoring rather than the badge quietly getting harder.
-      need: 1250,
-    }),
   },
 ];
 

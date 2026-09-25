@@ -153,21 +153,6 @@ const BADGE_GLYPHS: Record<string, React.ReactNode> = {
       <path d="M12 3.2 13.9 9l5.9.2-4.7 3.6 1.7 5.7-4.8-3.3-4.8 3.3 1.7-5.7L4.2 9.2 10.1 9z" />
     </>
   ),
-  // A skull, for sudden death.
-  "sudden-death": (
-    <>
-      <path d="M5.4 12.6a6.6 6.6 0 1 1 13.2 0c0 2-1 3.3-2.2 4.1v2.1a1.6 1.6 0 0 1-1.6 1.6H9.2a1.6 1.6 0 0 1-1.6-1.6v-2.1c-1.2-.8-2.2-2.1-2.2-4.1z" />
-      <circle cx="9.5" cy="12.4" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="14.5" cy="12.4" r="1.5" fill="currentColor" stroke="none" />
-    </>
-  ),
-  // A timer running down, for blitz.
-  "blitz": (
-    <>
-      <circle cx="12" cy="13.2" r="7.8" />
-      <path d="M12 8.8v4.4l3 2M9.6 2.8h4.8" />
-    </>
-  ),
   // A cut stone: a round with no flaw in it.
   "flawless": (
     <>

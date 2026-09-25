@@ -97,21 +97,8 @@ describe("finishing rounds", () => {
     expect(find(earned, "streak-50")).toMatchObject({ have: 12, unlocked: false });
   });
 
-  it("only counts a sudden-death streak towards the sudden-death badge", () => {
-    const relaxed = evaluate(
-      history({ buckets: [bucket({ runs: [run({ bestStreak: 40 })] })] })
-    );
-    expect(find(relaxed, "sudden-death").unlocked).toBe(false);
-
-    const sudden = evaluate(
-      history({
-        buckets: [
-          bucket({ ruleset: "sudden", runs: [run({ bestStreak: 25 })] }),
-        ],
-      })
-    );
-    expect(find(sudden, "sudden-death").unlocked).toBe(true);
-  });
+  // The sudden-death badge went with the control that set the ruleset: see
+  // the note in the catalogue. A streak under any rules counts the same now.
 });
 
 describe("clearing maps", () => {
