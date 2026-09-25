@@ -358,7 +358,7 @@ export default function Stats() {
 
           <MasteryBar mastered={learned.mastered} total={learned.total} />
 
-          <Section title="Your daily history" hint="a square a day">
+          <Section title="Your daily history">
             <DailyYear days={days} />
           </Section>
 
