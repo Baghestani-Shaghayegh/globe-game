@@ -247,6 +247,13 @@ export function playedDays(): string[] {
   return Object.keys(read()).sort().reverse();
 }
 
+/** How many dailies were finished without a single one missed. */
+export function perfectDays(): number {
+  return Object.values(read()).filter(
+    (result) => result.total > 0 && result.found >= result.total
+  ).length;
+}
+
 /** Consecutive days played up to and including today, or yesterday. */
 export function streak(today: string = dayKey()): number {
   const played = new Set(playedDays());

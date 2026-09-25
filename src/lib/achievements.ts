@@ -1,7 +1,7 @@
-import { allBuckets, isComplete, type Bucket } from "./records";
+import { allBuckets, isComplete, type Bucket, type Run } from "./records";
 import { allCountries, totals, type CountryRow } from "./countryStats";
-import { dayKey, playedDays, streak } from "./daily";
-import { MODES, type GameType } from "../data/modes";
+import { dayKey, perfectDays, playedDays, streak } from "./daily";
+import { GAME_TYPES, MODES, type GameType } from "../data/modes";
 
 /**
  * Everything an achievement can be measured against, gathered once.
@@ -16,6 +16,8 @@ export type PlayerHistory = {
   countries: CountryRow[];
   dailyStreak: number;
   dailyPlayed: number;
+  /** Dailies finished with nothing missed. */
+  dailyPerfect: number;
 };
 
 export type Achievement = {
@@ -47,19 +49,38 @@ function bestStreak(buckets: Bucket[]): number {
   );
 }
 
-/** Whether a mode has ever been cleared outright, in any game type. */
-function cleared(buckets: Bucket[], modeId: string): boolean {
-  return buckets.some(
-    (bucket) => bucket.modeId === modeId && bucket.runs.some(isComplete)
+/**
+ * The buckets that hold whole-map rounds of a mode.
+ *
+ * `count === null` is the "Everything" round length, and the filter is the
+ * whole point: a round is stored with the number of countries it asked for,
+ * so a ten-country round of the world map files a run of 10 found out of 10
+ * — complete, by every measure the records keep. Without this, the default
+ * round length earned "Find every sovereign country in one round" on the
+ * first go, and the continent badges with it.
+ */
+function wholeMap(buckets: Bucket[], modeId: string): Bucket[] {
+  return buckets.filter(
+    (bucket) => bucket.modeId === modeId && bucket.count === null
   );
+}
+
+/** Whether a mode's whole map has ever been cleared, in any game type. */
+function cleared(buckets: Bucket[], modeId: string): boolean {
+  return wholeMap(buckets, modeId).some((bucket) => bucket.runs.some(isComplete));
 }
 
 /** The quickest full clear of a mode, or null if it has never been finished. */
 function fastestClear(buckets: Bucket[], modeId: string): number | null {
-  const times = buckets
-    .filter((bucket) => bucket.modeId === modeId)
-    .flatMap((bucket) => bucket.runs.filter(isComplete).map((run) => run.ms));
+  const times = wholeMap(buckets, modeId).flatMap((bucket) =>
+    bucket.runs.filter(isComplete).map((run) => run.ms)
+  );
   return times.length ? Math.min(...times) : null;
+}
+
+/** Every run on file, whatever mode, length or ruleset it was played under. */
+function allRuns(buckets: Bucket[]): Run[] {
+  return buckets.flatMap((bucket) => bucket.runs);
 }
 
 function playedTypes(buckets: Bucket[]): Set<GameType> {
@@ -149,11 +170,54 @@ export const ACHIEVEMENTS: Achievement[] = [
     },
   },
   {
+    // Counted off GAME_TYPES rather than a number written here. It said four
+    // when there were six: Famous, Outline and Capital arrived after the
+    // badge did, and a badge that can be earned without touching two of the
+    // things it names is worse than no badge.
     id: "every-game-type",
-    name: "Four ways round",
-    desc: "Play all four game types.",
+    name: "Every way round",
+    desc: `Play all ${GAME_TYPES.length} game types.`,
     icon: "🎲",
-    measure: ({ buckets }) => ({ have: playedTypes(buckets).size, need: 4 }),
+    measure: ({ buckets }) => ({
+      have: playedTypes(buckets).size,
+      need: GAME_TYPES.length,
+    }),
+  },
+  {
+    id: "flawless",
+    name: "Flawless",
+    desc: "Finish a round of 25 or more without a single miss.",
+    icon: "💎",
+    measure: ({ buckets }) => ({
+      // A run whose best streak covers the whole round never broke it. The
+      // records keep the streak but not the misses, so this is the one way
+      // to read a perfect round off history that already exists.
+      have: allRuns(buckets).reduce(
+        (best, run) =>
+          run.total >= 25 && (run.bestStreak ?? 0) >= run.total
+            ? Math.max(best, run.total)
+            : best,
+        0
+      ),
+      need: 25,
+    }),
+  },
+  {
+    id: "big-round",
+    name: "Big round",
+    desc: "Score 5,000 points in a single round.",
+    icon: "📈",
+    measure: ({ buckets }) => ({
+      have: allRuns(buckets).reduce((best, run) => Math.max(best, run.points ?? 0), 0),
+      need: 5000,
+    }),
+  },
+  {
+    id: "rounds-100",
+    name: "Hundred rounds",
+    desc: "Play a hundred rounds.",
+    icon: "💯",
+    measure: ({ buckets }) => ({ have: allRuns(buckets).length, need: 100 }),
   },
   {
     id: "met-100",
@@ -197,6 +261,13 @@ export const ACHIEVEMENTS: Achievement[] = [
     desc: "Play the daily challenge thirty days running.",
     icon: "📅",
     measure: ({ dailyStreak }) => ({ have: dailyStreak, need: 30 }),
+  },
+  {
+    id: "daily-perfect",
+    name: "Clean sweep",
+    desc: "Finish a daily challenge with nothing missed.",
+    icon: "✨",
+    measure: ({ dailyPerfect }) => ({ have: dailyPerfect, need: 1 }),
   },
   {
     id: "daily-50",
@@ -263,6 +334,7 @@ export function collectHistory(): PlayerHistory {
     countries: allCountries(),
     dailyStreak: streak(dayKey()),
     dailyPlayed: playedDays().length,
+    dailyPerfect: perfectDays(),
   };
 }
 

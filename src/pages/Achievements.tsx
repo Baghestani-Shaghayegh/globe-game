@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { refresh, tally, type Earned } from "../lib/achievements";
 import { PageShell, ProgressTabs } from "../components/SiteHeader";
+import BadgeMedal from "../components/BadgeMedal";
 
 function when(iso: string | null): string {
   if (!iso) return "";
@@ -12,56 +13,47 @@ function when(iso: string | null): string {
 
 function Badge({ badge }: { badge: Earned }) {
   const share = badge.need > 0 ? Math.min(1, badge.have / badge.need) : 0;
-  const showBar = !badge.unlocked && badge.need > 1 && badge.have > 0;
+  // Shown for anything measured in more than one step, at nought as much as
+  // at half. A row that gains a bar only once you are on your way changes
+  // shape as you earn it, and the page jumps about as you scroll it.
+  const showBar = !badge.unlocked && badge.need > 1;
 
   return (
-    <li
-      className={`rounded-xl border p-4 transition-colors ${
-        badge.unlocked
-          ? "border-amber-300/25 bg-amber-300/[0.06]"
-          : "border-white/10 bg-white/[0.02]"
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        <span
-          aria-hidden="true"
-          className={`text-2xl leading-none ${badge.unlocked ? "" : "opacity-25 grayscale"}`}
+    <li className="flex items-center gap-4 py-3">
+      <BadgeMedal id={badge.id} unlocked={badge.unlocked} className="h-14 w-14" />
+
+      <div className="min-w-0 flex-1">
+        <p
+          className={`font-medium ${
+            badge.unlocked ? "text-amber-100" : "text-zinc-400"
+          }`}
         >
-          {badge.icon}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p
-            className={`font-medium ${
-              badge.unlocked ? "text-amber-100" : "text-zinc-400"
-            }`}
-          >
-            {badge.name}
-          </p>
-          <p className="mt-0.5 text-sm text-zinc-500">{badge.desc}</p>
+          {badge.name}
+        </p>
+        <p className="mt-0.5 text-sm text-zinc-500">{badge.desc}</p>
 
-          {showBar && (
-            <div className="mt-2.5 flex items-center gap-2">
+        {showBar && (
+          <div className="mt-2 flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-white/[0.07]"
+            >
               <span
-                aria-hidden="true"
-                className="h-1 min-w-0 flex-1 overflow-hidden rounded-full bg-white/[0.07]"
-              >
-                <span
-                  className="block h-full rounded-full bg-zinc-500"
-                  style={{ width: `${share * 100}%` }}
-                />
-              </span>
-              <span className="shrink-0 text-xs tabular-nums text-zinc-600">
-                {badge.have}/{badge.need}
-              </span>
-            </div>
-          )}
+                className="block h-full rounded-full bg-zinc-500"
+                style={{ width: `${share * 100}%` }}
+              />
+            </span>
+            <span className="shrink-0 text-xs tabular-nums text-zinc-600">
+              {badge.have.toLocaleString()}/{badge.need.toLocaleString()}
+            </span>
+          </div>
+        )}
 
-          {badge.unlocked && badge.at && (
-            <p className="mt-1.5 text-xs tabular-nums text-amber-200/40">
-              {when(badge.at)}
-            </p>
-          )}
-        </div>
+        {badge.unlocked && badge.at && (
+          <p className="mt-1 text-xs tabular-nums text-amber-200/45">
+            Earned {when(badge.at)}
+          </p>
+        )}
       </div>
     </li>
   );
@@ -94,7 +86,10 @@ export default function Achievements() {
           words that already said it precisely. */}
       <ProgressTabs />
 
-      <ul className="mt-7 grid gap-3 sm:grid-cols-2">
+      {/* No card around a badge: a medal is the object, and a bordered box
+          behind it made twenty-five of them read as a form. The gap between
+          the columns is what separates them now. */}
+      <ul className="mt-5 grid gap-x-10 sm:grid-cols-2">
         {ordered.map((badge) => (
           <Badge key={badge.id} badge={badge} />
         ))}

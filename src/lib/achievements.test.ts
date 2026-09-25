@@ -9,6 +9,7 @@ import {
 } from "./achievements";
 import type { Bucket, Run } from "./records";
 import type { CountryRow } from "./countryStats";
+import { GAME_TYPES } from "../data/modes";
 
 beforeEach(() => localStorage.clear());
 
@@ -48,6 +49,7 @@ const history = (over: Partial<PlayerHistory> = {}): PlayerHistory => ({
   countries: [],
   dailyStreak: 0,
   dailyPlayed: 0,
+  dailyPerfect: 0,
   ...over,
 });
 
@@ -160,6 +162,107 @@ describe("clearing maps", () => {
       })
     );
     expect(find(earned, "clear-all-regions").unlocked).toBe(true);
+  });
+
+  // The default round is ten countries, so this used to hand out "Find every
+  // sovereign country in one round" for the first round anybody finished.
+  it("does not accept a short round as a cleared map", () => {
+    const earned = evaluate(
+      history({
+        buckets: [
+          bucket({
+            key: "easy#10",
+            modeId: "easy",
+            count: 10,
+            runs: [run({ found: 10, total: 10 })],
+          }),
+        ],
+      })
+    );
+    expect(find(earned, "clear-easy").unlocked).toBe(false);
+  });
+
+  it("does not accept a short continent round either", () => {
+    const earned = evaluate(
+      history({
+        buckets: [
+          bucket({ key: "europe#25", count: 25, runs: [run({ found: 25, total: 25 })] }),
+        ],
+      })
+    );
+    expect(find(earned, "clear-europe").unlocked).toBe(false);
+  });
+
+  it("accepts the whole map at any round length setting of null", () => {
+    const earned = evaluate(
+      history({
+        buckets: [
+          bucket({ key: "easy", modeId: "easy", runs: [run({ found: 167, total: 167 })] }),
+        ],
+      })
+    );
+    expect(find(earned, "clear-easy").unlocked).toBe(true);
+  });
+});
+
+describe("the newer badges", () => {
+  it("wants a long round without a break for Flawless", () => {
+    const short = evaluate(
+      history({
+        buckets: [bucket({ runs: [run({ found: 10, total: 10, bestStreak: 10 })] })],
+      })
+    );
+    expect(find(short, "flawless").unlocked).toBe(false);
+
+    const broken = evaluate(
+      history({
+        buckets: [bucket({ runs: [run({ found: 30, total: 30, bestStreak: 29 })] })],
+      })
+    );
+    expect(find(broken, "flawless").unlocked).toBe(false);
+
+    const clean = evaluate(
+      history({
+        buckets: [bucket({ runs: [run({ found: 30, total: 30, bestStreak: 30 })] })],
+      })
+    );
+    expect(find(clean, "flawless").unlocked).toBe(true);
+  });
+
+  it("takes the best single round for Big round, not the total", () => {
+    const earned = evaluate(
+      history({
+        buckets: [
+          bucket({ runs: [run({ points: 3000 }), run({ points: 2600 })] }),
+        ],
+      })
+    );
+    expect(find(earned, "big-round")).toMatchObject({ have: 3000, unlocked: false });
+  });
+
+  it("counts every run towards a hundred rounds", () => {
+    const earned = evaluate(
+      history({
+        buckets: [
+          bucket({ runs: Array.from({ length: 60 }, () => run()) }),
+          bucket({ key: "asia", modeId: "asia", runs: Array.from({ length: 40 }, () => run()) }),
+        ],
+      })
+    );
+    expect(find(earned, "rounds-100").unlocked).toBe(true);
+  });
+
+  it("wants a daily with nothing missed for Clean sweep", () => {
+    expect(find(evaluate(history({ dailyPlayed: 9 })), "daily-perfect").unlocked).toBe(
+      false
+    );
+    expect(find(evaluate(history({ dailyPerfect: 1 })), "daily-perfect").unlocked).toBe(
+      true
+    );
+  });
+
+  it("asks for every game type there is, not a number written down", () => {
+    expect(find(evaluate(history()), "every-game-type").need).toBe(GAME_TYPES.length);
   });
 });
 
