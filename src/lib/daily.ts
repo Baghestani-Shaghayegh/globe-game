@@ -212,6 +212,27 @@ export function saveResult(result: DailyResult) {
   }
 }
 
+/**
+ * How often each score has come up on the daily, from ten down to none.
+ *
+ * The bar chart of guesses is the most copied thing about Wordle, and it is
+ * copied because it turns a run of days into a shape a player recognises as
+ * theirs. Every day is one row of ten, so the bins are fixed rather than
+ * derived — a day with a different length is left out rather than squeezed
+ * into a scale it does not belong on.
+ */
+export function scoreSpread(): { found: number; days: number }[] {
+  const results = Object.values(read()).filter(
+    (result): result is DailyResult =>
+      typeof result?.points === "number" && result.total === DAILY_COUNTRIES
+  );
+
+  return Array.from({ length: DAILY_COUNTRIES + 1 }, (_, index) => {
+    const found = DAILY_COUNTRIES - index;
+    return { found, days: results.filter((r) => r.found === found).length };
+  });
+}
+
 /** Every day played, newest first — the basis of the streak. */
 export function playedDays(): string[] {
   return Object.keys(read()).sort().reverse();

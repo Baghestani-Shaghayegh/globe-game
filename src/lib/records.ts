@@ -95,6 +95,9 @@ function write(store: Store) {
 }
 
 /** A stored bucket, decomposed back into the three things that identify it. */
+/** The highest-scoring run on file, and which board it was on. */
+export type BestRun = { points: number; bucket: string; at: string };
+
 export type Bucket = {
   key: string;
   type: GameType;
@@ -227,4 +230,23 @@ export function formatDuration(ms: number): string {
   return hours > 0
     ? `${hours}:${pad(minutes)}:${pad(seconds)}`
     : `${minutes}:${pad(seconds)}`;
+}
+
+/**
+ * The best round you have played, across every mode and map.
+ *
+ * The number a player actually wants to beat. Runs from before scoring
+ * existed carry no points and are skipped rather than counted as nought.
+ */
+export function bestRun(buckets = allBuckets()): BestRun | null {
+  let best: BestRun | null = null;
+  for (const bucket of buckets) {
+    for (const run of bucket.runs) {
+      if (typeof run.points !== "number") continue;
+      if (!best || run.points > best.points) {
+        best = { points: run.points, bucket: bucket.key, at: run.at };
+      }
+    }
+  }
+  return best;
 }

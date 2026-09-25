@@ -1,5 +1,6 @@
 import { getCountryMeta } from "../data/countries";
 import type { Continent } from "../data/continents";
+import { SOVEREIGN_COUNT } from "../data/modes";
 
 /**
  * What the player has done with one country, across every round it has come
@@ -129,6 +130,31 @@ export function allCountries(): CountryRow[] {
     .sort(
       (a, b) => b.seen - a.seen || a.displayName.localeCompare(b.displayName)
     );
+}
+
+/**
+ * How many clean answers make a country yours, and how reliably.
+ *
+ * "Three in a row, with nothing missed since" would be the natural rule and
+ * cannot be written: a `CountryStat` counts outcomes, it does not order them,
+ * so there is no way to ask what happened after what. Counting instead — three
+ * clean answers, and at least four in five sightings clean — costs nothing in
+ * meaning and, more to the point, reads the history every player already has
+ * rather than starting a new ledger that would put everyone back at zero.
+ */
+export const MASTERY_CLEAN = 3;
+export const MASTERY_ACCURACY = 80;
+
+/** Whether one country counts as mastered. */
+export function isMastered(row: CountryRow): boolean {
+  return row.first >= MASTERY_CLEAN && row.accuracy >= MASTERY_ACCURACY;
+}
+
+/** How many of the map you have mastered, out of how many there are. */
+export function mastery(
+  rows = allCountries()
+): { mastered: number; total: number } {
+  return { mastered: rows.filter(isMastered).length, total: SOVEREIGN_COUNT };
 }
 
 export type Totals = {

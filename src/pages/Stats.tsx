@@ -1,14 +1,17 @@
 import { useMemo, useState } from "react";
 import {
+  MASTERY_ACCURACY,
+  MASTERY_CLEAN,
   allCountries,
   byContinent,
+  mastery,
   mostMissed,
   totals,
   type ContinentRow,
   type CountryRow,
 } from "../lib/countryStats";
-import { allBuckets, formatDuration } from "../lib/records";
-import { dayKey, streakState } from "../lib/daily";
+import { allBuckets, bestRun, formatDuration } from "../lib/records";
+import { dayKey, scoreSpread, streakState } from "../lib/daily";
 import { MODES } from "../data/modes";
 import type { Continent } from "../data/continents";
 import { PageShell, ProgressTabs } from "../components/SiteHeader";
@@ -103,6 +106,77 @@ function MissedRow({ row }: { row: CountryRow }) {
   );
 }
 
+/**
+ * How much of the map is yours, as one bar.
+ *
+ * The four figures above answer "how am I doing"; this answers "how far
+ * through am I", which is the question a geography game is really asking. It
+ * is the one number here that has an end, so it is the one that reads as
+ * progress rather than as a score.
+ */
+function MasteryBar({ mastered, total }: { mastered: number; total: number }) {
+  const share = total > 0 ? Math.min(1, mastered / total) : 0;
+  return (
+    <div className="mt-3">
+      <span
+        aria-hidden="true"
+        className="block h-2 overflow-hidden rounded-full bg-white/[0.07]"
+      >
+        <span
+          className="block h-full rounded-full bg-teal-300/80"
+          style={{ width: `${share * 100}%` }}
+        />
+      </span>
+      <p className="mt-1.5 text-xs text-zinc-600">
+        {total - mastered} to go
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Every daily you have played, by how many of the ten you found.
+ *
+ * One row per score, ten at the top, so a good run of days leans the bars
+ * upward — the shape is the point, which is why the bars are all one colour
+ * and only the counts are labelled. Today's score is not marked out: the row
+ * it lands in is the mark.
+ */
+function DailySpread({ spread }: { spread: { found: number; days: number }[] }) {
+  const most = Math.max(...spread.map((bin) => bin.days), 1);
+
+  // Eleven rows of which seven are empty is not a shape, it is a gap. The
+  // chart runs from ten down to the worst day there has been, and never
+  // shows fewer than five rows — a week of tens would otherwise be a single
+  // bar with nothing to be better than.
+  const worst = spread.reduce(
+    (last, bin, index) => (bin.days > 0 ? index : last),
+    0
+  );
+  const rows = spread.slice(0, Math.max(worst, 4) + 1);
+
+  return (
+    <ul className="space-y-1 px-4 py-3">
+      {rows.map((bin) => (
+        <li key={bin.found} className="flex items-center gap-3 text-xs">
+          <span className="w-5 shrink-0 text-right tabular-nums text-zinc-500">
+            {bin.found}
+          </span>
+          <span className="flex h-4 min-w-0 flex-1 items-center">
+            <span
+              className="h-full rounded-[3px] bg-teal-300/70"
+              style={{ width: `${Math.max(bin.days > 0 ? 3 : 0, (bin.days / most) * 100)}%` }}
+            />
+            {bin.days > 0 && (
+              <span className="ml-2 tabular-nums text-zinc-400">{bin.days}</span>
+            )}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function Section({
   title,
   hint,
@@ -142,6 +216,9 @@ export default function Stats() {
     };
   }, []);
   const [run] = useState(() => streakState(dayKey()));
+  const learned = useMemo(() => mastery(rows), [rows]);
+  const best = useMemo(() => bestRun(), []);
+  const spread = useMemo(() => scoreSpread(), []);
 
   return (
     <PageShell>
@@ -158,25 +235,49 @@ export default function Stats() {
         </p>
       ) : (
         <>
-          <p className="mt-2 text-zinc-400">
-            Counted from every country a round has actually put in front of
-            you.
-          </p>
-
+          {/* Four figures worth chasing, not four worth decoding. "66% first
+              try" and "88 countries met" were a report card: true, hard to
+              place, and impossible to brag about. What replaces them is the
+              set every game of this kind shows — how far through you are,
+              your best, your streak, and how much you have played. */}
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Tile value={`${summary.accuracy}%`} label="First try" />
-            <Tile value={String(summary.countries)} label="Countries met" />
-            <Tile value={String(played.runs)} label="Rounds" />
+            <Tile
+              value={`${learned.mastered}/${learned.total}`}
+              label="Countries mastered"
+            />
+            <Tile
+              value={best ? best.points.toLocaleString() : "—"}
+              label={best ? "Best round" : "No scored round yet"}
+            />
             <Tile
               value={run.days > 0 ? `🔥 ${run.days}` : "—"}
               label={
-                // The record earns its place here, where the page is a
-                // record of everything else too — not on the menu, where it
-                // would just be a second number to read.
-                run.best > run.days ? `Daily streak · best ${run.best}` : "Daily streak"
+                run.best > run.days ? `Day streak · best ${run.best}` : "Day streak"
               }
             />
+            <Tile
+              value={String(played.runs)}
+              label={played.ms > 0 ? `Rounds · ${formatDuration(played.ms)}` : "Rounds"}
+            />
           </div>
+
+          <MasteryBar mastered={learned.mastered} total={learned.total} />
+
+          {spread.some((bin) => bin.days > 0) && (
+            <Section title="Daily scores" hint="how each day has gone">
+              <DailySpread spread={spread} />
+            </Section>
+          )}
+
+          <h2 className="mt-10 text-xl font-semibold tracking-tight text-zinc-50">
+            Where you're weak
+          </h2>
+          <p className="mt-1 text-sm text-zinc-500">
+            Counted from every country a round has actually put in front of
+            you. A country counts as mastered once you have named it{" "}
+            {MASTERY_CLEAN} times with no wrong answer, and get it right first
+            time at least {MASTERY_ACCURACY}% of the time.
+          </p>
 
           <Section
             title="Accuracy by continent"
@@ -192,7 +293,7 @@ export default function Stats() {
           {missed.length > 0 && (
             <Section
               title="Keeps beating you"
-              hint="practice these"
+              hint="missed · got on the retry · first-try accuracy"
             >
               <ul className="divide-y divide-white/[0.05]">
                 {missed.map((row) => (

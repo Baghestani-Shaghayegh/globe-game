@@ -3,10 +3,14 @@ import {
   allCountries,
   byContinent,
   clearStats,
+  isMastered,
+  mastery,
   mostMissed,
   recordRound,
   totals,
+  type CountryRow,
 } from "./countryStats";
+import { SOVEREIGN_COUNT } from "../data/modes";
 
 beforeEach(() => localStorage.clear());
 
@@ -158,5 +162,43 @@ describe("mostMissed", () => {
   it("honours the limit", () => {
     recordRound({ seen: ["Chad", "Peru", "Mali"], found: [], fumbled: [] });
     expect(mostMissed(2)).toHaveLength(2);
+  });
+});
+
+describe("mastery", () => {
+  const row = (over: Partial<CountryRow>): CountryRow => ({
+    geoName: "France",
+    displayName: "France",
+    continents: ["europe"],
+    seen: 0,
+    first: 0,
+    fumbled: 0,
+    missed: 0,
+    accuracy: 0,
+    ...over,
+  });
+
+  it("needs three clean answers, not two", () => {
+    expect(isMastered(row({ seen: 2, first: 2, accuracy: 100 }))).toBe(false);
+    expect(isMastered(row({ seen: 3, first: 3, accuracy: 100 }))).toBe(true);
+  });
+
+  it("forgives one early stumble but not a habit", () => {
+    // Four clean out of five is 80%: the floor, and it counts.
+    expect(isMastered(row({ seen: 5, first: 4, missed: 1, accuracy: 80 }))).toBe(
+      true
+    );
+    // Three clean out of five is 60%: known, not mastered.
+    expect(
+      isMastered(row({ seen: 5, first: 3, missed: 2, accuracy: 60 }))
+    ).toBe(false);
+  });
+
+  it("counts against the whole map, not against what you have seen", () => {
+    const rows = [
+      row({ geoName: "France", seen: 4, first: 4, accuracy: 100 }),
+      row({ geoName: "Chad", seen: 4, first: 1, missed: 3, accuracy: 25 }),
+    ];
+    expect(mastery(rows)).toEqual({ mastered: 1, total: SOVEREIGN_COUNT });
   });
 });

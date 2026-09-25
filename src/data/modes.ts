@@ -34,6 +34,12 @@ export const GAME_TYPES: { id: GameType; label: string; blurb: string }[] = [
 ];
 
 /**
+ * How many sovereign countries the map holds — the size of the whole game,
+ * and what "all of them" means on a progress bar or in a badge.
+ */
+export const SOVEREIGN_COUNT = 167;
+
+/**
  * Extra rules a round can be played under. "sudden" ends the round on the
  * first wrong answer; "relaxed" is the ordinary game.
  */
