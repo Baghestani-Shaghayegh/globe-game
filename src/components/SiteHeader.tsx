@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { playTap } from "../lib/sound";
 import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled } from "../lib/supabase";
+import { TabLink, TabRow } from "./Tabs";
 
 /**
  * The masthead, on every page that isn't a round in progress.
@@ -231,32 +232,13 @@ export function ProgressTabs() {
     { to: "/levels", label: "Level & themes" },
   ];
 
-  // Tabs, not buttons: a row of filled chips reads as four things to press,
-  // where a tab strip reads as one thing with four states. Same underline as
-  // the masthead's nav, so the two rows of links behave alike.
   return (
-    <nav
-      className="mt-4 flex flex-wrap justify-center gap-6 border-b border-white/[0.07] text-sm"
-      aria-label="Your progress"
-    >
-      {tabs.map((tab) => {
-        const active = pathname === tab.to;
-        return (
-          <Link
-            key={tab.to}
-            to={tab.to}
-            onClick={playTap}
-            aria-current={active ? "page" : undefined}
-            className={`-mb-px border-b-2 px-0.5 pb-2.5 text-center transition-colors ${
-              active
-                ? "border-teal-300 font-medium text-zinc-100"
-                : "border-transparent text-zinc-400 hover:text-zinc-100"
-            }`}
-          >
-            {tab.label}
-          </Link>
-        );
-      })}
-    </nav>
+    <TabRow label="Your progress">
+      {tabs.map((tab) => (
+        <TabLink key={tab.to} to={tab.to} active={pathname === tab.to}>
+          {tab.label}
+        </TabLink>
+      ))}
+    </TabRow>
   );
 }

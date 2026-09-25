@@ -6,11 +6,11 @@ import { GAME_TYPES, gamePath } from "../data/modes";
 /**
  * The hall of fame: one name per crown, held until somebody is faster.
  *
- * Above the weekly board rather than below it, because this is the thing
- * worth screenshotting. The weekly board answers "who played most this week",
- * which nobody brags about; this answers "who can name every country on earth
- * faster than anyone alive", which is the only claim in the game anyone would
- * repeat out loud.
+ * A tab beside the weekly and monthly boards. The weekly board answers "who
+ * played most this week", which nobody brags about; this answers "who can name
+ * every country on earth faster than anyone alive", which is the only claim in
+ * the game anyone would repeat out loud — so it gets equal billing rather than
+ * a block above a board.
  *
  * An unclaimed crown is shown, not hidden. A vacant throne with "nobody yet"
  * on it is an invitation; an absent card is nothing at all.
@@ -24,16 +24,9 @@ export default function CrownWall({
 }) {
   return (
     <section>
-      <div className="flex flex-wrap items-baseline gap-x-3">
-        <h2 className="text-xl font-semibold tracking-tight text-zinc-50">
-          Hall of fame
-        </h2>
-        <p className="text-sm text-zinc-500">
-          Fastest to clear all 167 — held until somebody is quicker.
-        </p>
-      </div>
-
-      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {/* No heading of its own: this is a tab on the leaderboard now, and the
+          tab names it while the line under the title carries the blurb. */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {(crowns ?? []).map((crown) => {
           const mine = crown.holder?.user_id === meId && meId !== null;
           return (

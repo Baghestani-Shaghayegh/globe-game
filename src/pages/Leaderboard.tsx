@@ -14,8 +14,8 @@ import {
 import AdSlot from "../components/AdSlot";
 import CrownWall from "../components/CrownWall";
 import { crowns as fetchCrowns, type Crown } from "../lib/crowns";
-import { playTap } from "../lib/sound";
 import { PageShell } from "../components/SiteHeader";
+import { TabButton, TabRow } from "../components/Tabs";
 
 /** How many places the board shows before it stops. */
 const BOARD_SIZE = 40;
@@ -136,7 +136,11 @@ export default function Leaderboard() {
   // first month sits on top of it forever, and a board nobody can climb is one
   // nobody tries at. Both of these turn over.
   const periods = useMemo(() => [weekPeriod(), monthPeriod()], []);
-  const [periodId, setPeriodId] = useState<Period["id"]>("week");
+  // The hall of fame is a third tab rather than a block above the board. It
+  // used to sit on top of both boards, which meant the page opened on six
+  // cards and you scrolled to reach the thing the page is named after.
+  const [tab, setTab] = useState<Period["id"] | "fame">("week");
+  const periodId: Period["id"] = tab === "fame" ? "week" : tab;
   const period = periods.find((p) => p.id === periodId) ?? periods[0];
 
   const [overall, setOverall] = useState<OverallRow[] | null>(null);
@@ -186,12 +190,16 @@ export default function Leaderboard() {
     };
   }, []);
 
-  // Two columns once there are enough names to fill them, so a board of forty
-  // is one screen rather than a column you scroll past the end of.
+  // Two players to a row, so a board of forty is one screen rather than a
+  // column you scroll past the end of. Split at any length: the column widths
+  // are the same either way, and a board that changes shape at the twelfth
+  // player looks like two different pages.
   const columns = useMemo(() => {
-    if (!overall || overall.length <= 12) return [overall ?? []];
+    if (!overall?.length) return [];
     const half = Math.ceil(overall.length / 2);
-    return [overall.slice(0, half), overall.slice(half)];
+    return [overall.slice(0, half), overall.slice(half)].filter(
+      (column) => column.length > 0
+    );
   }, [overall]);
 
   const players = overall?.[0]?.players ?? 0;
@@ -202,15 +210,31 @@ export default function Leaderboard() {
 
   return (
     <PageShell>
-      <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
-        Leaderboard
-      </h1>
+      <div className="mt-5 flex flex-wrap items-baseline justify-between gap-3">
+        <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">
+          Leaderboard
+        </h1>
+        {/* Proof there is a crowd, on the title's line where the badge count
+            is. One number, and it is the number a player is measuring
+            themselves against. */}
+        {tab !== "fame" && players > 0 && (
+          <span className="text-sm tabular-nums text-zinc-500">
+            {players.toLocaleString()} {players === 1 ? "player" : "players"}
+          </span>
+        )}
+      </div>
 
       <p className="mt-2 text-sm text-zinc-500">
-        Points from every round you play, the daily included.{" "}
-        {period.id === "week"
-          ? `Everyone starts level again in ${untilWeekEnd()}.`
-          : "Everyone starts level again on the first of the month."}
+        {tab === "fame" ? (
+          "Fastest to clear all 167 — held until somebody is quicker."
+        ) : (
+          <>
+            Points from every round you play, the daily included.{" "}
+            {period.id === "week"
+              ? `Everyone starts level again in ${untilWeekEnd()}.`
+              : "Everyone starts level again on the first of the month."}
+          </>
+        )}
       </p>
 
       {!accountsEnabled ? (
@@ -220,61 +244,43 @@ export default function Leaderboard() {
         </p>
       ) : (
         <>
-          {/* Above the weekly board on purpose. "Who scored most this week"
-              is not a thing anyone repeats out loud; "fastest person alive
-              to name every country" is. */}
-          <div className="mt-7">
-            <CrownWall crowns={held} meId={meId} />
-          </div>
+          <TabRow label="Board" tablist>
+            {periods.map((option) => (
+              <TabButton
+                key={option.id}
+                active={tab === option.id}
+                onClick={() => setTab(option.id)}
+              >
+                {option.label}
+              </TabButton>
+            ))}
+            <TabButton active={tab === "fame"} onClick={() => setTab("fame")}>
+              Hall of fame
+            </TabButton>
+          </TabRow>
 
-          <div className="mt-9 flex flex-wrap items-center gap-x-4 gap-y-2">
-            <div role="tablist" aria-label="Board" className="flex gap-1.5">
-              {periods.map((option) => {
-                const active = option.id === periodId;
-                return (
-                  <button
-                    key={option.id}
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => {
-                      playTap();
-                      setPeriodId(option.id);
-                    }}
-                    className={`rounded-lg border px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                      active
-                        ? "border-teal-300/60 bg-teal-300/[0.14] text-teal-100"
-                        : "border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/25 hover:bg-white/[0.06] hover:text-zinc-100"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
+          {tab === "fame" ? (
+            <div className="mt-6">
+              <CrownWall crowns={held} meId={meId} />
             </div>
-
-            {/* Proof there is a crowd. One number, and it is the number a
-                player is measuring themselves against. */}
-            {players > 0 && (
-              <span className="text-sm tabular-nums text-zinc-500">
-                {players.toLocaleString()}{" "}
-                {players === 1 ? "player" : "players"}
-              </span>
-            )}
-          </div>
-
-          <div className="mt-3 grid gap-3 lg:grid-cols-[repeat(auto-fit,minmax(24rem,1fr))]">
-            {overall === null ? (
+          ) : overall === null ? (
+            <div className="mt-6">
               <Panel>
                 <Empty>Loading…</Empty>
               </Panel>
-            ) : overall.length === 0 ? (
+            </div>
+          ) : overall.length === 0 ? (
+            <div className="mt-6">
               <Panel>
                 <Empty>
                   {error ?? "Nobody has played yet. Be the first name here."}
                 </Empty>
               </Panel>
-            ) : (
-              columns.map((column, index) => (
+            </div>
+          ) : (
+            // Two to a row wherever there is room for them.
+            <div className="mt-6 grid gap-3 lg:grid-cols-2">
+              {columns.map((column, index) => (
                 <Panel key={index}>
                   <ul className="divide-y divide-white/[0.05]">
                     {column.map((row) => (
@@ -287,14 +293,14 @@ export default function Leaderboard() {
                     ))}
                   </ul>
                 </Panel>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* Below the board, when they are past the end of it. A player in
               34th used to open this page and find nothing about themselves on
               it at all — the page quietly told them they weren't in the game. */}
-          {mine && !onBoard && (
+          {tab !== "fame" && mine && !onBoard && (
             <div className="mt-3">
               <Panel>
                 <ul>
