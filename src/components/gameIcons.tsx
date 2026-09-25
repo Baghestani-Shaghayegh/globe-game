@@ -91,3 +91,28 @@ export const DAILY_ICONS = {
     </>
   ),
 } as const;
+
+/** The figures on a profile: what each one counts, drawn the same way. */
+export const STAT_ICONS = {
+  // The flame the streak chip already uses.
+  streak: drawn(
+    <path d="M12 3s5 4.2 5 9a5 5 0 0 1-10 0c0-1.8.8-3.3 1.6-4.4.4 1 1 1.7 1.7 2.1.4-2.6.3-4.7 1.7-6.7z" />
+  ),
+  // A bolt, for the XP that levels you up.
+  level: drawn(<path d="M13 3 5 13.5h6L11 21l8-10.5h-6z" />),
+  // A calendar, for days played.
+  days: drawn(
+    <>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+      <path d="M3.5 10h17M8 3.5V7M16 3.5V7" />
+    </>
+  ),
+  // A trophy, for badges earned.
+  badges: drawn(
+    <>
+      <path d="M8 4h8v5a4 4 0 0 1-8 0V4z" />
+      <path d="M8 5.5H5.5V7a3 3 0 0 0 3 3M16 5.5h2.5V7a3 3 0 0 1-3 3" />
+      <path d="M12 13v3.5M9 20h6l-.5-3.5h-5z" />
+    </>
+  ),
+} as const;

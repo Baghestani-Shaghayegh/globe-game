@@ -15,6 +15,7 @@ import { allBuckets } from "../lib/records";
 import { refresh, tally } from "../lib/achievements";
 import { dayKey, playedDays, streakState } from "../lib/daily";
 import { progressFor, totalXp } from "../lib/levels";
+import { STAT_ICONS } from "../components/gameIcons";
 
 /** Every country the game ships a flag for, by the name a player would look for. */
 function flagOptions(): { code: string; name: string }[] {
@@ -385,13 +386,29 @@ function Stats() {
   }, []);
 
   const tiles = [
-    { to: "/records", label: "Day streak", value: String(figures.streak) },
-    { to: "/levels", label: "Level", value: String(figures.level) },
-    { to: "/stats", label: "Days played", value: String(figures.days) },
+    {
+      to: "/records",
+      label: "Day streak",
+      value: String(figures.streak),
+      icon: STAT_ICONS.streak,
+    },
+    {
+      to: "/levels",
+      label: "Level",
+      value: String(figures.level),
+      icon: STAT_ICONS.level,
+    },
+    {
+      to: "/stats",
+      label: "Days played",
+      value: String(figures.days),
+      icon: STAT_ICONS.days,
+    },
     {
       to: "/achievements",
       label: "Badges",
       value: `${figures.badges.unlocked}/${figures.badges.total}`,
+      icon: STAT_ICONS.badges,
     },
   ];
 
@@ -407,8 +424,11 @@ function Stats() {
             to={tile.to}
             className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center transition-colors hover:border-white/25"
           >
-            <span className="block text-2xl font-semibold tabular-nums text-zinc-50">
-              {tile.value}
+            <span className="flex items-center justify-center gap-2">
+              <span className="text-teal-300/80">{tile.icon}</span>
+              <span className="text-2xl font-semibold tabular-nums text-zinc-50">
+                {tile.value}
+              </span>
             </span>
             <span className="mt-0.5 block text-xs text-zinc-500">
               {tile.label}
@@ -484,12 +504,15 @@ function DeleteAccount() {
           </div>
         </div>
       ) : (
-        <button
-          onClick={() => setAsking(true)}
-          className="text-sm text-zinc-600 underline underline-offset-4 transition-colors hover:text-rose-300"
-        >
-          Delete my account
-        </button>
+        // Off in the corner, where the thing you are not looking for lives.
+        <div className="flex justify-end">
+          <button
+            onClick={() => setAsking(true)}
+            className="text-sm text-zinc-600 underline underline-offset-4 transition-colors hover:text-rose-300"
+          >
+            Delete my account
+          </button>
+        </div>
       )}
     </section>
   );
