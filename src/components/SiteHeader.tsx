@@ -1,10 +1,7 @@
-import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import StreakChip from "./StreakChip";
 import { playTap } from "../lib/sound";
 import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled } from "../lib/supabase";
-import { dayKey, streakState, type Streak } from "../lib/daily";
 
 /**
  * The masthead, on every page that isn't a round in progress.
@@ -51,14 +48,6 @@ function NavLink({
 export default function SiteHeader() {
   const { profile, session } = useAuth();
   const { pathname } = useLocation();
-
-  // The streak is kept on the device, so it stands whether or not anyone is
-  // signed in — and it is read here rather than passed in, so every page that
-  // carries the masthead carries the flame too.
-  const [daily, setDaily] = useState<Streak | null>(null);
-  useEffect(() => {
-    setDaily(streakState(dayKey()));
-  }, []);
 
   return (
     <header className="relative z-10 w-full px-5 py-4 [text-shadow:0_1px_4px_rgba(7,17,28,0.85)] sm:px-8 lg:px-12">
@@ -120,7 +109,6 @@ export default function SiteHeader() {
             </svg>
             <span className="hidden sm:inline">Settings</span>
           </Link>
-          {daily && <StreakChip streak={daily} />}
           {accountsEnabled && (
             <Link
               to="/account"
