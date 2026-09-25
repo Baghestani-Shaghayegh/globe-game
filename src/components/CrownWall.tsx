@@ -7,7 +7,7 @@ import {
   type Bucket,
 } from "../lib/records";
 import { CROWN_RUN, type Crown } from "../lib/crowns";
-import { gamePath, type GameType } from "../data/modes";
+import { GAME_TYPES, gamePath, type GameType } from "../data/modes";
 
 /**
  * The hall of fame: one holder per crown, held until somebody is faster.
@@ -123,6 +123,11 @@ function myBest(
     best: clean.length ? Math.min(...clean.map((run) => run.ms)) : null,
     hintedOnly: clean.length === 0 && cleared.length > 0,
   };
+}
+
+/** "Find it", not "FIND": the tag names a game type, so it uses its name. */
+function typeLabel(type: GameType): string {
+  return GAME_TYPES.find((option) => option.id === type)?.label ?? type;
 }
 
 /** A record, in whatever it is measured in. */
@@ -285,9 +290,13 @@ function Card({
             <span className="truncate font-medium text-zinc-50">
               {holder.username}
             </span>
+            {/* Which game type the record was set in. Only on a crown that
+                spans several — the full map and the continents are contested
+                in all six, so "whose record is this, exactly" is a real
+                question there and nowhere else. */}
             {crown.heldIn && crown.buckets.length > 1 && (
-              <span className="shrink-0 rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-500">
-                {crown.heldIn}
+              <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] text-zinc-400">
+                {typeLabel(crown.heldIn)}
               </span>
             )}
             {/* Labelled, because a bare "8:32" beside a name is a number
