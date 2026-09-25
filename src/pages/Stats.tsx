@@ -33,10 +33,24 @@ function gradeColor(accuracy: number): string {
   return "#fb7185";
 }
 
-function Tile({ value, label }: { value: string; label: string }) {
+function Tile({
+  value,
+  unit,
+  label,
+}: {
+  value: string;
+  /** What the figure is counted in, small and quiet beside it — "pts". */
+  unit?: string;
+  label: string;
+}) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
-      <p className="text-2xl font-semibold tabular-nums text-zinc-50">{value}</p>
+      <p className="text-2xl font-semibold tabular-nums text-zinc-50">
+        {value}
+        {unit && (
+          <span className="ml-1 text-sm font-medium text-zinc-500">{unit}</span>
+        )}
+      </p>
       <p className="mt-0.5 text-xs uppercase tracking-wider text-zinc-500">
         {label}
       </p>
@@ -247,18 +261,22 @@ export default function Stats() {
             />
             <Tile
               value={best ? best.points.toLocaleString() : "—"}
+              unit={best ? "pts" : undefined}
               label={best ? "Best round" : "No scored round yet"}
             />
+            {/* Two tiles, the way Wordle counts a streak: the one you are on
+                and the best you have had. As a "· best 3" tacked onto the
+                label it read as a footnote about the same number.
+
+                Nought is a number here. The chip beside the player's name
+                hides at nought on purpose — an empty flame there is a
+                reproach — but this page is the place that answers "how am I
+                doing", and a dash answers nothing. */}
             <Tile
-              value={run.days > 0 ? `🔥 ${run.days}` : "—"}
-              label={
-                run.best > run.days ? `Day streak · best ${run.best}` : "Day streak"
-              }
+              value={run.days > 0 ? `🔥 ${run.days}` : "0"}
+              label="Day streak"
             />
-            <Tile
-              value={String(played.runs)}
-              label={played.ms > 0 ? `Rounds · ${formatDuration(played.ms)}` : "Rounds"}
-            />
+            <Tile value={String(run.best)} label="Best streak" />
           </div>
 
           <MasteryBar mastered={learned.mastered} total={learned.total} />
