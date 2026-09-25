@@ -11,6 +11,8 @@ import {
 import { FLAG_CODE } from "../data/flags";
 import { getCountryMeta } from "../data/countries";
 import { PageShell } from "../components/SiteHeader";
+import { allBuckets } from "../lib/records";
+import { refresh, tally } from "../lib/achievements";
 
 /** Every country the game ships a flag for, by the name a player would look for. */
 function flagOptions(): { code: string; name: string }[] {
@@ -75,6 +77,70 @@ function oauthErrorFromUrl(): string | null {
   return providerDisabled(urlAuthError)
     ? "Google sign-in isn't switched on for this site yet. Use your email instead."
     : urlAuthError;
+}
+
+/**
+ * What an account is actually for, before it is asked for.
+ *
+ * The page opened on "Sign in" and two buttons: it asked for an email without
+ * ever saying what the email buys. Every line here is something the account
+ * really does today — the boards, the crowns, the rooms. Notably absent is
+ * carrying your records to another device, which sounds like the obvious one
+ * and is not true: records, streaks, badges and the practice deck live in this
+ * browser, and an account does not move them.
+ */
+function WhySignIn() {
+  // Read once, from the history the game already keeps. A player who has been
+  // at this a while should see their own numbers rather than a sales pitch.
+  const played = useMemo(() => {
+    const buckets = allBuckets();
+    const runs = buckets.reduce((sum, bucket) => sum + bucket.runs.length, 0);
+    return { runs, badges: tally(refresh()).unlocked };
+  }, []);
+
+  const lines = [
+    "Your name and flag on the weekly and monthly boards",
+    "A crown in the hall of fame, if you clear the map fastest",
+    "Private rooms — play a friend head to head",
+    "No password: a link in your email, or Google",
+  ];
+
+  return (
+    <div className="mt-6 rounded-2xl border border-teal-300/25 bg-teal-300/[0.05] p-5 sm:p-6">
+      <h2 className="text-lg font-semibold text-zinc-50">
+        Create a free account
+      </h2>
+
+      {played.runs > 0 && (
+        <p className="mt-1.5 text-sm text-zinc-400">
+          {played.runs === 1 ? "One round" : `${played.runs} rounds`}
+          {played.badges > 0 &&
+            ` and ${played.badges === 1 ? "one badge" : `${played.badges} badges`}`}{" "}
+          so far — none of it is on a board yet.
+        </p>
+      )}
+
+      <ul className="mt-4 space-y-2.5">
+        {lines.map((line) => (
+          <li key={line} className="flex items-start gap-2.5 text-sm text-zinc-200">
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="mt-0.5 h-4 w-4 shrink-0 text-teal-300"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m5 12.5 4.5 4.5L19 7" />
+            </svg>
+            {line}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 /** The signed-out half: ask for an email, send a link, say so. */
@@ -150,6 +216,8 @@ function SignIn() {
 
   return (
     <>
+      <WhySignIn />
+
       <button
         onClick={withGoogle}
         disabled={goingToGoogle}
@@ -192,8 +260,9 @@ function SignIn() {
       </form>
 
       <p className="mt-5 text-sm text-zinc-500">
-        No password either way. You can keep playing without an account; signing
-        in is what makes your name show up on a leaderboard.
+        You can keep playing without one. Your records, streak and badges are
+        saved in this browser either way — an account is what puts your name on
+        a board, not where your history lives.
       </p>
     </>
   );
@@ -347,7 +416,7 @@ export default function Account() {
   return (
     <Shell>
       <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
-        {session ? "Your account" : "Sign in"}
+        {session ? "Your account" : "My profile"}
       </h1>
 
       {loading ? (

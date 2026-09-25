@@ -134,7 +134,7 @@ export default function SiteHeader() {
               onClick={playTap}
               className="flex items-center gap-2 rounded-xl border border-white/15 px-3.5 py-1.5 text-sm text-zinc-100 transition-colors hover:border-white/35"
             >
-              {profile?.country && (
+              {profile?.country ? (
                 <img
                   src={`/flags/${profile.country}.svg`}
                   alt=""
@@ -142,8 +142,26 @@ export default function SiteHeader() {
                   height={14}
                   className="w-[18px] rounded-[2px]"
                 />
+              ) : (
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4 text-zinc-400"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="8" r="3.4" />
+                  <path d="M5 20a7 7 0 0 1 14 0" />
+                </svg>
               )}
-              {profile ? profile.username : session ? "Finish setup" : "Sign in"}
+              {/* "My profile" rather than "Sign in" while signed out. The
+                  button led to a page that is a profile either way, and a
+                  bare "Sign in" asks for something before it has said what
+                  for — the page behind it is where the case gets made. */}
+              {profile ? profile.username : session ? "Finish setup" : "My profile"}
             </Link>
           )}
         </div>
