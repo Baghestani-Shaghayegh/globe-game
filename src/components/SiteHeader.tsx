@@ -234,8 +234,14 @@ export function ProgressTabs() {
     { to: "/levels", label: "Level & themes" },
   ];
 
+  // Tabs, not buttons: a row of filled chips reads as four things to press,
+  // where a tab strip reads as one thing with four states. Same underline as
+  // the masthead's nav, so the two rows of links behave alike.
   return (
-    <nav className="mt-4 flex flex-wrap gap-1.5" aria-label="Your progress">
+    <nav
+      className="mt-4 flex flex-wrap gap-6 border-b border-white/[0.07] text-sm"
+      aria-label="Your progress"
+    >
       {tabs.map((tab) => {
         const active = pathname === tab.to;
         return (
@@ -244,10 +250,10 @@ export function ProgressTabs() {
             to={tab.to}
             onClick={playTap}
             aria-current={active ? "page" : undefined}
-            className={`rounded-lg border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+            className={`-mb-px border-b-2 px-0.5 pb-2.5 text-center transition-colors ${
               active
-                ? "border-teal-300/60 bg-teal-300/[0.14] text-teal-100"
-                : "border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/25 hover:bg-white/[0.06] hover:text-zinc-100"
+                ? "border-teal-300 font-medium text-zinc-100"
+                : "border-transparent text-zinc-400 hover:text-zinc-100"
             }`}
           >
             {tab.label}
