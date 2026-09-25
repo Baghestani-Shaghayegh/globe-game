@@ -463,19 +463,23 @@ function DeleteAccount() {
             streak and badges are in this browser and stay there.
           </p>
           {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
-          <div className="mt-4 flex flex-wrap items-center gap-3">
+          {/* Keeping the account is the button; deleting it is the quiet
+              link beside it. The weight belongs to the way out, not the way
+              through — a filled button under a question about deleting
+              everything invites the press it should be slowing down. */}
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            <button
+              onClick={() => setAsking(false)}
+              className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-[#07111c] transition-colors hover:bg-white"
+            >
+              Keep my account
+            </button>
             <button
               onClick={() => void remove()}
               disabled={working}
-              className="rounded-lg border border-rose-400/40 bg-rose-400/15 px-4 py-2 text-sm font-medium text-rose-100 transition-colors hover:bg-rose-400/25 disabled:opacity-50"
+              className="text-sm text-rose-300/80 underline underline-offset-4 transition-colors hover:text-rose-200 disabled:opacity-50"
             >
               {working ? "Deleting…" : "Yes, delete it"}
-            </button>
-            <button
-              onClick={() => setAsking(false)}
-              className="text-sm text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
-            >
-              Keep my account
             </button>
           </div>
         </div>
