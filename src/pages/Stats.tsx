@@ -9,7 +9,7 @@ import {
   type ContinentRow,
   type CountryRow,
 } from "../lib/countryStats";
-import { allBuckets, bestRun, formatDuration } from "../lib/records";
+import { bestRun } from "../lib/records";
 import { dayKey, scoreSpread, streakState } from "../lib/daily";
 import { MODES } from "../data/modes";
 import type { Continent } from "../data/continents";
@@ -197,13 +197,6 @@ export default function Stats() {
   const [rows] = useState<CountryRow[]>(() => allCountries());
   const summary = useMemo(() => totals(rows), [rows]);
   const continents = useMemo(() => byContinent(rows), [rows]);
-  const played = useMemo(() => {
-    const runs = allBuckets().flatMap((b) => b.runs);
-    return {
-      runs: runs.length,
-      ms: runs.reduce((sum, run) => sum + run.ms, 0),
-    };
-  }, []);
   const [run] = useState(() => streakState(dayKey()));
   const learned = useMemo(() => mastery(rows), [rows]);
   const best = useMemo(() => bestRun(), []);
@@ -283,11 +276,6 @@ export default function Stats() {
             </ul>
           </Section>
 
-          <p className="mt-6 text-sm tabular-nums text-zinc-600">
-            {summary.seen} {summary.seen === 1 ? "country" : "countries"} put
-            to you across {played.runs} {played.runs === 1 ? "round" : "rounds"}
-            {played.ms > 0 && ` · ${formatDuration(played.ms)} played`}
-          </p>
         </>
       )}
 
