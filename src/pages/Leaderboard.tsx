@@ -330,11 +330,20 @@ export default function Leaderboard() {
   // Named after the window it covers, not after the tab. The month reads off
   // the period's own start date in UTC — the same midnight the board is
   // ranked from, so the name can't drift a day either side of the first.
-  const board = useMemo((): { title: string; blurb?: string } => {
+  const board = useMemo((): {
+    title: string;
+    blurb?: string;
+    /** A rule of the board, where there is one worth stating up front. */
+    note?: string;
+  } => {
     if (tab === "fame") {
       return {
         title: "Hall of fame",
-        blurb: "One holder each, set without hints, until somebody goes quicker.",
+        blurb: "One holder each, until somebody goes quicker.",
+        // Its own line. Buried in the blurb as "set without hints" it read as
+        // a description of the holders rather than the rule you are playing
+        // under, and it is the rule that costs somebody a record.
+        note: "A round only counts here if you finish it without hints.",
       };
     }
     // No line under this one. A board headed "This week" has said everything
@@ -395,6 +404,9 @@ export default function Leaderboard() {
             </h2>
             {board.blurb && (
               <p className="mt-1 text-sm text-zinc-500">{board.blurb}</p>
+            )}
+            {board.note && (
+              <p className="mt-1.5 text-xs text-zinc-600">{board.note}</p>
             )}
             {tab !== "fame" && players > 0 && (
               <p className="mt-1 text-sm tabular-nums text-zinc-500">
