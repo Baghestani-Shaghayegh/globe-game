@@ -56,11 +56,68 @@ body {
   animation: score-pop 0.9s ease-out both;
 }
 
+/* A gloss travelling across a podium row, once every few seconds.
+   The element it sits on needs `relative` and `overflow-hidden`; the sweep is
+   a pseudo-element so it lies over the row's own background without touching
+   the text, and it is `pointer-events-none` by construction. */
+@keyframes shine {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  /* Most of the cycle is the wait. A sheen that never stops reads as a
+     loading skeleton, which is the opposite of "this row is the prize". */
+  55%,
+  100% {
+    transform: translateX(320%) skewX(-18deg);
+  }
+}
+
+.shine {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.shine::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 45%;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.09) 45%,
+    rgb(255 255 255 / 0.16) 50%,
+    rgb(255 255 255 / 0.09) 55%,
+    transparent 100%
+  );
+  animation: shine 4.5s cubic-bezier(0.4, 0, 0.35, 1) infinite;
+}
+
+/* Gold runs a touch warmer and a touch brighter than the other two. */
+.shine-gold::after {
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgb(253 230 138 / 0.14) 45%,
+    rgb(254 243 199 / 0.26) 50%,
+    rgb(253 230 138 / 0.14) 55%,
+    transparent 100%
+  );
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-shake,
   .animate-fade-in,
   .animate-score-pop {
     animation: none;
+  }
+
+  /* No sweep at all rather than a bar parked over the row. */
+  .shine::after {
+    display: none;
   }
 
   /* Without the rise it would simply hang there, so it does not show at all. */

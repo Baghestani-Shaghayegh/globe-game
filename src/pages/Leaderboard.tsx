@@ -30,12 +30,26 @@ const BOARD_SIZE = 40;
  */
 const MEDALS = ["🥇", "🥈", "🥉"] as const;
 
-function Medal({ rank }: { rank: number }) {
+/**
+ * The place, as a medal for the top three and a numeral for everyone else.
+ *
+ * The first three rows used to carry both — a small grey "1" and a medal
+ * beside it, saying the same thing twice in two alphabets. The medal is the
+ * louder of the two and the one that survives a screenshot, so it takes the
+ * whole cell and grows into it. The label keeps the rank readable to a screen
+ * reader, which an emoji on its own is not.
+ */
+function Rank({ rank }: { rank: number }) {
   const medal = MEDALS[rank - 1];
-  if (!medal) return null;
   return (
-    <span aria-label={`rank ${rank}`} className="text-base leading-none">
-      {medal}
+    <span className="flex w-9 shrink-0 items-center justify-end">
+      {medal ? (
+        <span aria-label={`rank ${rank}`} className="text-2xl leading-none">
+          {medal}
+        </span>
+      ) : (
+        <span className="font-medium tabular-nums text-zinc-500">{rank}</span>
+      )}
     </span>
   );
 }
@@ -91,16 +105,23 @@ function Row({
   isYou: boolean;
   prevLabel: string;
 }) {
+  // The podium catches the light. Gold gets its own, warmer sweep; fourth
+  // place down gets none, which is what makes the top three look like the
+  // top three from across the room.
+  const sheen =
+    row.rank === 1
+      ? "shine shine-gold"
+      : row.rank <= 3
+        ? "shine"
+        : "";
+
   return (
     <li
-      className={`flex items-center gap-2.5 px-4 py-2.5 text-sm ${
+      className={`flex items-center gap-2.5 px-4 py-2.5 text-sm ${sheen} ${
         isYou ? "bg-sky-400/[0.07]" : ""
       }`}
     >
-      <span className="w-6 shrink-0 text-right font-medium tabular-nums text-zinc-500">
-        {row.rank}
-      </span>
-      <Medal rank={row.rank} />
+      <Rank rank={row.rank} />
       <Flag code={row.country} />
       <span className={`truncate ${isYou ? "text-sky-200" : "text-zinc-100"}`}>
         {row.username}
@@ -203,6 +224,32 @@ export default function Leaderboard() {
   }, [overall]);
 
   const players = overall?.[0]?.players ?? 0;
+
+  // Named after the window it covers, not after the tab. The month reads off
+  // the period's own start date in UTC — the same midnight the board is
+  // ranked from, so the name can't drift a day either side of the first.
+  const board = useMemo(() => {
+    if (tab === "fame") {
+      return {
+        title: "Hall of fame",
+        blurb: "Fastest to clear all 167 — held until somebody is quicker.",
+      };
+    }
+    if (period.id === "week") {
+      return {
+        title: "This week's leaderboard",
+        blurb: `Cumulative rankings since Monday. Everyone starts level again in ${untilWeekEnd()}.`,
+      };
+    }
+    const month = period.since.toLocaleDateString(undefined, {
+      month: "long",
+      timeZone: "UTC",
+    });
+    return {
+      title: `${month} leaderboard`,
+      blurb: `Cumulative rankings since ${month} 1st.`,
+    };
+  }, [tab, period]);
   const onBoard =
     mine !== null && overall !== null
       ? overall.some((row) => row.user_id === mine.user_id)
@@ -210,32 +257,9 @@ export default function Leaderboard() {
 
   return (
     <PageShell>
-      <div className="mt-5 flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">
-          Leaderboard
-        </h1>
-        {/* Proof there is a crowd, on the title's line where the badge count
-            is. One number, and it is the number a player is measuring
-            themselves against. */}
-        {tab !== "fame" && players > 0 && (
-          <span className="text-sm tabular-nums text-zinc-500">
-            {players.toLocaleString()} {players === 1 ? "player" : "players"}
-          </span>
-        )}
-      </div>
-
-      <p className="mt-2 text-sm text-zinc-500">
-        {tab === "fame" ? (
-          "Fastest to clear all 167 — held until somebody is quicker."
-        ) : (
-          <>
-            Points from every round you play, the daily included.{" "}
-            {period.id === "week"
-              ? `Everyone starts level again in ${untilWeekEnd()}.`
-              : "Everyone starts level again on the first of the month."}
-          </>
-        )}
-      </p>
+      <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
+        Leaderboard
+      </h1>
 
       {!accountsEnabled ? (
         <p className="mt-6 text-zinc-400">
@@ -258,6 +282,24 @@ export default function Leaderboard() {
               Hall of fame
             </TabButton>
           </TabRow>
+
+          {/* What you are looking at, under the tab that chose it. "This
+              month" names the tab; "September leaderboard" names the board,
+              which is the thing a player would say out loud. The count is
+              proof there is a crowd, and the number they are measuring
+              themselves against. */}
+          <div className="mt-6 text-center">
+            <h2 className="text-lg font-semibold tracking-tight text-zinc-100">
+              {board.title}
+            </h2>
+            <p className="mt-1 text-sm text-zinc-500">{board.blurb}</p>
+            {tab !== "fame" && players > 0 && (
+              <p className="mt-1 text-sm tabular-nums text-zinc-500">
+                {players.toLocaleString()}{" "}
+                {players === 1 ? "player" : "players"}
+              </p>
+            )}
+          </div>
 
           {tab === "fame" ? (
             <div className="mt-6">
