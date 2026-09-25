@@ -197,13 +197,19 @@ function DailyYear({ days }: { days: DailyDay[] }) {
 
   return (
     <div ref={scroller} className="overflow-x-auto px-4 py-3.5">
-      <div className="inline-block min-w-full">
+      <div className="min-w-full">
         {/* The month strip is its own grid over the same columns, so a name
             cannot drift off the week it belongs to. */}
+        {/* The squares stretch to fill the column rather than sitting at a
+            fixed ten pixels with the rest of the width left over. A floor of
+            0.55rem keeps them square-ish on a phone, where the row scrolls
+            instead of squashing. */}
         <div
           aria-hidden="true"
-          className="ml-8 grid gap-[3px] text-[10px] text-zinc-600"
-          style={{ gridTemplateColumns: `repeat(${columns}, 0.625rem)` }}
+          className="ml-[1.875rem] grid gap-[3px] text-[10px] text-zinc-600"
+          style={{
+            gridTemplateColumns: `repeat(${columns}, minmax(0.55rem, 1fr))`,
+          }}
         >
           {Array.from({ length: columns }, (_, column) => (
             <span key={column} className="h-4 whitespace-nowrap">
@@ -213,16 +219,19 @@ function DailyYear({ days }: { days: DailyDay[] }) {
         </div>
 
         <div className="flex gap-1.5">
-          <div className="grid grid-rows-7 gap-[3px] text-[10px] leading-[0.625rem] text-zinc-600">
+          <div className="grid shrink-0 grid-rows-7 items-center gap-[3px] text-[10px] text-zinc-600">
             {WEEKDAY_LABELS.map((day, index) => (
-              <span key={index} className="h-2.5 w-6 text-right">
+              <span key={index} className="w-6 text-right leading-none">
                 {day}
               </span>
             ))}
           </div>
 
           <div
-            className="grid grid-flow-col grid-rows-7 gap-[3px]"
+            className="grid flex-1 grid-flow-col grid-rows-7 gap-[3px]"
+            style={{
+              gridTemplateColumns: `repeat(${columns}, minmax(0.55rem, 1fr))`,
+            }}
             role="img"
             aria-label={`Dailies over the last year: ${
               days.filter((day) => day.found !== null).length
@@ -233,10 +242,10 @@ function DailyYear({ days }: { days: DailyDay[] }) {
                 <span
                   key={cell.day}
                   title={label(cell)}
-                  className={`h-2.5 w-2.5 rounded-[2px] ${tone(cell)}`}
+                  className={`aspect-square w-full rounded-[2px] ${tone(cell)}`}
                 />
               ) : (
-                <span key={`blank-${index}`} className="h-2.5 w-2.5" />
+                <span key={`blank-${index}`} className="aspect-square w-full" />
               )
             )}
           </div>
@@ -329,8 +338,8 @@ export default function Stats() {
           <MasteryBar mastered={learned.mastered} total={learned.total} />
 
           <Section
-            title="The last year"
-            hint="one square a day · fuller means more found"
+            title="Your daily history"
+            hint="a square a day for the last year · brighter means more found"
           >
             <DailyYear days={days} />
           </Section>
