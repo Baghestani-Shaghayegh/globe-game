@@ -196,8 +196,8 @@ function DailyYear({ days }: { days: DailyDay[] }) {
   const columns = Math.ceil(cells.length / 7);
 
   return (
-    <div ref={scroller} className="overflow-x-auto px-4 py-3.5">
-      <div className="min-w-full">
+    <div className="px-4 py-3.5">
+      <div ref={scroller} className="min-w-full overflow-x-auto">
         {/* The month strip is its own grid over the same columns, so a name
             cannot drift off the week it belongs to. */}
         {/* The squares stretch to fill the column rather than sitting at a
@@ -250,6 +250,27 @@ function DailyYear({ days }: { days: DailyDay[] }) {
             )}
           </div>
         </div>
+      </div>
+
+      {/* The scale, drawn rather than described. "Brighter means more
+          countries found that day" is a sentence explaining a picture; five
+          swatches from empty to full are the picture explaining itself. */}
+      <div className="mt-3 flex items-center justify-end gap-1.5 text-[11px] text-zinc-600">
+        <span>Less</span>
+        {[
+          "bg-white/[0.04]",
+          "bg-teal-300/25",
+          "bg-teal-300/45",
+          "bg-teal-300/70",
+          "bg-teal-300",
+        ].map((tint) => (
+          <span
+            key={tint}
+            aria-hidden="true"
+            className={`h-2.5 w-2.5 rounded-[2px] ${tint}`}
+          />
+        ))}
+        <span>More</span>
       </div>
     </div>
   );
@@ -337,10 +358,7 @@ export default function Stats() {
 
           <MasteryBar mastered={learned.mastered} total={learned.total} />
 
-          <Section
-            title="Your daily history"
-            hint="a square a day · brighter means more countries found that day"
-          >
+          <Section title="Your daily history" hint="a square a day">
             <DailyYear days={days} />
           </Section>
 
