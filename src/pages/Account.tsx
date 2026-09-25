@@ -89,7 +89,11 @@ function oauthErrorFromUrl(): string | null {
  *
  * No count of what the player has already done, either. A tally of rounds and
  * badges under the heading read as leverage — look what you stand to miss —
- * where the four lines below simply say what the thing is.
+ * where the lines below simply say what the thing is.
+ *
+ * Where local storage ends is on the privacy page rather than under these
+ * buttons now. Nothing here claims otherwise; if signing in ever does carry a
+ * player's history, this list is where that line belongs, at the top.
  */
 function WhySignIn() {
   const lines = [
@@ -259,11 +263,6 @@ function SignIn() {
         </button>
       </form>
 
-      <p className="mt-5 text-sm text-zinc-500">
-        You can keep playing without one. Your records, streak and badges are
-        saved in this browser either way — an account is what puts your name on
-        a board, not where your history lives.
-      </p>
     </>
   );
 }
