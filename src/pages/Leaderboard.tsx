@@ -72,43 +72,17 @@ function Flag({ code }: { code: string | null }) {
 }
 
 /**
- * Where this player finished the period before.
- *
- * The one thing that turns a table into a story: a row that says "#10 last
- * week" is a player climbing, and the board reads as something happening
- * rather than a list of names. Nothing at all for someone who wasn't playing
- * then — "new" would be a guess, and most of the time a wrong one.
- */
-function LastTime({ rank, label }: { rank: number | null; label: string }) {
-  if (rank === null) return null;
-  const medal = MEDALS[rank - 1];
-  return (
-    <span className="flex shrink-0 items-center gap-1 rounded-full bg-white/[0.06] px-2 py-0.5 text-xs text-zinc-400">
-      {medal ? (
-        <span aria-hidden="true">{medal}</span>
-      ) : (
-        <span className="tabular-nums">#{rank}</span>
-      )}
-      {label}
-    </span>
-  );
-}
-
-/**
  * One place on a board: rank, who, and the number they are ranked by.
  *
  * The rows used to carry a second figure — how many rounds the weekly total
  * came from — and it competed with the number that actually decides the order.
+ *
+ * They also carried a "#10 last week" chip. It said the same kind of thing as
+ * the gain under the total — this player is moving — only slower and a week
+ * late, and between the two the row had rank, medal, flag, name, chip, total
+ * and gain on it. The faster of the two signals stayed.
  */
-function Row({
-  row,
-  isYou,
-  prevLabel,
-}: {
-  row: OverallRow;
-  isYou: boolean;
-  prevLabel: string;
-}) {
+function Row({ row, isYou }: { row: OverallRow; isYou: boolean }) {
   // The podium catches the light. Gold gets its own, warmer sweep; fourth
   // place down gets none, which is what makes the top three look like the
   // top three from across the room.
@@ -136,8 +110,6 @@ function Row({
         {row.username}
         {isYou && <span className="ml-1.5 text-xs text-sky-300/70">you</span>}
       </span>
-      <LastTime rank={row.prev_rank} label={prevLabel} />
-
       {/* The total for the window, and under it what they have added today.
           The total says who is ahead; the gain says who is moving, which is
           the half that makes a table worth opening twice in a day. Absent
@@ -469,7 +441,6 @@ export default function Leaderboard() {
                         key={row.user_id}
                         row={row}
                         isYou={row.user_id === meId}
-                        prevLabel={period.prevLabel}
                       />
                     ))}
                   </ul>
@@ -494,7 +465,7 @@ export default function Leaderboard() {
               </p>
               <Panel>
                 <ul>
-                  <Row row={mine} isYou prevLabel={period.prevLabel} />
+                  <Row row={mine} isYou />
                 </ul>
               </Panel>
             </div>

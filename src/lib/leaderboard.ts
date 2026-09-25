@@ -164,7 +164,11 @@ export type OverallRow = {
   runs: number;
   best_run: number;
   last_played: string;
-  /** Where they finished the period before, or null if they weren't playing. */
+  /**
+   * Where they finished the period before, or null if they weren't playing.
+   * Not shown any more — the gain under the total says the same thing sooner
+   * — so this comes back null while the callers pass no previous window.
+   */
   prev_rank: number | null;
   /** How many players are on this board, not how many rows came back. */
   players: number;
@@ -196,8 +200,11 @@ export async function overallTop(
   const { data, error } = await supabase.rpc("overall_leaderboard", {
     since: period.since.toISOString(),
     limit_to: limit,
-    prev_since: period.prevSince.toISOString(),
-    prev_until: period.prevUntil.toISOString(),
+    // The previous window, which the rows no longer print. Passed as null so
+    // the function skips that pass over scores entirely; `Period` still
+    // carries the dates, so bringing the chip back is a one-line change here.
+    prev_since: null,
+    prev_until: null,
     offset_by: offset,
     // The same UTC midnight the daily challenge turns over on, so "today"
     // means one thing across the game rather than one thing per feature.
@@ -223,8 +230,8 @@ export async function myStanding(period: Period): Promise<OverallRow | null> {
   if (!supabase) return null;
   const { data, error } = await supabase.rpc("my_overall_standing", {
     since: period.since.toISOString(),
-    prev_since: period.prevSince.toISOString(),
-    prev_until: period.prevUntil.toISOString(),
+    prev_since: null,
+    prev_until: null,
     today_since: dayStart().toISOString(),
   });
   if (error) throw error;

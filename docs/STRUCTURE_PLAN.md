@@ -281,12 +281,17 @@ whoever got there first. `since` is what makes a board weekly.
 The board everyone lands on is the overall one:
 `public.overall_leaderboard(since, limit_to, prev_since, prev_until, offset_by)`
 sums every bucket per player. It answers three things at once — where each player
-ranks now, where they ranked in the window `prev_since … prev_until` (what the
-"#10 last week" chip on a row is), and how many players are on the board at
-all. The previous window is passed in rather than worked out in SQL, because
-only the client knows whether the board on screen is the weekly or the monthly
-one; `weekPeriod()` and `monthPeriod()` in `lib/leaderboard.ts` build both
-halves of the pair.
+ranks now, where they ranked in the window `prev_since … prev_until`, and how
+many players are on the board at all. The previous window is passed in rather
+than worked out in SQL, because only the client knows whether the board on
+screen is the weekly or the monthly one; `weekPeriod()` and `monthPeriod()` in
+`lib/leaderboard.ts` build both halves of the pair.
+
+The rows printed that second rank as a "#10 last week" chip, and no longer do:
+it says the same thing as the gain below, a week later. The callers pass
+`prev_since` as null now, which skips the pass over `scores` that computed it,
+and `Period` still carries the dates — bringing the chip back is one line in
+`overallTop`.
 
 Ranks are `rank()`, not `row_number()`: two players on the same points are
 both 2nd and the next one is 4th. Fewer runs still decides which of a tied
