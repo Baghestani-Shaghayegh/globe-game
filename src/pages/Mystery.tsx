@@ -16,7 +16,8 @@ import { useGlobeClick } from "../features/globe-guess/useGlobeClick";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
 import { GLOBE_SURFACE, useGlobeLook } from "../features/globe-guess/useGlobeLook";
 import { getCountryMeta } from "../data/countries";
-import { resolveName } from "../lib/answerMatch";
+import { nearestNames, resolveName } from "../lib/answerMatch";
+import { useSuggestions } from "../features/globe-guess/useSuggestions";
 import { landShade, theme } from "../lib/globeTheme";
 import { landMaterial } from "../lib/globeTerrain";
 import { featureCentre, type Geometry, worldAltitude } from "../lib/geo";
@@ -24,8 +25,8 @@ import { dayKey, formatDay } from "../lib/daily";
 import Celebrate from "../components/Celebrate";
 import { playSolved, playWarm, playWrong, playLose } from "../lib/sound";
 import {
+  borderKm,
   closeness,
-  distanceKm,
   heatColor,
   loadMystery,
   mysteryFor,
@@ -33,9 +34,14 @@ import {
   postMysteryScore,
   saveMystery,
   scoreFor,
+  shapeOf,
   type MysteryResult,
   type Point,
+  type Shape,
 } from "../lib/mystery";
+
+/** How many of the nearest guesses the list under the box shows. */
+const CLOSEST_SHOWN = 5;
 
 /** How many squares of the trail are worth showing on the result card. */
 const MAX_TRAIL = 24;
@@ -83,6 +89,16 @@ export default function Mystery() {
     for (const feature of features) {
       const { lat, lng } = featureCentre(feature.geometry);
       map.set(feature.properties.name, { lat, lng });
+    }
+    return map;
+  }, [features]);
+
+  // Each outline as points on the sphere, once, so a guess measures edge to
+  // edge in a few milliseconds rather than retracing the geometry each time.
+  const shapes = useMemo(() => {
+    const map = new Map<string, Shape>();
+    for (const feature of features) {
+      map.set(feature.properties.name, shapeOf(feature.geometry));
     }
     return map;
   }, [features]);
@@ -159,10 +175,13 @@ export default function Mystery() {
         return;
       }
       const from = centres.get(name);
-      const to = centres.get(answer);
-      if (!from || !to) return;
+      const fromShape = shapes.get(name);
+      const toShape = shapes.get(answer);
+      if (!from || !fromShape || !toShape) return;
 
-      const km = Math.round(distanceKm(from, to));
+      // Nearest border to nearest border: 0 for a neighbour. The centre is
+      // still where the camera goes, since that is where the country is.
+      const km = Math.round(borderKm(fromShape, toShape));
       const next: MysteryResult = {
         ...result,
         guesses: [{ name, km }, ...result.guesses],
@@ -193,7 +212,16 @@ export default function Mystery() {
         playWarm(closeness(km) / 100);
       }
     },
-    [result, answer, guessed, centres]
+    [result, answer, guessed, centres, shapes]
+  );
+
+  /** The nearest few guesses, closest first, for the list under the box. */
+  const closest = useMemo(
+    () =>
+      [...(result?.guesses ?? [])]
+        .sort((a, b) => a.km - b.km)
+        .slice(0, CLOSEST_SHOWN),
+    [result]
   );
 
   const [typed, setTyped] = useState("");
@@ -220,20 +248,40 @@ export default function Mystery() {
     if (to) globeRef.current?.pointOfView({ ...to, altitude: 1.6 }, 900);
   };
 
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
+  // Every playable country with its aliases, for the list under the box.
+  const suggestable = useMemo(() => playable.map(getCountryMeta), [playable]);
+  const { matches, highlighted, setHighlighted, onKeyDown } = useSuggestions(
+    suggestable,
+    typed,
+    5
+  );
+  /** What a missed guess was probably reaching for, offered as buttons. */
+  const [didYouMean, setDidYouMean] = useState<string[]>([]);
+
+  const tryGuess = (text: string) => {
     if (!result || result.solved) return;
     // An empty box is not a wrong guess — it is no guess. Submitting one used
     // to answer "No country called """, which is a sentence about nothing.
-    if (!typed.trim()) return;
-    const name = resolveName(typed, playable);
+    if (!text.trim()) return;
+    const name = resolveName(text, playable);
     if (!name) {
-      setFlash("No country called");
+      // Says what it could not find, and — where there is one — what you
+      // probably meant. "No country called" on its own left a player to work
+      // out their own typo against a globe that could not help them.
+      setFlash(`No country called "${text.trim()}"`);
+      setDidYouMean(nearestNames(text, playable));
       playWrong();
       return;
     }
     setTyped("");
+    setDidYouMean([]);
+    setHighlighted(-1);
     guess(name);
+  };
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    tryGuess(typed);
   };
 
   // Hovering still names a country, which is worth keeping: it is how someone
@@ -405,17 +453,58 @@ export default function Mystery() {
               <label htmlFor="guess" className="sr-only">
                 Country name
               </label>
-              <input
-                id="guess"
-                value={typed}
-                onChange={(e) => setTyped(e.target.value)}
-                placeholder="Country name"
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                autoFocus
-                className="w-44 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
-              />
+              {/* Filters as you type, the way the Name it box does. A bare
+                  box made the spelling of "Central African Republic" part of
+                  the puzzle. */}
+              <div className="relative">
+                <input
+                  id="guess"
+                  value={typed}
+                  onChange={(e) => {
+                    setTyped(e.target.value);
+                    setHighlighted(-1);
+                    setDidYouMean([]);
+                  }}
+                  onKeyDown={(e) =>
+                    onKeyDown(e, tryGuess, () => tryGuess(typed))
+                  }
+                  placeholder="Country name"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoFocus
+                  role="combobox"
+                  aria-expanded={matches.length > 0}
+                  aria-controls="guess-suggestions"
+                  className="w-44 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
+                />
+                {matches.length > 0 && (
+                  <ul
+                    id="guess-suggestions"
+                    role="listbox"
+                    className="absolute left-0 top-full z-20 mt-1 w-full overflow-hidden rounded-md border border-white/10 bg-[#141b23] text-left shadow-xl"
+                  >
+                    {matches.map((name, index) => (
+                      <li
+                        key={name}
+                        role="option"
+                        aria-selected={index === highlighted}
+                        onMouseDown={(e) => {
+                          // Before the input loses focus, so the click lands.
+                          e.preventDefault();
+                          tryGuess(name);
+                        }}
+                        onMouseEnter={() => setHighlighted(index)}
+                        className={`cursor-pointer truncate px-2.5 py-1.5 text-sm text-zinc-200 ${
+                          index === highlighted ? "bg-white/10" : ""
+                        }`}
+                      >
+                        {name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <button
                 type="submit"
                 className="rounded-md border border-white/15 bg-white/10 px-3 py-1.5 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/15"
@@ -424,6 +513,50 @@ export default function Mystery() {
               </button>
             </form>
             {flash && <p className="text-xs text-amber-300/80">{flash}</p>}
+            {didYouMean.length > 0 && (
+              <p className="pointer-events-auto text-xs text-zinc-400">
+                Did you mean{" "}
+                {didYouMean.map((name, i) => (
+                  <span key={name}>
+                    {i > 0 && " or "}
+                    <button
+                      type="button"
+                      onClick={() => tryGuess(name)}
+                      className="text-teal-300 underline underline-offset-2 hover:text-teal-200"
+                    >
+                      {getCountryMeta(name).displayName}
+                    </button>
+                  </span>
+                ))}
+                ?
+              </p>
+            )}
+
+            {/* The closest guesses so far, with the distance printed. The
+                colour on the globe says warmer or colder; only a number says
+                how much, and "0 km" is the one that tells you you're right
+                next to it. Closest first, because the far ones stop mattering
+                the moment you have a near one. */}
+            {closest.length > 0 && (
+              <ol className="mt-1 w-56 space-y-0.5 text-left text-xs">
+                {closest.map((g) => (
+                  <li key={g.name} className="flex items-center gap-2">
+                    <span
+                      aria-hidden="true"
+                      className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
+                      style={{ backgroundColor: heatColor(g.km) }}
+                    />
+                    <span className="min-w-0 flex-1 truncate text-zinc-300">
+                      {getCountryMeta(g.name).displayName}
+                    </span>
+                    <span className="shrink-0 tabular-nums text-zinc-500">
+                      {g.km === 0 ? "touching" : `${g.km.toLocaleString()} km`}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+
             {/* Played down, and last: a way out of a puzzle you cannot get,
                 not a button to reach for. */}
             <button

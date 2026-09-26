@@ -219,3 +219,48 @@ export function suggestNames<T extends Suggestable>(
     .slice(0, limit)
     .map((scored) => scored.item);
 }
+
+/**
+ * The countries a missed guess was probably reaching for, nearest first.
+ *
+ * Not an answer — `resolveName` already accepts every slip it safely can, and
+ * refuses the rest on purpose so Iceland never answers for Ireland. This is
+ * for after that refusal: somebody typed "nigera", the box said no, and
+ * "Did you mean Nigeria?" is a better thing to hear than "No country called".
+ * They still have to pick it, so being generous here costs nothing.
+ *
+ * Up to two, on a tie, because offering the wrong one of two equally close
+ * names is worse than offering both.
+ */
+export function nearestNames(typed: string, pool: string[]): string[] {
+  const query = normalizeAnswer(typed);
+  if (query.length < 3) return [];
+
+  // A third of what was typed, and never more than three: past that it has
+  // stopped being a misspelling and started being a different word.
+  const cap = Math.min(3, Math.max(1, Math.floor(query.length / 3)));
+  let best = cap + 1;
+  let hits: string[] = [];
+
+  for (const name of pool) {
+    const meta = getCountryMeta(name);
+    // One past the best so far, so a name that never gets within it reads as
+    // worse rather than as a tie.
+    let nearest = best + 1;
+    for (const form of [meta.displayName, meta.geoName, ...meta.aliases]) {
+      const text = normalizeAnswer(form);
+      nearest = Math.min(
+        nearest,
+        editDistance(query, text, best),
+        editDistance(spaceless(query), spaceless(text), best)
+      );
+    }
+    if (nearest < best) {
+      best = nearest;
+      hits = [name];
+    } else if (nearest === best && nearest <= cap) {
+      hits.push(name);
+    }
+  }
+  return best <= cap ? hits.slice(0, 2) : [];
+}

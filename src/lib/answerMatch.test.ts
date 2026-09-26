@@ -4,6 +4,7 @@ import {
   allowedSlips,
   editDistance,
   isCorrectGuess,
+  nearestNames,
   normalizeAnswer,
   suggestNames,
 } from "./answerMatch";
@@ -276,5 +277,51 @@ describe("names typed with dots or run together", () => {
       expect(isCorrectGuess(a.replace(/ /g, ""), other)).toBe(false);
       expect(isCorrectGuess(a, other)).toBe(false);
     }
+  });
+});
+
+describe("nearestNames", () => {
+  const pool = ["Nigeria", "Niger", "Iceland", "Ireland", "Chad", "Switzerland"];
+
+  it("offers the country a misspelling was reaching for", () => {
+    expect(nearestNames("nigeira", pool)).toEqual(["Nigeria"]);
+    expect(nearestNames("switserlnd", pool)).toEqual(["Switzerland"]);
+  });
+
+  it("offers both when two are equally close, rather than guessing", () => {
+    // One letter from Nigeria and one from Niger: a real ambiguity, and the
+    // reason this returns two.
+    expect(nearestNames("nigera", pool).sort()).toEqual(["Niger", "Nigeria"]);
+    expect(nearestNames("irceland", pool).sort()).toEqual(["Iceland", "Ireland"]);
+  });
+
+  it("offers nothing for a different word altogether", () => {
+    expect(nearestNames("banana", pool)).toEqual([]);
+  });
+
+  it("stays quiet on two letters, where everything is one slip from something", () => {
+    expect(nearestNames("ch", pool)).toEqual([]);
+  });
+});
+
+describe("the short forms people type", () => {
+  it.each([
+    ["car", "Central African Republic"],
+    ["CAR", "Central African Republic"],
+    ["png", "Papua New Guinea"],
+    ["nz", "New Zealand"],
+    ["cape verde", "Cabo Verde"],
+    ["bosnia", "Bosnia and Herzegovina"],
+    ["st lucia", "Saint Lucia"],
+    ["dprk", "North Korea"],
+  ])("accepts %s for %s", (typed, geoName) => {
+    expect(isCorrectGuess(typed, getCountryMeta(geoName))).toBe(true);
+  });
+
+  it("gives an ambiguous one to nobody", () => {
+    // Both Koreas, and both "DR"s, are a guess at which one you meant.
+    expect(isCorrectGuess("korea", getCountryMeta("South Korea"))).toBe(false);
+    expect(isCorrectGuess("korea", getCountryMeta("North Korea"))).toBe(false);
+    expect(isCorrectGuess("dr", getCountryMeta("Dominican Republic"))).toBe(false);
   });
 });

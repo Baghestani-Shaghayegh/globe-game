@@ -1,4 +1,5 @@
 import { hash, mulberry32 } from "./daily";
+import type { Geometry } from "./geo";
 import { DAILY_MULTIPLIER, dayNumber, elapsedMs } from "./daily";
 import { postScore } from "./leaderboard";
 
@@ -38,6 +39,63 @@ export function bearing(from: Point, to: Point): number {
     Math.cos(lat1) * Math.sin(lat2) -
     Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
   return (((Math.atan2(y, x) * 180) / Math.PI) + 360) % 360;
+}
+
+/**
+ * A country's outline as points on the unit sphere, packed x, y, z.
+ *
+ * Built once per country so that measuring between two of them is a dot
+ * product per pair of points rather than a haversine: the inner loop for
+ * Russia against Canada is about two and a half million pairs, and the trig
+ * version took a tenth of a second on a laptop — a visible stall on a phone,
+ * on every guess.
+ */
+export type Shape = Float64Array;
+
+export function shapeOf(geometry: Geometry): Shape {
+  const rings =
+    geometry.type === "Polygon" ? geometry.coordinates : geometry.coordinates.flat();
+  const points = rings.flat();
+  const out = new Float64Array(points.length * 3);
+  points.forEach(([lng, lat], i) => {
+    const phi = (lat * Math.PI) / 180;
+    const lambda = (lng * Math.PI) / 180;
+    out[i * 3] = Math.cos(phi) * Math.cos(lambda);
+    out[i * 3 + 1] = Math.cos(phi) * Math.sin(lambda);
+    out[i * 3 + 2] = Math.sin(phi);
+  });
+  return out;
+}
+
+/**
+ * The gap between two countries at their nearest, in kilometres. Zero for
+ * neighbours.
+ *
+ * Centre to centre, which is what this used to measure, is a poor answer to
+ * "how close was that": Russia's middle is thousands of kilometres from its
+ * own border, so naming a country right next to the answer could still read
+ * cold. The nearest edge is what a player means by close, and it makes the
+ * number worth printing — 0 km says "you're touching it".
+ *
+ * The map's neighbours share their border vertices, so touching countries
+ * come out at exactly nought rather than a few kilometres of sampling error.
+ */
+export function borderKm(a: Shape, b: Shape): number {
+  let best = -1;
+  for (let i = 0; i < a.length; i += 3) {
+    const ax = a[i];
+    const ay = a[i + 1];
+    const az = a[i + 2];
+    for (let j = 0; j < b.length; j += 3) {
+      const dot = ax * b[j] + ay * b[j + 1] + az * b[j + 2];
+      if (dot > best) {
+        best = dot;
+        // A shared vertex. Nothing gets closer than touching.
+        if (best >= 1 - 1e-12) return 0;
+      }
+    }
+  }
+  return EARTH_RADIUS_KM * Math.acos(Math.max(-1, Math.min(1, best)));
 }
 
 const ARROWS = ["↑", "↗", "→", "↘", "↓", "↙", "←", "↖"] as const;

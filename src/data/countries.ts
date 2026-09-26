@@ -39,6 +39,29 @@ const OVERRIDES: Record<string, { displayName?: string; aliases?: string[] }> = 
   "United Arab Emirates": { aliases: ["uae"] },
   "Falkland Islands": { aliases: ["falklands", "malvinas"] },
   "Northern Cyprus": { aliases: ["north cyprus"] },
+
+  // The short forms people actually type. Only the unambiguous ones: "sa" is
+  // South Africa to some and Saudi Arabia to others, so neither gets it.
+  "Central African Republic": { aliases: ["car", "central africa"] },
+  "Bosnia and Herzegovina": { aliases: ["bosnia", "bih"] },
+  "Papua New Guinea": { aliases: ["png"] },
+  "New Zealand": { aliases: ["nz"] },
+  "South Korea": { aliases: ["republic of korea", "rok"] },
+  "North Korea": { aliases: ["dprk"] },
+  "Dominican Republic": { aliases: ["dominican rep"] },
+  "Trinidad and Tobago": { aliases: ["trinidad", "tt"] },
+  "Antigua and Barbuda": { aliases: ["antigua"] },
+  "Saint Kitts and Nevis": { aliases: ["st kitts", "st kitts and nevis"] },
+  "Saint Lucia": { aliases: ["st lucia"] },
+  "Saint Vincent and the Grenadines": { aliases: ["st vincent", "svg"] },
+  "Sao Tome and Principe": { aliases: ["sao tome"] },
+  "Vatican City": { aliases: ["vatican", "holy see"] },
+  "Cabo Verde": { aliases: ["cape verde"] },
+  Kyrgyzstan: { aliases: ["kyrgyz republic"] },
+  Laos: { aliases: ["lao"] },
+  Vietnam: { aliases: ["viet nam"] },
+  "Solomon Islands": { aliases: ["solomons"] },
+  "Marshall Islands": { aliases: ["marshalls"] },
 };
 
 // Territories, dependencies, and disputed regions — hard mode only.

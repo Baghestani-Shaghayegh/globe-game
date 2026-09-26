@@ -3,6 +3,7 @@ import {
   MAX_SCALE_KM,
   arrowFor,
   bearing,
+  borderKm,
   closeness,
   distanceKm,
   heat,
@@ -11,8 +12,10 @@ import {
   mysteryFor,
   saveMystery,
   scoreFor,
+  shapeOf,
   type MysteryResult,
 } from "./mystery";
+import type { Geometry } from "./geo";
 
 beforeEach(() => localStorage.clear());
 
@@ -282,5 +285,47 @@ describe("giving up", () => {
   it("survives a reload", () => {
     saveMystery({ ...base, gaveUp: true });
     expect(loadMystery("2026-09-10")?.gaveUp).toBe(true);
+  });
+});
+
+describe("borderKm", () => {
+  const ring = (lng: number, lat: number, size = 1): [number, number][] => [
+    [lng, lat],
+    [lng + size, lat],
+    [lng + size, lat + size],
+    [lng, lat + size],
+    [lng, lat],
+  ];
+  const square = (lng: number, lat: number, size = 1): Geometry => ({
+    type: "Polygon",
+    coordinates: [ring(lng, lat, size)],
+  });
+
+  it("is nought for countries that share a border", () => {
+    // Two squares meeting along the line lng = 1.
+    expect(borderKm(shapeOf(square(0, 0)), shapeOf(square(1, 0)))).toBe(0);
+  });
+
+  it("measures edge to edge, not centre to centre", () => {
+    // A one-degree gap on the equator is about 111 km. Centre to centre
+    // would be two degrees, about 222.
+    const km = borderKm(shapeOf(square(0, 0)), shapeOf(square(2, 0)));
+    expect(km).toBeGreaterThan(110);
+    expect(km).toBeLessThan(112.5);
+  });
+
+  it("is the same whichever way round you ask", () => {
+    const a = shapeOf(square(10, 40));
+    const b = shapeOf(square(30, -5, 3));
+    expect(borderKm(a, b)).toBeCloseTo(borderKm(b, a), 6);
+  });
+
+  it("reads a MultiPolygon's islands as part of the country", () => {
+    const islands: Geometry = {
+      type: "MultiPolygon",
+      coordinates: [[ring(50, 0)], [ring(0, 0)]],
+    };
+    // The far island is 49 degrees away; the near one touches.
+    expect(borderKm(shapeOf(islands), shapeOf(square(1, 0)))).toBe(0);
   });
 });

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { suggestNames, type Suggestable } from "../../lib/answerMatch";
+import { useEffect, useMemo, useRef } from "react";
+import type { Suggestable } from "../../lib/answerMatch";
 import { wrongNameQuip } from "../../lib/quips";
+import { useSuggestions } from "./useSuggestions";
 
 type Props = {
   open: boolean;
@@ -40,11 +41,10 @@ export default function GuessModal({
   // Re-rolled when a wrong answer lands, not on every keystroke: the line has
   // to sit still while you type the next attempt.
   const jab = useMemo(() => (isWrong ? wrongNameQuip() : ""), [isWrong]);
-  const [highlighted, setHighlighted] = useState(-1);
-
-  const matches = useMemo(
-    () => suggestNames(names, value, MAX_SUGGESTIONS).map((m) => m.displayName),
-    [names, value]
+  const { matches, highlighted, setHighlighted, onKeyDown } = useSuggestions(
+    names,
+    value,
+    MAX_SUGGESTIONS
   );
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export default function GuessModal({
       inputRef.current?.focus();
       setHighlighted(-1);
     }
-  }, [open]);
+  }, [open, setHighlighted]);
 
   if (!open) return null;
 
@@ -68,31 +68,11 @@ export default function GuessModal({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setHighlighted((prev) =>
-        matches.length === 0 ? -1 : (prev + 1) % matches.length
-      );
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setHighlighted((prev) =>
-        matches.length === 0 ? -1 : prev <= 0 ? matches.length - 1 : prev - 1
-      );
-    } else if (e.key === "Escape") {
+    if (e.key === "Escape") {
       onClose();
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (highlighted >= 0 && matches[highlighted]) {
-        handleSelect(matches[highlighted]);
-      } else if (matches.length === 1) {
-        // One suggestion left is not a choice — it is the answer, and making
-        // someone arrow down to it, or finish typing a name the box has
-        // already worked out, is a keystroke tax on knowing it.
-        handleSelect(matches[0]);
-      } else {
-        onSubmit(value);
-      }
+      return;
     }
+    onKeyDown(e, handleSelect, () => onSubmit(value));
   };
 
   return (
