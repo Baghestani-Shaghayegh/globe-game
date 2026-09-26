@@ -755,6 +755,13 @@ export default function GlobeGame({
       {round.confirmingExit && (
         <ExitConfirm
           onFinish={() => {
+            // Nothing answered yet: just go. Ending the round here filed it,
+            // and on the daily that meant a day marked done with nothing
+            // found and no way back in — for somebody who had only looked.
+            if (attempted.size === 0 && expired.size === 0) {
+              navigate("/");
+              return;
+            }
             leaving.current = true;
             endRun();
           }}
