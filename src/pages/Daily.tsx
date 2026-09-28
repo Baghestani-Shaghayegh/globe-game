@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import GlobeGame from "../features/globe-guess/GlobeGame";
 import FindGame from "../features/globe-guess/FindGame";
+import DailyResultGlobe from "../features/globe-guess/DailyResultGlobe";
 import type { RoundOutcome } from "../features/globe-guess/FindGame";
 import { getCountryMeta } from "../data/countries";
 import { cluesFor } from "../data/clues";
@@ -16,6 +17,7 @@ import {
   DAILY_MULTIPLIER,
   dayKey,
   formatDay,
+  resultCountries,
   resultFor,
   saveResult,
   type Challenge,
@@ -171,6 +173,7 @@ export default function Daily() {
         found: outcome.found.length,
         total: challenge.countries.length,
         outcomes,
+        countries: challenge.countries,
       };
       saveResult(saved);
       setResult(saved);
@@ -193,6 +196,10 @@ export default function Daily() {
 
   if (result) {
     const label = GAME_TYPES.find((t) => t.id === result.type)?.label ?? "";
+    const played = resultCountries(
+      result,
+      challenge.day === result.day ? challenge.countries : null
+    );
     return (
       <div className="min-h-screen bg-[#07111c] px-5 py-12">
         <main className="mx-auto w-full max-w-[1180px]">
@@ -232,7 +239,9 @@ export default function Daily() {
                   Time ran out.
                 </p>
               )}
-            <p className="mt-4 text-2xl leading-none tracking-widest">
+            {/* One line on a phone too: ten squares at the desktop size are
+                wider than a 390px screen, and the tenth wrapped on its own. */}
+            <p className="mt-4 whitespace-nowrap text-xl leading-none tracking-wide sm:text-2xl sm:tracking-widest">
               {result.outcomes
                 .map((o) =>
                   o === "first" ? "🟩" : o === "retried" ? "🟨" : "⬜"
@@ -241,6 +250,9 @@ export default function Daily() {
             </p>
           </div>
 
+          {played && (
+            <DailyResultGlobe countries={played} outcomes={result.outcomes} />
+          )}
 
           <AdSlot className="mt-8" />
 

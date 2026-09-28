@@ -13,6 +13,7 @@ import {
   dayNumber,
   playedDays,
   recentDays,
+  resultCountries,
   resultFor,
   saveResult,
   streak,
@@ -313,5 +314,43 @@ describe("recentDays", () => {
 
   it("crosses a month boundary backwards", () => {
     expect(recentDays(3, "2026-10-01")[0].day).toBe("2026-09-29");
+  });
+});
+
+describe("which countries a saved result was played on", () => {
+  const base: DailyResult = {
+    day: "2026-09-28",
+    number: 1,
+    type: "name",
+    points: 100,
+    found: 1,
+    total: 2,
+    ms: 1000,
+    outcomes: ["first", "missed"],
+  };
+
+  it("uses the list the result was saved with", () => {
+    const result = { ...base, countries: ["France", "Chad"] };
+    expect(resultCountries(result, ["Peru", "Oman"])).toEqual(["France", "Chad"]);
+  });
+
+  it("falls back to the day's round for a result saved before the list was kept", () => {
+    expect(resultCountries(base, ["Peru", "Oman"])).toEqual(["Peru", "Oman"]);
+  });
+
+  it("draws nothing when the list and the outcomes don't line up", () => {
+    expect(resultCountries(base, ["Peru"])).toBeNull();
+    expect(resultCountries({ ...base, countries: ["France"] }, null)).toBeNull();
+    expect(resultCountries(base, null)).toBeNull();
+  });
+
+  it("draws nothing from a corrupt stored list", () => {
+    const corrupt = { ...base, countries: ["France", 7] } as unknown as DailyResult;
+    expect(resultCountries(corrupt, null)).toBeNull();
+  });
+
+  it("keeps the list through a save and a read", () => {
+    saveResult({ ...base, countries: ["France", "Chad"] });
+    expect(resultFor(base.day)?.countries).toEqual(["France", "Chad"]);
   });
 });

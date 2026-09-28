@@ -180,7 +180,28 @@ export type DailyResult = {
   total: number;
   ms: number;
   outcomes: Outcome[];
+  /**
+   * The day's countries, in the same order as `outcomes`, for drawing the
+   * result on the globe. Absent on results saved before it was kept; those
+   * fall back to working the day's round out again.
+   */
+  countries?: string[];
 };
+
+/**
+ * The countries a saved result was played on, if they can be trusted to line
+ * up with its outcomes — a stored list that is malformed or the wrong length
+ * is ignored rather than drawn with the wrong colours on the wrong places.
+ */
+export function resultCountries(
+  result: DailyResult,
+  fallback: string[] | null
+): string[] | null {
+  const list = Array.isArray(result.countries) ? result.countries : fallback;
+  if (!list || !Array.isArray(result.outcomes)) return null;
+  if (list.length !== result.outcomes.length) return null;
+  return list.every((name) => typeof name === "string") ? list : null;
+}
 
 const KEY = "worldguess.daily.v1";
 
