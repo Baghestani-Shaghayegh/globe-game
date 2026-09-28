@@ -75,8 +75,28 @@ export default function Connect() {
 
   useEffect(() => {
     if (!puzzle) return;
+    const saved = loadConnect(day);
+    // Saved under the old rule, a chain could join up and still be marked
+    // unsolved — one detour failed the check for good. Settled here exactly
+    // as a new placement would settle it, so anyone stuck today finds it
+    // finished on a reload rather than asked for a country it no longer needs.
+    const route =
+      saved && !saved.solved ? routeThrough(saved.from, saved.to, saved.chain) : null;
+    if (saved && route) {
+      const spare = saved.chain.filter((placed) => !route.includes(placed)).length;
+      const settled: ConnectResult = {
+        ...saved,
+        chain: route,
+        solved: true,
+        wrong: saved.wrong + spare,
+      };
+      saveConnect(settled);
+      setResult(settled);
+      void postConnectScore(settled);
+      return;
+    }
     setResult(
-      loadConnect(day) ?? {
+      saved ?? {
         day,
         number: puzzle.number,
         from: puzzle.from,
