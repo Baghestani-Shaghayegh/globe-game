@@ -36,7 +36,8 @@ import {
   type ConnectResult,
   type Grade,
 } from "../lib/connect";
-import { resolveName } from "../lib/answerMatch";
+import { nearestNames, resolveName } from "../lib/answerMatch";
+import { useSuggestions } from "../features/globe-guess/useSuggestions";
 
 type CountryFeature = {
   properties: { name: string };
@@ -213,14 +214,33 @@ export default function Connect() {
 
   const [burst, setBurst] = useState(0);
 
-  const submit = useCallback(
-    (event: FormEvent) => {
-      event.preventDefault();
-      if (!result || result.solved) return;
+  /**
+   * The list under the box, as in the mystery country. Without it the
+   * spelling of "Democratic Republic of the Congo" was part of the puzzle,
+   * and the box had no way to say what it would take.
+   */
+  const pool = useMemo(() => connectable(), []);
+  const suggestable = useMemo(() => pool.map(getCountryMeta), [pool]);
+  const { matches, highlighted, setHighlighted, onKeyDown } = useSuggestions(
+    suggestable,
+    typed,
+    5
+  );
+  /** What a name that matched nothing was probably reaching for. */
+  const [didYouMean, setDidYouMean] = useState<string[]>([]);
 
-      const name = resolveName(typed, connectable());
+  const tryAdd = useCallback(
+    (text: string) => {
+      if (!result || result.solved) return;
+      // An empty box is no guess, not a wrong one.
+      if (!text.trim()) return;
+      setDidYouMean([]);
+      setHighlighted(-1);
+
+      const name = resolveName(text, pool);
       if (!name) {
-        setNote("No country by that name.");
+        setNote(`No country called "${text.trim()}".`);
+        setDidYouMean(nearestNames(text, pool));
         playWrong();
         return;
       }
@@ -284,8 +304,13 @@ export default function Connect() {
         playStep(chain.length * 2);
       }
     },
-    [result, typed, placedSet]
+    [result, placedSet, pool, setHighlighted]
   );
+
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    tryAdd(typed);
+  };
 
   /**
    * Whether a country is on the board at all.
@@ -479,15 +504,55 @@ export default function Connect() {
               <label htmlFor="link" className="sr-only">
                 A country in the chain
               </label>
-              <input
-                id="link"
-                autoFocus
-                value={typed}
-                onChange={(e) => setTyped(e.target.value)}
-                placeholder="Country name"
-                autoComplete="off"
-                className="w-48 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
-              />
+              <div className="relative">
+                <input
+                  id="link"
+                  autoFocus
+                  value={typed}
+                  onChange={(e) => {
+                    setTyped(e.target.value);
+                    setHighlighted(-1);
+                    setDidYouMean([]);
+                  }}
+                  onKeyDown={(e) => onKeyDown(e, tryAdd, () => tryAdd(typed))}
+                  placeholder="Country name"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  role="combobox"
+                  aria-expanded={matches.length > 0}
+                  aria-controls="link-suggestions"
+                  className="w-48 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
+                />
+                {matches.length > 0 && (
+                  <ul
+                    id="link-suggestions"
+                    role="listbox"
+                    // Upwards on a phone, where the panel sits on the bottom
+                    // edge and a list opening down would leave the screen.
+                    className="absolute bottom-full left-0 z-20 mb-1 w-full overflow-hidden rounded-md border border-white/10 bg-raised text-left shadow-xl lg:bottom-auto lg:top-full lg:mb-0 lg:mt-1"
+                  >
+                    {matches.map((match, index) => (
+                      <li
+                        key={match}
+                        role="option"
+                        aria-selected={index === highlighted}
+                        onMouseDown={(e) => {
+                          // Before the input loses focus, so the click lands.
+                          e.preventDefault();
+                          tryAdd(match);
+                        }}
+                        onMouseEnter={() => setHighlighted(index)}
+                        className={`cursor-pointer truncate px-2.5 py-1.5 text-sm text-zinc-200 ${
+                          index === highlighted ? "bg-white/10" : ""
+                        }`}
+                      >
+                        {match}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <button
                 type="submit"
                 className="rounded-md bg-white/10 px-3 py-1.5 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/15"
@@ -496,6 +561,24 @@ export default function Connect() {
               </button>
             </form>
             {note && <p className="text-xs text-amber-300/80">{note}</p>}
+            {didYouMean.length > 0 && (
+              <p className="pointer-events-auto text-xs text-zinc-400">
+                Did you mean{" "}
+                {didYouMean.map((name, i) => (
+                  <span key={name}>
+                    {i > 0 && " or "}
+                    <button
+                      type="button"
+                      onClick={() => tryAdd(name)}
+                      className="text-teal-300 underline underline-offset-2 hover:text-teal-200"
+                    >
+                      {display(name)}
+                    </button>
+                  </span>
+                ))}
+                ?
+              </p>
+            )}
           </>
         )}
 
