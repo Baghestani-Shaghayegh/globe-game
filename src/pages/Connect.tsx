@@ -373,7 +373,7 @@ export default function Connect() {
 
   if (loadError || !puzzle) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#07111c] px-6 text-center">
+      <div className="night flex min-h-screen flex-col items-center justify-center gap-3 bg-page px-6 text-center">
         <p className="text-zinc-100">
           {loadError ? "Couldn't load the map data." : "No puzzle for today."}
         </p>
@@ -397,7 +397,7 @@ export default function Connect() {
    * link is in it — opening it and turning straight round has cost nothing.
    */
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#07111c]">
+    <div className="night relative h-screen w-screen overflow-hidden bg-page">
       <Globe
         ref={globeRef}
         width={viewport.width}
@@ -419,11 +419,11 @@ export default function Connect() {
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4">
         <button
           onClick={handleBack}
-          className="pointer-events-auto rounded-lg border border-white/10 bg-[#141b23]/90 px-3 py-1.5 text-sm text-zinc-300 backdrop-blur transition-colors hover:text-zinc-100"
+          className="pointer-events-auto rounded-lg border border-white/10 bg-raised/90 px-3 py-1.5 text-sm text-zinc-300 backdrop-blur transition-colors hover:text-zinc-100"
         >
           ← Modes
         </button>
-        <div className="rounded-lg border border-white/10 bg-[#141b23]/90 px-3 py-1.5 text-right text-sm backdrop-blur">
+        <div className="rounded-lg border border-white/10 bg-raised/90 px-3 py-1.5 text-right text-sm backdrop-blur">
           <p className="font-medium text-zinc-100">Connect</p>
           <p className="text-xs tabular-nums text-zinc-500">
             par {puzzle.par} · {result ? placedOf(result).length : 0} placed
@@ -431,7 +431,7 @@ export default function Connect() {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-2 rounded-xl border border-white/10 bg-[#141b23]/90 px-5 py-3 text-center backdrop-blur">
+      <div className="pointer-events-none absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-2 rounded-xl border border-white/10 bg-raised/90 px-5 py-3 text-center backdrop-blur">
         <p className="text-xs uppercase tracking-wider text-zinc-500">
           Walk from
         </p>

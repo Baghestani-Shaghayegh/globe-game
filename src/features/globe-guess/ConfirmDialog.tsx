@@ -36,16 +36,16 @@ export default function ConfirmDialog({
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      className="absolute inset-0 z-20 flex items-center justify-center bg-[#07111c]/70 p-4 backdrop-blur-sm"
+      className="absolute inset-0 z-20 flex items-center justify-center bg-page/70 p-4 backdrop-blur-sm"
     >
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#141b23] p-6 text-center">
+      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-raised p-6 text-center">
         <p className="text-base font-medium text-zinc-100">{title}</p>
         {body && <p className="mt-1.5 text-sm text-zinc-400">{body}</p>}
         <div className="mt-5 flex flex-col gap-2">
           <button
             autoFocus
             onClick={onCancel}
-            className="rounded-lg bg-teal-300 px-4 py-2 text-sm font-semibold text-[#07111c] transition-colors hover:bg-teal-200"
+            className="rounded-lg bg-teal-300 px-4 py-2 text-sm font-semibold text-page transition-colors hover:bg-teal-200"
           >
             {cancelLabel}
           </button>

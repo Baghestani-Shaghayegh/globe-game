@@ -212,7 +212,7 @@ export default function Room() {
   // waiting for a request that was never going to come back.
   if (!accountsEnabled || !session || !profile) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#07111c] px-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-page px-6 text-center">
         <p className="max-w-xs text-zinc-100">
           {accountsEnabled
             ? "Matches show everyone's name, so you'll need one to join this room."
@@ -232,7 +232,7 @@ export default function Room() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#07111c] text-zinc-400">
+      <div className="flex min-h-screen items-center justify-center bg-page text-zinc-400">
         Finding the room…
       </div>
     );
@@ -240,7 +240,7 @@ export default function Room() {
 
   if (!room) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#07111c] px-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-page px-6 text-center">
         <p className="text-zinc-100">
           {error ?? actionError ?? "That room has closed."}
         </p>
@@ -261,7 +261,7 @@ export default function Room() {
   // ---- Lobby ----------------------------------------------------------------
   if (room.status === "lobby") {
     return (
-      <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
+      <div className="min-h-screen bg-page px-5 py-10 sm:px-8 lg:px-12">
         <main className="mx-auto w-full max-w-[1180px]">
           <button
             onClick={quit}
@@ -345,7 +345,7 @@ export default function Room() {
     const winner = table[0];
     const drawn = table.filter((p) => p.rank === 1).length > 1;
     return (
-      <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
+      <div className="min-h-screen bg-page px-5 py-10 sm:px-8 lg:px-12">
         <main className="mx-auto w-full max-w-[1180px]">
           <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
             {drawn
@@ -406,7 +406,7 @@ export default function Room() {
 
   // ---- The match ------------------------------------------------------------
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#07111c]">
+    <div className="night relative h-screen w-screen overflow-hidden bg-page">
       {target && features.length > 0 && (
         <MatchGlobe
           features={features}
@@ -430,7 +430,7 @@ export default function Room() {
             return (
               <li
                 key={player.user_id}
-                className="flex items-center gap-2 rounded-lg border border-white/10 bg-[#141b23]/90 px-2.5 py-1.5 text-sm backdrop-blur"
+                className="flex items-center gap-2 rounded-lg border border-white/10 bg-raised/90 px-2.5 py-1.5 text-sm backdrop-blur"
               >
                 <Flag code={names[player.user_id]?.country ?? null} />
                 <span
@@ -455,7 +455,7 @@ export default function Room() {
         </ul>
 
         <div className="flex flex-col items-end gap-2">
-          <div className="rounded-lg border border-white/10 bg-[#141b23]/90 px-3 py-1.5 text-sm backdrop-blur">
+          <div className="rounded-lg border border-white/10 bg-raised/90 px-3 py-1.5 text-sm backdrop-blur">
             <span className="text-zinc-500">
               {room.current_index + 1}/{room.questions.length}
             </span>

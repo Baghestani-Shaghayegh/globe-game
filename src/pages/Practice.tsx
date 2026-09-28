@@ -126,7 +126,7 @@ export default function Practice() {
   const ready = askable(type, queue);
 
   return (
-    <div className="min-h-screen bg-[#07111c] px-5 py-10 sm:px-8 lg:px-12">
+    <div className="min-h-screen bg-page px-5 py-10 sm:px-8 lg:px-12">
       <main className="mx-auto w-full max-w-[1180px]">
         <Link
           to="/"

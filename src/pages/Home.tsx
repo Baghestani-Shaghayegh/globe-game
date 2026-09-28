@@ -142,7 +142,7 @@ function MapChips({
         className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium backdrop-blur-sm transition-colors ${
           picked
             ? "border-teal-300 bg-teal-300 text-teal-950"
-            : "border-white/15 bg-[#0a1420]/90 text-zinc-300 hover:border-teal-300/60 hover:text-zinc-50"
+            : "border-white/15 bg-surface/90 text-zinc-300 hover:border-teal-300/60 hover:text-zinc-50"
         }`}
       >
         {option.label}
@@ -211,9 +211,9 @@ function GameCard({
         // A hair smaller than the outer cut, so the border keeps its width
         // along the diagonal as well as the sides.
         style={{ clipPath: corner(CUT - 1) }}
-        className="flex h-full flex-col bg-[#0a1420]"
+        className="flex h-full flex-col bg-surface"
       >
-        <span className="relative block aspect-video overflow-hidden bg-[#07111c]">
+        <span className="night relative block aspect-video overflow-hidden bg-page">
           <img
             src={image}
             alt=""
@@ -274,12 +274,18 @@ export default function Home() {
 
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#07111c]">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-page">
       {backdropWanted && (
         <div className="pointer-events-none absolute inset-0 animate-fade-in">
-          <Suspense fallback={null}>
-            <BackgroundGlobe />
-          </Suspense>
+          {/* Faded right back in light mode: the globe is dark whatever the
+              page is, and at full strength the words on top of it were dark
+              on dark. There it is a watermark, like the globe on an atlas's
+              title page. */}
+          <div className="home-globe h-full w-full">
+            <Suspense fallback={null}>
+              <BackgroundGlobe />
+            </Suspense>
+          </div>
         </div>
       )}
 
@@ -296,7 +302,7 @@ export default function Home() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 70% 60% at 50% 48%, rgba(7,17,28,0.72) 0%, rgba(7,17,28,0.5) 45%, rgba(7,17,28,0.18) 72%, rgba(7,17,28,0.02) 90%, transparent 100%)",
+            "radial-gradient(ellipse 70% 60% at 50% 48%, color-mix(in srgb, var(--page) 72%, transparent) 0%, color-mix(in srgb, var(--page) 50%, transparent) 45%, color-mix(in srgb, var(--page) 18%, transparent) 72%, color-mix(in srgb, var(--page) 2%, transparent) 90%, transparent 100%)",
         }}
       />
 
@@ -311,7 +317,7 @@ export default function Home() {
               three competing lines of prose is how a page starts to read as
               noise before anything on it has been clicked. */}
           <section className="pt-[clamp(0.5rem,2.1vh,2.25rem)]">
-            <h1 className="mx-auto max-w-xl text-center text-4xl font-semibold [text-shadow:0_2px_12px_rgba(7,17,28,0.9)] leading-[1.08] tracking-tight text-zinc-50 sm:text-[clamp(2rem,4.4vh,2.75rem)]">
+            <h1 className="mx-auto max-w-xl text-center text-4xl font-semibold [text-shadow:0_2px_12px_color-mix(in_srgb,var(--page)_90%,transparent)] leading-[1.08] tracking-tight text-zinc-50 sm:text-[clamp(2rem,4.4vh,2.75rem)]">
               How well do you know your world?
             </h1>
           </section>

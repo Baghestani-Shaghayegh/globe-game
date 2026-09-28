@@ -33,7 +33,7 @@ export default function UpdateToast() {
       role="status"
       className="fixed inset-x-0 bottom-0 z-40 px-5 pb-4 sm:inset-x-auto sm:right-5 sm:w-80"
     >
-      <div className="flex items-center gap-3 rounded-xl border border-white/15 bg-[#0b1624]/95 px-4 py-3 shadow-lg backdrop-blur">
+      <div className="flex items-center gap-3 rounded-xl border border-white/15 bg-sunken/95 px-4 py-3 shadow-lg backdrop-blur">
         <p className="flex-1 text-sm text-zinc-300">A new version is ready.</p>
         <button
           onClick={() => void update?.()}

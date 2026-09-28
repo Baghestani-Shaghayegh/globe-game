@@ -740,7 +740,7 @@ export default function GlobeGame({
 
   if (loadError) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#07111c] px-6">
+      <div className="night flex min-h-screen flex-col items-center justify-center gap-3 bg-page px-6">
         <p className="text-zinc-100">Couldn't load the map data.</p>
         <Link
           to="/"
@@ -754,7 +754,7 @@ export default function GlobeGame({
 
   return (
     <div
-      className="relative h-screen w-screen overflow-hidden bg-[#07111c]"
+      className="night relative h-screen w-screen overflow-hidden bg-page"
       onPointerDown={globeClick.onPointerDown}
       onPointerUp={globeClick.onPointerUp}
     >
@@ -821,12 +821,12 @@ export default function GlobeGame({
           {cursor === null ? (
             <button
               onClick={() => setCursor(0)}
-              className="sr-only rounded-md border border-white/20 bg-[#141b23] px-3 py-1.5 text-sm text-zinc-100 focus:not-sr-only focus:relative"
+              className="sr-only rounded-md border border-white/20 bg-raised px-3 py-1.5 text-sm text-zinc-100 focus:not-sr-only focus:relative"
             >
               Pick a country with the keyboard
             </button>
           ) : (
-            <p className="rounded-lg border border-white/10 bg-[#141b23]/90 px-4 py-2 text-center text-sm text-zinc-300 backdrop-blur">
+            <p className="rounded-lg border border-white/10 bg-raised/90 px-4 py-2 text-center text-sm text-zinc-300 backdrop-blur">
               <b className="font-medium text-zinc-100">
                 {cursorName ? getCountryMeta(cursorName).displayName : ""}
               </b>
@@ -868,7 +868,7 @@ export default function GlobeGame({
       )}
 
       {showInPlay && !summary && selectable.length > 0 && (
-        <div className="absolute inset-x-0 bottom-6 z-20 mx-auto flex w-fit items-center gap-3 rounded-full border border-white/10 bg-[#141b23]/90 py-2 pl-4 pr-2 text-sm backdrop-blur">
+        <div className="absolute inset-x-0 bottom-6 z-20 mx-auto flex w-fit items-center gap-3 rounded-full border border-white/10 bg-raised/90 py-2 pl-4 pr-2 text-sm backdrop-blur">
           <span className="flex items-center gap-2 text-zinc-400">
             <span
               aria-hidden="true"
@@ -887,7 +887,7 @@ export default function GlobeGame({
       )}
 
       {summary && round.reviewingMap && (
-        <div className="absolute inset-x-0 bottom-6 z-20 mx-auto flex w-fit items-center gap-3 rounded-full border border-white/10 bg-[#141b23]/90 py-2 pl-4 pr-2 text-sm backdrop-blur">
+        <div className="absolute inset-x-0 bottom-6 z-20 mx-auto flex w-fit items-center gap-3 rounded-full border border-white/10 bg-raised/90 py-2 pl-4 pr-2 text-sm backdrop-blur">
           <span className="flex items-center gap-2 text-zinc-400">
             <span
               aria-hidden="true"

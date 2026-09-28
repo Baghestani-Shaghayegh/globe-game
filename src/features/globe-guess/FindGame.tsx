@@ -763,7 +763,7 @@ export default function FindGame({
 
   if (loadError) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#07111c] px-6">
+      <div className="night flex min-h-screen flex-col items-center justify-center gap-3 bg-page px-6">
         <p className="text-zinc-100">Couldn't load the map data.</p>
         <Link
           to="/"
@@ -777,7 +777,7 @@ export default function FindGame({
 
   return (
     <div
-      className="relative h-screen w-screen overflow-hidden bg-[#07111c]"
+      className="night relative h-screen w-screen overflow-hidden bg-page"
       onPointerDown={globeClick.onPointerDown}
       onPointerUp={globeClick.onPointerUp}
     >
@@ -834,7 +834,7 @@ export default function FindGame({
 
       {!summary && target && (
         <div
-          className={`pointer-events-none absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-[#141b23]/90 px-5 py-2.5 text-center backdrop-blur ${
+          className={`pointer-events-none absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-raised/90 px-5 py-2.5 text-center backdrop-blur ${
             wrongName ? "animate-shake" : ""
           }`}
         >
@@ -1029,7 +1029,7 @@ export default function FindGame({
       )}
 
       {summary && round.reviewingMap && (
-        <div className="absolute inset-x-0 bottom-6 z-20 mx-auto flex w-fit items-center gap-3 rounded-full border border-white/10 bg-[#141b23]/90 py-2 pl-4 pr-2 text-sm backdrop-blur">
+        <div className="absolute inset-x-0 bottom-6 z-20 mx-auto flex w-fit items-center gap-3 rounded-full border border-white/10 bg-raised/90 py-2 pl-4 pr-2 text-sm backdrop-blur">
           <span className="flex items-center gap-2 text-zinc-400">
             <span
               aria-hidden="true"

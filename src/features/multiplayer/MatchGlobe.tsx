@@ -147,7 +147,7 @@ export default function MatchGlobe({
       />
 
       <div
-        className={`pointer-events-none absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-2 rounded-xl border border-white/10 bg-[#141b23]/90 px-5 py-3 text-center backdrop-blur ${
+        className={`pointer-events-none absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-2 rounded-xl border border-white/10 bg-raised/90 px-5 py-3 text-center backdrop-blur ${
           wrongName ? "animate-shake" : ""
         }`}
       >

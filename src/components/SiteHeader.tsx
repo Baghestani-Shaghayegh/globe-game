@@ -3,6 +3,7 @@ import { playTap } from "../lib/sound";
 import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled } from "../lib/supabase";
 import { TabLink, TabRow } from "./Tabs";
+import ThemeToggle from "./ThemeToggle";
 
 /**
  * The masthead, on every page that isn't a round in progress.
@@ -51,7 +52,7 @@ export default function SiteHeader() {
   const { pathname } = useLocation();
 
   return (
-    <header className="relative z-10 w-full px-5 py-4 [text-shadow:0_1px_4px_rgba(7,17,28,0.85)] sm:px-8 lg:px-12">
+    <header className="relative z-10 w-full px-5 py-4 [text-shadow:0_1px_4px_color-mix(in_srgb,var(--page)_85%,transparent)] sm:px-8 lg:px-12">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 md:grid md:grid-cols-[1fr_auto_1fr]">
         <Link to="/" onClick={playTap} className="flex items-center gap-2.5">
           <svg
@@ -86,6 +87,7 @@ export default function SiteHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-3 md:ml-0 md:justify-self-end">
+          <ThemeToggle />
           <Link
             to="/settings"
             onClick={playTap}
@@ -207,7 +209,7 @@ export function SiteFooter({ className = "" }: { className?: string }) {
  */
 export function PageShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-[#07111c]">
+    <div className="flex min-h-screen flex-col bg-page">
       <SiteHeader />
       <main className="mx-auto w-full max-w-[1180px] flex-1 px-5 pb-12 pt-4 sm:px-8 lg:px-12">
         {children}

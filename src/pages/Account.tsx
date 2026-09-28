@@ -230,7 +230,7 @@ function SignIn() {
       <button
         onClick={withGoogle}
         disabled={goingToGoogle}
-        className="mt-6 flex w-full items-center justify-center gap-2.5 rounded-lg bg-white py-2.5 text-sm font-medium text-[#1f1f1f] transition-opacity hover:opacity-90 disabled:opacity-60"
+        className="mt-6 flex w-full items-center justify-center gap-2.5 rounded-lg bg-[#ffffff] py-2.5 text-sm font-medium text-[#1f1f1f] transition-opacity hover:opacity-90 disabled:opacity-60"
       >
         <GoogleMark />
         {goingToGoogle ? "Taking you to Google…" : "Continue with Google"}
@@ -308,7 +308,7 @@ function EditButton({ label, onClick }: { label: string; onClick: () => void }) 
 function FlagAvatar({ code, onEdit }: { code: string | null; onEdit: () => void }) {
   return (
     <span className="relative inline-block">
-      <span className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 border-teal-300/40 bg-[#0a1420]">
+      <span className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-2 border-teal-300/40 bg-surface">
         {code ? (
           <img
             src={`/flags/${code}.svg`}
@@ -335,7 +335,7 @@ function FlagAvatar({ code, onEdit }: { code: string | null; onEdit: () => void 
         onClick={onEdit}
         aria-label="Change your flag"
         title="Change your flag"
-        className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border border-[#07111c] bg-teal-300 text-[#07111c] transition-colors hover:bg-teal-200"
+        className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border border-page bg-teal-300 text-page transition-colors hover:bg-teal-200"
       >
         <svg
           aria-hidden="true"
@@ -496,7 +496,7 @@ function AccountFooter() {
           <div className="mt-4 flex flex-wrap items-center gap-4">
             <button
               onClick={() => setAsking(false)}
-              className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-[#07111c] transition-colors hover:bg-white"
+              className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-page transition-colors hover:bg-white"
             >
               Keep my account
             </button>
@@ -672,7 +672,7 @@ function ProfileForm({
             <button
               type="submit"
               disabled={saving || username === profile?.username}
-              className="rounded-lg bg-teal-300 px-4 py-2 text-sm font-semibold text-[#07111c] transition-colors hover:bg-teal-200 disabled:opacity-40"
+              className="rounded-lg bg-teal-300 px-4 py-2 text-sm font-semibold text-page transition-colors hover:bg-teal-200 disabled:opacity-40"
             >
               {saving ? "Saving…" : profile ? "Save name" : "Claim this name"}
             </button>
@@ -730,7 +730,7 @@ function ProfileForm({
             <button
               onClick={() => void commit(username, country)}
               disabled={saving || country === (profile?.country ?? "")}
-              className="rounded-lg bg-teal-300 px-4 py-2 text-sm font-semibold text-[#07111c] transition-colors hover:bg-teal-200 disabled:opacity-40"
+              className="rounded-lg bg-teal-300 px-4 py-2 text-sm font-semibold text-page transition-colors hover:bg-teal-200 disabled:opacity-40"
             >
               {saving ? "Saving…" : "Save flag"}
             </button>

@@ -3,8 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#07111c" />
+    <!-- Light or dark, set before anything draws so a light-mode player gets
+         no dark flash on load. The same rule as src/lib/appearance.ts. -->
+    <script>
+      try {
+        var choice = localStorage.getItem("worldguess.appearance.v1");
+        var light =
+          choice === "light" ||
+          (choice === "system" &&
+            window.matchMedia("(prefers-color-scheme: light)").matches);
+        document.documentElement.dataset.theme = light ? "light" : "dark";
+        if (light)
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute("content", "#f3f1ec");
+      } catch (e) {
+        document.documentElement.dataset.theme = "dark";
+      }
+    </script>
 
     <title>WorldGuess — how much of the world map can you recall?</title>
     <meta

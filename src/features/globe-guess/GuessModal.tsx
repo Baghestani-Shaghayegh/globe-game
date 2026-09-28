@@ -81,7 +81,7 @@ export default function GuessModal({
       onClick={onClose}
     >
       <div
-        className={`w-full max-w-sm rounded-xl border border-white/10 bg-[#102030] p-5 shadow-2xl ${
+        className={`w-full max-w-sm rounded-xl border border-white/10 bg-modal p-5 shadow-2xl ${
           isWrong ? "animate-shake" : ""
         }`}
         onClick={(e) => e.stopPropagation()}

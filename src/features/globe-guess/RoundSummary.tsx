@@ -49,11 +49,11 @@ export default function RoundSummary({
   const worthCelebrating = completed || isBest;
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#07111c]/55 p-4">
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-page/55 p-4">
       {worthCelebrating && (
         <Celebrate burst={1} count={completed && isBest ? 110 : 70} />
       )}
-      <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-[#141b23] shadow-2xl">
+      <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-raised shadow-2xl">
         <div className="px-6 pt-6 text-center">
           <p className="text-sm text-zinc-400">
             {completed

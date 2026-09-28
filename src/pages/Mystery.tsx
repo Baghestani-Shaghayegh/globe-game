@@ -333,7 +333,7 @@ export default function Mystery() {
 
   if (loadError) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#07111c] px-6">
+      <div className="night flex min-h-screen flex-col items-center justify-center gap-3 bg-page px-6">
         <p className="text-zinc-100">Couldn't load the map data.</p>
         <Link
           to="/"
@@ -358,7 +358,7 @@ export default function Mystery() {
    */
   return (
     <div
-      className="relative h-screen w-screen overflow-hidden bg-[#07111c]"
+      className="night relative h-screen w-screen overflow-hidden bg-page"
       onPointerDown={globeClick.onPointerDown}
       onPointerUp={globeClick.onPointerUp}
     >
@@ -385,11 +385,11 @@ export default function Mystery() {
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4">
         <button
           onClick={handleBack}
-          className="pointer-events-auto rounded-lg border border-white/10 bg-[#141b23]/90 px-3 py-1.5 text-sm text-zinc-300 backdrop-blur transition-colors hover:text-zinc-100"
+          className="pointer-events-auto rounded-lg border border-white/10 bg-raised/90 px-3 py-1.5 text-sm text-zinc-300 backdrop-blur transition-colors hover:text-zinc-100"
         >
           ← Modes
         </button>
-        <div className="rounded-lg border border-white/10 bg-[#141b23]/90 px-3 py-1.5 text-right text-sm backdrop-blur">
+        <div className="rounded-lg border border-white/10 bg-raised/90 px-3 py-1.5 text-right text-sm backdrop-blur">
           <p className="font-medium text-zinc-100">Mystery country</p>
           <p className="text-xs tabular-nums text-zinc-500">
             {guesses.length} {guesses.length === 1 ? "guess" : "guesses"}
@@ -398,7 +398,7 @@ export default function Mystery() {
       </div>
 
       {/* The prompt sits over the globe but never eats a click meant for it. */}
-      <div className="pointer-events-none absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-[#141b23]/90 px-5 py-3 text-center backdrop-blur">
+      <div className="pointer-events-none absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-raised/90 px-5 py-3 text-center backdrop-blur">
         {result?.solved || result?.gaveUp ? (
           <>
             <p
@@ -485,7 +485,7 @@ export default function Mystery() {
                   <ul
                     id="guess-suggestions"
                     role="listbox"
-                    className="absolute left-0 top-full z-20 mt-1 w-full overflow-hidden rounded-md border border-white/10 bg-[#141b23] text-left shadow-xl"
+                    className="absolute left-0 top-full z-20 mt-1 w-full overflow-hidden rounded-md border border-white/10 bg-raised text-left shadow-xl"
                   >
                     {matches.map((name, index) => (
                       <li
@@ -576,7 +576,7 @@ export default function Mystery() {
           themselves that yellow is warmer than pale blue — Jou asked for a
           key. Built from the same stops the globe is painted with. */}
       <div className="pointer-events-none absolute inset-x-0 bottom-5 z-10 flex flex-col items-center gap-2 px-4">
-        <div className="w-full max-w-xs rounded-lg border border-white/10 bg-[#141b23]/90 px-3 pb-1.5 pt-2 backdrop-blur">
+        <div className="w-full max-w-xs rounded-lg border border-white/10 bg-raised/90 px-3 pb-1.5 pt-2 backdrop-blur">
           <div className="flex justify-between text-[11px] font-medium uppercase tracking-wider">
             <span className="text-red-400">Hot</span>
             <span className="text-blue-400">Cold</span>

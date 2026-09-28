@@ -212,7 +212,9 @@ export default function BadgeMedal({
       {/* The milled edge, behind the face. */}
       <path
         d={EDGE}
-        fill={unlocked ? "#f59e0b" : "#ffffff"}
+        // Locked, the medal is drawn in the site's own colours so it reads as
+        // an empty slot in light mode too, rather than a black disc.
+        style={{ fill: unlocked ? "#f59e0b" : "var(--color-white)" }}
         opacity={unlocked ? 0.4 : 0.05}
       />
 
@@ -221,8 +223,12 @@ export default function BadgeMedal({
         cx="32"
         cy="32"
         r="25"
-        fill={unlocked ? `url(#${gradient})` : "#121a25"}
-        stroke={unlocked ? "#fef3c7" : "rgba(255,255,255,0.10)"}
+        style={{
+          fill: unlocked ? `url(#${gradient})` : "var(--medal-locked)",
+          stroke: unlocked
+            ? "#fef3c7"
+            : "color-mix(in srgb, var(--color-white) 10%, transparent)",
+        }}
         strokeWidth="1.4"
       />
       <circle
@@ -230,14 +236,24 @@ export default function BadgeMedal({
         cy="32"
         r="20.8"
         fill="none"
-        stroke={unlocked ? "rgba(120,53,15,0.32)" : "rgba(255,255,255,0.07)"}
+        style={{
+          stroke: unlocked
+            ? "rgba(120,53,15,0.32)"
+            : "color-mix(in srgb, var(--color-white) 7%, transparent)",
+        }}
         strokeWidth="1"
       />
 
       <g
         transform="translate(20 20)"
         fill="none"
-        stroke={unlocked ? "#4a2c05" : "#4b5563"}
+        // Colour set here and the stroke taken from it, so the glyphs' filled
+        // dots (currentColor) match their lines instead of borrowing the
+        // page's text colour — black on a light page.
+        style={{
+          color: unlocked ? "#4a2c05" : "var(--color-zinc-600)",
+          stroke: "currentColor",
+        }}
         strokeWidth="1.9"
         strokeLinecap="round"
         strokeLinejoin="round"

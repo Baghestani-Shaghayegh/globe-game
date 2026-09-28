@@ -24,7 +24,7 @@ export default function ConsentBanner() {
     <div
       role="dialog"
       aria-label="Cookies"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#0b1624]/95 px-5 py-4 backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-sunken/95 px-5 py-4 backdrop-blur"
     >
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 sm:flex-row sm:items-center">
         <p className="flex-1 text-sm leading-relaxed text-zinc-300">

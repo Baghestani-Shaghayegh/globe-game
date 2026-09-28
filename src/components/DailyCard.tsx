@@ -37,7 +37,7 @@ export default function DailyCard({
 }) {
   // The wash is a background *image*, not a second background colour.
   //
-  // It used to be `bg-sky-400/[0.07]` next to an opaque `bg-[#07111c]/75` on
+  // It used to be `bg-sky-400/[0.07]` next to an opaque page-colour base on
   // the same element — two utilities setting the same property, so the tint
   // won and the opaque base never applied at all. The card was a 7% film over
   // the globe, which is why the highlight off the Atlantic read straight
@@ -71,7 +71,7 @@ export default function DailyCard({
     <Link
       onClick={playTap}
       to={to}
-      className={`group relative flex items-center gap-4 rounded-2xl border bg-[#0a1420]/95 p-4 backdrop-blur-sm transition-colors sm:flex-col sm:items-start sm:gap-3 sm:p-5 ${tone}`}
+      className={`group relative flex items-center gap-4 rounded-2xl border bg-surface/95 p-4 backdrop-blur-sm transition-colors sm:flex-col sm:items-start sm:gap-3 sm:p-5 ${tone}`}
     >
       <span
         aria-hidden="true"

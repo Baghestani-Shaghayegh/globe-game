@@ -20,6 +20,7 @@ export const LOCAL_KEYS = [
   "worldguess.mystery.v1",
   "worldguess.connect.v1",
   "worldguess.higherlower.v1",
+  "worldguess.appearance.v1",
 ] as const;
 
 /** What a player would call each thing, for the warning before erasing it. */

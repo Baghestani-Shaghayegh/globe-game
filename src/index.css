@@ -1,8 +1,70 @@
 @import "tailwindcss";
+@import "./theme-light.css";
+
+/*
+ * The surfaces, by what they are rather than what colour they are, so light
+ * mode can swap them. Inline, so a utility reads the variable where it is used
+ * — a night scope inside a light page resolves its own values.
+ */
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-sunken: var(--sunken);
+  --color-modal: var(--modal);
+}
+
+:root,
+.night {
+  /* Behind everything: the night sky the globe hangs in. */
+  --page: #07111c;
+  /* Cards laid on the page. */
+  --surface: #0a1420;
+  /* Panels floating over the globe. */
+  --raised: #141b23;
+  /* Bars pinned to the screen's edge. */
+  --sunken: #0b1624;
+  /* The guess box. */
+  --modal: #102030;
+  /* A badge not yet earned. */
+  --medal-locked: #121a25;
+}
+
+:root[data-theme="light"] {
+  --page: #f3f1ec;
+  --surface: #ffffff;
+  --raised: #ffffff;
+  --sunken: #faf9f6;
+  --modal: #ffffff;
+  --medal-locked: #e8e5de;
+}
+
+:root[data-theme="light"] .night {
+  --page: #07111c;
+  --surface: #0a1420;
+  --raised: #141b23;
+  --sunken: #0b1624;
+  --modal: #102030;
+}
 
 html,
 body {
-  background: #07111c;
+  background: var(--page);
+  color-scheme: dark;
+}
+
+:root[data-theme="light"],
+:root[data-theme="light"] body {
+  color-scheme: light;
+}
+
+/* The home page's globe, as a watermark. See Home.tsx. */
+:root[data-theme="light"] .home-globe {
+  opacity: 0.28;
+}
+
+/* Form controls and scrollbars inside a night scope stay dark too. */
+.night {
   color-scheme: dark;
 }
 
