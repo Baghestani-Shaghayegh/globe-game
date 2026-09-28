@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import DailyCard from "../components/DailyCard";
 import AdSlot from "../components/AdSlot";
@@ -107,120 +107,65 @@ function useModeCounts(type: GameType): Counts {
 }
 
 /**
- * A dropdown, built rather than borrowed.
+ * The map every round card below plays on, as a row of choices you can see.
  *
- * This was a native `<select>`, which on a Mac opens as a system menu: white,
- * square, its own typeface, nothing to do with the page it was opened from.
- * The list is short and fixed, so the menu is drawn here — closing on a click
- * outside, on Escape, and on a choice.
+ * This was a dropdown reading "Map · Countries only", and a first-time
+ * visitor had no way to know it was a choice at all, let alone what else was
+ * in it — Sara found it unclear. All seven maps fit on a line or two, so they
+ * are laid out as pills under a plain heading: what the options are is
+ * visible before anything is pressed, and the one picked is lit.
+ *
+ * The two whole-world maps come first and the continents after, with a gap
+ * between, because that is the real choice: everywhere, or one part of it.
  */
-function Picker({
-  label,
+function MapChips({
   value,
   options,
   onChange,
-  className = "",
 }: {
-  label: string;
   value: string;
-  options: { value: string; label: string; note?: string }[];
+  options: { value: string; label: string; note?: string; group: "world" | "region" }[];
   onChange: (value: string) => void;
-  className?: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const box = useRef<HTMLDivElement>(null);
-  const chosen = options.find((o) => o.value === value);
-
-  useEffect(() => {
-    if (!open) return;
-    const away = (event: MouseEvent) => {
-      if (!box.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", away);
-    document.addEventListener("keydown", escape);
-    return () => {
-      document.removeEventListener("mousedown", away);
-      document.removeEventListener("keydown", escape);
-    };
-  }, [open]);
-
-  return (
-    <div ref={box} className={`relative min-w-0 flex-1 ${className}`}>
+  const chip = (option: (typeof options)[number]) => {
+    const picked = option.value === value;
+    return (
       <button
+        key={option.value}
         type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
+        role="radio"
+        aria-checked={picked}
         onClick={() => {
           playTap();
-          setOpen((o) => !o);
+          onChange(option.value);
         }}
-        className={`flex w-full items-center gap-2 rounded-xl border bg-white/[0.04] py-2.5 pl-3 pr-3.5 text-left text-sm text-zinc-100 transition-colors ${
-          open ? "border-teal-300/60" : "border-white/15 hover:border-white/30"
+        className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium backdrop-blur-sm transition-colors ${
+          picked
+            ? "border-teal-300 bg-teal-300 text-teal-950"
+            : "border-white/15 bg-[#0a1420]/90 text-zinc-300 hover:border-teal-300/60 hover:text-zinc-50"
         }`}
       >
-        {/* The label rides inside the field. Above it, it cost a line of a
-            page that has to fit one window — and inside it reads as part of
-            the same control rather than a heading for it. */}
-        <span className="shrink-0 rounded-md bg-white/[0.06] px-2 py-0.5 text-xs text-zinc-400">
-          {label}
-        </span>
-        <span className="min-w-0 truncate">{chosen?.label ?? value}</span>
-        {chosen?.note && (
-          <span className="shrink-0 text-xs text-zinc-500">
-            · {chosen.note}
+        {option.label}
+        {option.note && (
+          <span
+            className={`text-xs tabular-nums ${picked ? "text-teal-900/70" : "text-zinc-500"}`}
+          >
+            {option.note}
           </span>
         )}
-        <span className="flex-1" />
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          className={`h-4 w-4 shrink-0 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
       </button>
+    );
+  };
 
-      {open && (
-        <ul
-          role="listbox"
-          className="absolute z-30 mt-1.5 max-h-72 w-full overflow-y-auto rounded-xl border border-white/15 bg-[#0b1622] p-1 shadow-2xl shadow-black/60"
-        >
-          {options.map((option) => (
-            <li key={option.value}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={option.value === value}
-                onClick={() => {
-                  playTap();
-                  onChange(option.value);
-                  setOpen(false);
-                }}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                  option.value === value
-                    ? "bg-teal-300/15 text-teal-100"
-                    : "text-zinc-300 hover:bg-white/[0.06] hover:text-zinc-100"
-                }`}
-              >
-                <span className="min-w-0 flex-1 truncate">{option.label}</span>
-                {option.note && (
-                  <span className="shrink-0 text-xs text-zinc-500">
-                    {option.note}
-                  </span>
-                )}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Choose your map"
+      className="flex flex-wrap items-center justify-center gap-2"
+    >
+      {options.filter((o) => o.group === "world").map(chip)}
+      <span aria-hidden="true" className="mx-1 hidden h-5 w-px bg-white/15 sm:block" />
+      {options.filter((o) => o.group === "region").map(chip)}
     </div>
   );
 }
@@ -426,19 +371,22 @@ export default function Home() {
               cards on the page once, six of them above the fold, and a
               first-time visitor took them for the main event. */}
           <section className="mt-[clamp(1.75rem,4vh,3rem)]">
-            <div className="flex flex-col items-center gap-3">
+            <div className="flex flex-col items-center">
               <h2 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
                 Discover more games
               </h2>
-              <div className="flex w-full max-w-[17.5rem] items-center">
-                <Picker
-                  label="Map"
+              <p className="mt-3 text-xs font-medium uppercase tracking-[0.16em] text-zinc-400">
+                Choose your map
+              </p>
+              <div className="mt-2.5 max-w-4xl">
+                <MapChips
                   value={modeId}
                   onChange={(v) => setModeId(v as ModeId)}
                   options={MODES.map((mode) => ({
                     value: mode.id,
                     label: mode.name,
                     note: counts[mode.id] ? String(counts[mode.id]) : undefined,
+                    group: mode.regional ? "region" : "world",
                   }))}
                 />
               </div>
