@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import DailyCard from "../components/DailyCard";
 import AdSlot from "../components/AdSlot";
 import SiteHeader, { SiteFooter } from "../components/SiteHeader";
-import { DAILY_ICONS, GAME_ICONS } from "../components/gameIcons";
+import { DAILY_ICONS } from "../components/gameIcons";
 import { playTap } from "../lib/sound";
 import { getCountryMeta } from "../data/countries";
 import {
@@ -13,7 +13,6 @@ import {
   type GameType,
   type ModeId,
 } from "../data/modes";
-import { accountsEnabled } from "../lib/supabase";
 import {
   DAILY_LIMIT_SECONDS,
   DAILY_MULTIPLIER,
@@ -39,13 +38,6 @@ const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
  * ten of them read as the page ignoring the choice — so the map you pick is
  * now the round you get, and the number beside it is the number you play.
  */
-/**
- * Play together is off the menu for now, at Sara's call. The page and its
- * rooms still work, so a link somebody was already sent keeps working;
- * setting this back to true is all it takes to offer it again.
- */
-const SHOW_PLAY_TOGETHER = false;
-
 const ROUND_LENGTH = null;
 const CLOCK = null;
 const RULES = "relaxed" as const;
@@ -233,58 +225,76 @@ function Picker({
   );
 }
 
-/** One of the other ways to play: a small pill, not a card. */
-function WayToPlay({
+/** The cut-off corner, bottom right, on every game card. */
+const CUT = 20;
+const corner = (size: number) =>
+  `polygon(0 0, 100% 0, 100% calc(100% - ${size}px), calc(100% - ${size}px) 100%, 0 100%)`;
+
+/**
+ * One game in "Discover more games": a picture of it being played, its name
+ * and one line on what it asks.
+ *
+ * Sara's reference was a games site whose other games sit under the main one
+ * as picture cards, and a picture does what a name like "Find it" cannot — it
+ * shows a first-time visitor what they are about to play. The pictures are
+ * screenshots of this game, not stock photos, for the same reason.
+ *
+ * The border is the outer element showing through a two pixel gap
+ * round the inner one, because a CSS border does not follow a clipped corner.
+ */
+function GameCard({
   to,
+  image,
   title,
-  icon,
+  note,
   badge,
 }: {
   to: string;
+  image: string;
   title: string;
-  icon: React.ReactNode;
+  note: string;
   badge?: string;
 }) {
   return (
     <Link
-      onClick={playTap}
       to={to}
-      className="group flex items-center gap-2 rounded-full border border-white/10 bg-[#0a1420]/90 py-1.5 pl-3 pr-3.5 text-sm backdrop-blur-sm transition-colors hover:border-white/30 hover:bg-[#0d1928]"
+      onClick={playTap}
+      style={{ clipPath: corner(CUT) }}
+      className="group block h-full bg-teal-300/55 p-[2px] transition-colors hover:bg-teal-300"
     >
-      <span className="shrink-0 text-zinc-500 transition-colors group-hover:text-zinc-300 [&_svg]:h-4 [&_svg]:w-4">
-        {icon}
-      </span>
-      <span className="font-medium text-zinc-300 group-hover:text-zinc-100">
-        {title}
-      </span>
-      {badge && (
-        <span className="shrink-0 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-200">
-          {badge}
+      <span
+        // A hair smaller than the outer cut, so the border keeps its width
+        // along the diagonal as well as the sides.
+        style={{ clipPath: corner(CUT - 1) }}
+        className="flex h-full flex-col bg-[#0a1420]"
+      >
+        <span className="relative block aspect-video overflow-hidden bg-[#07111c]">
+          <img
+            src={image}
+            alt=""
+            loading="lazy"
+            width={800}
+            height={450}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+          {badge && (
+            <span className="absolute right-2 top-2 rounded-full bg-amber-300 px-2 py-0.5 text-[11px] font-semibold text-amber-950">
+              {badge}
+            </span>
+          )}
         </span>
-      )}
+        <span className="flex flex-1 flex-col items-center px-3 pb-5 pt-3 text-center">
+          <span className="text-base font-semibold text-teal-300 sm:text-lg">
+            {title}
+          </span>
+          <span className="mt-1 text-xs leading-snug text-zinc-400 sm:text-sm">
+            {note}
+          </span>
+        </span>
+      </span>
     </Link>
   );
 }
-
-/** The icons on the cards — drawn, so they match at any size and any theme. */
-const icons = {
-  practice: (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-      <path d="M5 20V10M12 20V4M19 20v-7" />
-    </svg>
-  ),
-  together: (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="9" cy="8" r="3" />
-      <path d="M3.5 19a5.5 5.5 0 0 1 11 0M17 11a2.6 2.6 0 1 0-2-4.3M17.5 19a5 5 0 0 0-3-4.6" />
-    </svg>
-  ),
-  bigger: (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 20 20 4M4 14v6h6M20 10V4h-6" />
-    </svg>
-  ),
-} as const;
 
 export default function Home() {
   const backdropWanted = useBackdropWanted();
@@ -406,21 +416,19 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Six tiles, not six tabs and a button. Picking the game was a
-              row of tabs, a line of explanation, a dropdown and a Start —
-              four controls to answer one question. Each tile is the question
-              and the answer: this is what it asks you, press it to play it.
-              The map applies to whichever one you press, so it stays a single
-              control beside the heading rather than one per tile.
+          {/* The other games, as picture cards under the dailies — the
+              layout of the games site Sara pointed at. Each round card is the
+              question and the answer: this is what it asks you, press it to
+              play it. The map applies to whichever round you press, so it
+              stays one control under the heading rather than one per card.
 
-              Small, and under the dailies. These were the largest cards on the
-              page, six of them above the fold, and a first-time visitor took
-              them for the main event — Jou said they took too much space and
-              there were too many buttons to know where to start. */}
-          <section className="mt-[clamp(1.25rem,3.2vh,2.5rem)]">
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-              <h2 className="text-lg font-semibold tracking-tight text-zinc-200">
-                Play a round
+              Under the dailies, not beside them: these were the largest
+              cards on the page once, six of them above the fold, and a
+              first-time visitor took them for the main event. */}
+          <section className="mt-[clamp(1.75rem,4vh,3rem)]">
+            <div className="flex flex-col items-center gap-3">
+              <h2 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
+                Discover more games
               </h2>
               <div className="flex w-full max-w-[17.5rem] items-center">
                 <Picker
@@ -436,57 +444,47 @@ export default function Home() {
               </div>
             </div>
 
-            <ul className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-              {GAME_TYPES.map((type) => (
-                <li key={type.id} className="flex">
-                  <Link
-                    to={gamePath(type.id, modeId, CLOCK, RULES, ROUND_LENGTH)}
-                    onClick={playTap}
-                    title={type.blurb}
-                    className="group flex w-full items-center gap-3 rounded-xl border border-white/10 bg-[#0a1420]/90 px-3 py-2.5 backdrop-blur-sm transition-colors hover:border-teal-300/50"
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-300/[0.1] text-teal-200 transition-colors group-hover:bg-teal-300/20 [&_svg]:h-[1.125rem] [&_svg]:w-[1.125rem]">
-                      {GAME_ICONS[type.id]}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-semibold text-zinc-100">
-                        {type.label}
-                      </span>
-                      <span className="block text-xs leading-snug text-zinc-500">
-                        {type.blurb}
-                      </span>
-                    </span>
-                  </Link>
+            {/* A wrapping row rather than a grid, so an odd card out on the
+                last line sits in the middle rather than hard left. */}
+            <ul className="mt-5 flex flex-wrap justify-center gap-3 sm:gap-5">
+              {[
+                ...GAME_TYPES.map((type) => ({
+                  id: type.id as string,
+                  to: gamePath(type.id, modeId, CLOCK, RULES, ROUND_LENGTH),
+                  title: type.label,
+                  note: type.blurb,
+                  badge: undefined as string | undefined,
+                })),
+                {
+                  id: "practice",
+                  to: "/practice",
+                  title: "Practice",
+                  note: "Work on your weak spots.",
+                  badge: duePractice > 0 ? `${duePractice} waiting` : undefined,
+                },
+                {
+                  id: "bigger",
+                  to: "/bigger",
+                  title: "Which is bigger?",
+                  note: "Two countries, pick the larger.",
+                  badge: undefined,
+                },
+              ].map((game) => (
+                <li
+                  key={game.id}
+                  className="w-[calc(50%-0.375rem)] sm:w-[calc((100%-2.5rem)/3)]"
+                >
+                  <GameCard
+                    to={game.to}
+                    image={`/cards/${game.id}.jpg`}
+                    title={game.title}
+                    note={game.note}
+                    badge={game.badge}
+                  />
                 </li>
               ))}
             </ul>
           </section>
-
-          {/* Links in a line rather than more cards: they are there for
-              whoever goes looking, not to compete with the rest. */}
-          <nav
-            aria-label="More ways to play"
-            className="mt-[clamp(0.75rem,2.4vh,1.5rem)] flex flex-wrap items-center justify-center gap-2"
-          >
-            <WayToPlay
-              to="/practice"
-              title="Practice"
-              badge={duePractice > 0 ? `${duePractice} waiting` : undefined}
-              icon={icons.practice}
-            />
-            {SHOW_PLAY_TOGETHER && accountsEnabled && (
-              <WayToPlay
-                to="/play-together"
-                title="Play together"
-                icon={icons.together}
-              />
-            )}
-            <WayToPlay
-              to="/bigger"
-              title="Which is bigger?"
-              icon={icons.bigger}
-            />
-          </nav>
 
           <div aria-hidden="true" className="grow-[0.55]" />
 
