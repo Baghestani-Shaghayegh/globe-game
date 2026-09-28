@@ -43,8 +43,6 @@ import {
   type Shape,
 } from "../lib/mystery";
 
-/** How many of the nearest guesses the list under the box shows. */
-const CLOSEST_SHOWN = 5;
 
 /** How many squares of the trail are worth showing on the result card. */
 const MAX_TRAIL = 24;
@@ -218,12 +216,13 @@ export default function Mystery() {
     [result, answer, guessed, centres, shapes]
   );
 
-  /** The nearest few guesses, closest first, for the list under the box. */
+  /**
+   * Every guess, closest first, for the list in the panel. It used to stop at
+   * five; it now scrolls inside the panel instead, so the whole hunt is there
+   * to look back over without the panel growing down the screen.
+   */
   const closest = useMemo(
-    () =>
-      [...(result?.guesses ?? [])]
-        .sort((a, b) => a.km - b.km)
-        .slice(0, CLOSEST_SHOWN),
+    () => [...(result?.guesses ?? [])].sort((a, b) => a.km - b.km),
     [result]
   );
 
@@ -296,10 +295,13 @@ export default function Mystery() {
       const { name } = (d as CountryFeature).properties;
       const over = result?.solved || result?.gaveUp;
       if (over && name === result?.answer)
-        // Green when it was found, amber when it was handed over — the same
-        // colour a revealed answer takes everywhere else in the game.
+        // Green when it was found. Handed over, it is the hottest colour on
+        // the scale, because it is the place every guess was measured from.
+        // It used to be amber like a revealed answer elsewhere in the game,
+        // but here amber is a point on the heat scale: Ukraine given up read
+        // as lukewarm next to a red Turkey.
         return landMaterial(
-          result?.solved ? theme.found : theme.selected,
+          result?.solved ? theme.found : heatColor(0),
           "answer"
         );
       const km = guessed.get(name);
@@ -373,9 +375,14 @@ export default function Mystery() {
         {...GLOBE_SURFACE}
         polygonsData={features}
         polygonCapMaterial={capColor}
-        polygonAltitude={(d) =>
-          guessed.has((d as CountryFeature).properties.name) ? 0.03 : 0.012
-        }
+        // The answer, once shown, stands clear of the guesses around it —
+        // a near guess is nearly its colour.
+        polygonAltitude={(d) => {
+          const { name } = (d as CountryFeature).properties;
+          if ((result?.solved || result?.gaveUp) && name === result.answer)
+            return 0.055;
+          return guessed.has(name) ? 0.03 : 0.012;
+        }}
         polygonsTransitionDuration={250}
         onPolygonHover={(polygon) =>
           globeClick.setHovered(polygon as CountryFeature | null)
@@ -389,21 +396,18 @@ export default function Mystery() {
         >
           ← Modes
         </button>
-        <div className="rounded-lg border border-white/10 bg-raised/90 px-3 py-1.5 text-right text-sm backdrop-blur">
-          <p className="font-medium text-zinc-100">Mystery country</p>
-          <p className="text-xs tabular-nums text-zinc-500">
-            {guesses.length} {guesses.length === 1 ? "guess" : "guesses"}
-          </p>
-        </div>
       </div>
 
-      {/* The prompt sits over the globe but never eats a click meant for it. */}
-      <div className="pointer-events-none absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-raised/90 px-5 py-3 text-center backdrop-blur">
+      {/* The prompt never eats a click meant for the globe, and stays out of
+          its way: the corner under the back button on a wide screen, the
+          bottom edge on a phone, where the globe fills the width. It sat top
+          and centre, over the very part of the map the hunt was about. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 mx-auto flex w-[min(20rem,calc(100vw-1.5rem))] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-raised/90 px-5 py-3 text-center backdrop-blur lg:inset-x-auto lg:bottom-auto lg:left-4 lg:top-16 lg:mx-0">
         {result?.solved || result?.gaveUp ? (
           <>
             <p
               className={`text-xs uppercase tracking-wider ${
-                result?.solved ? "text-emerald-400/70" : "text-amber-400/70"
+                result?.solved ? "text-emerald-400/70" : "text-red-400/80"
               }`}
             >
               {result?.solved ? "Found it" : "It was"}
@@ -485,7 +489,9 @@ export default function Mystery() {
                   <ul
                     id="guess-suggestions"
                     role="listbox"
-                    className="absolute left-0 top-full z-20 mt-1 w-full overflow-hidden rounded-md border border-white/10 bg-raised text-left shadow-xl"
+                    // Upwards on a phone, where the panel sits on the bottom
+                    // edge and a list opening down would leave the screen.
+                    className="absolute bottom-full left-0 z-20 mb-1 w-full overflow-hidden rounded-md border border-white/10 bg-raised text-left shadow-xl lg:bottom-auto lg:top-full lg:mb-0 lg:mt-1"
                   >
                     {matches.map((name, index) => (
                       <li
@@ -541,7 +547,11 @@ export default function Mystery() {
                 next to it. Closest first, because the far ones stop mattering
                 the moment you have a near one. */}
             {closest.length > 0 && (
-              <ol className="mt-1 w-56 space-y-0.5 text-left text-xs">
+              <div className="pointer-events-auto mt-1 w-full text-left">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+                {closest.length} {closest.length === 1 ? "guess" : "guesses"}
+              </p>
+              <ol className="mt-1 max-h-28 space-y-0.5 overflow-y-auto pr-1 text-xs lg:max-h-56">
                 {closest.map((g) => (
                   <li key={g.name} className="flex items-center gap-2">
                     <span
@@ -558,6 +568,7 @@ export default function Mystery() {
                   </li>
                 ))}
               </ol>
+              </div>
             )}
 
             {/* Played down, and last: a way out of a puzzle you cannot get,
@@ -575,7 +586,8 @@ export default function Mystery() {
       {/* What the colours mean. Without it a player had to work out for
           themselves that yellow is warmer than pale blue — Jou asked for a
           key. Built from the same stops the globe is painted with. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-5 z-10 flex flex-col items-center gap-2 px-4">
+      {/* At the top on a phone, where the panel has the bottom edge. */}
+      <div className="pointer-events-none absolute inset-x-0 top-16 z-10 flex flex-col items-center gap-2 px-4 lg:bottom-5 lg:top-auto">
         <div className="w-full max-w-xs rounded-lg border border-white/10 bg-raised/90 px-3 pb-1.5 pt-2 backdrop-blur">
           <div className="flex justify-between text-[11px] font-medium uppercase tracking-wider">
             <span className="text-red-400">Hot</span>
