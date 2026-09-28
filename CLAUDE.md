@@ -14,6 +14,20 @@ Say plainly what was *not* verified. Several things here can only be tested on
 Sara's machine (see Environment below), and claiming otherwise is worse than
 admitting the gap.
 
+**End every reply — not just finished work, every one — with a three-line
+status block in a code block.** Sara asked for this explicitly too. Short, one
+line each, in this exact shape:
+
+```
+✅ Done: <what this reply finished, in a few words>
+⬜ Left: <what remains, items separated by · >
+👉 You: <the one next thing Sara should do or decide>
+```
+
+If nothing is left, say so on the Left line rather than dropping it. The You
+line is a single concrete action — a decision to make, something to test on
+her machine, a reply to send — never a vague "let me know".
+
 ## Branches
 
 Develop on `develop`, promote to `main` when asked. Never push to `main`
