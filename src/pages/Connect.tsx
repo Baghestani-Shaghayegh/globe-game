@@ -240,7 +240,14 @@ export default function Connect() {
         const next = { ...result, wrong: result.wrong + 1 };
         saveConnect(next);
         setResult(next);
-        setNote(`${display(name)} doesn't border anything you've placed.`);
+        // Names what it has to touch. "Anything you've placed" meant the two
+        // ends as well as the chain, which nobody reading it could know — and
+        // before the first country it described an empty board.
+        setNote(
+          placed.length === 0
+            ? `${display(name)} doesn't border ${display(result.from)} or ${display(result.to)}.`
+            : `${display(name)} doesn't border ${display(result.from)}, ${display(result.to)} or any country you've added.`
+        );
         setTyped("");
         playWrong();
         return;
@@ -423,15 +430,13 @@ export default function Connect() {
         >
           ← Modes
         </button>
-        <div className="rounded-lg border border-white/10 bg-raised/90 px-3 py-1.5 text-right text-sm backdrop-blur">
-          <p className="font-medium text-zinc-100">Connect</p>
-          <p className="text-xs tabular-nums text-zinc-500">
-            par {puzzle.par} · {result ? placedOf(result).length : 0} placed
-          </p>
-        </div>
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 top-20 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-2 rounded-xl border border-white/10 bg-raised/90 px-5 py-3 text-center backdrop-blur">
+      {/* Out of the globe's way, as in the other games: the corner under the
+          back button on a wide screen, the bottom edge on a phone. The par
+          and the count live in here too — they had a box of their own in the
+          other corner, which said "Connect" on a page that already says it. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 mx-auto flex w-[min(22rem,calc(100vw-1.5rem))] flex-col items-center gap-2 rounded-xl border border-white/10 bg-raised/90 px-5 py-3 text-center backdrop-blur lg:inset-x-auto lg:bottom-auto lg:left-4 lg:top-16 lg:mx-0">
         <p className="text-xs uppercase tracking-wider text-zinc-500">
           Walk from
         </p>
@@ -439,6 +444,11 @@ export default function Connect() {
           {display(puzzle.from)}{" "}
           <span className="text-zinc-600">→</span> {display(puzzle.to)}
         </p>
+        {!result?.solved && (
+          <p className="text-xs tabular-nums text-zinc-500">
+            Par {puzzle.par} · {result ? placedOf(result).length : 0} added
+          </p>
+        )}
 
         {result?.solved ? (
           <>
@@ -451,15 +461,18 @@ export default function Connect() {
               {[puzzle.from, ...result.chain, puzzle.to].map(display).join(" → ")}
             </p>
             {shortest && (
-              <p className="max-w-sm text-xs text-zinc-500">
+              <p className="text-xs text-zinc-500">
                 Shortest:{" "}
                 {[puzzle.from, ...shortest, puzzle.to].map(display).join(" → ")}
               </p>
             )}
+            <p className="text-xs text-zinc-600">
+              {formatDay(day)} · a new pair at midnight UTC
+            </p>
           </>
         ) : (
           <>
-            <p className="max-w-xs text-sm text-zinc-400">
+            <p className="text-sm text-zinc-400">
               Name countries that link them up.
             </p>
             <form onSubmit={submit} className="pointer-events-auto flex gap-2 pt-1">
@@ -503,11 +516,6 @@ export default function Connect() {
         )}
       </div>
 
-      {result?.solved && (
-        <p className="pointer-events-none absolute inset-x-0 bottom-5 z-10 text-center text-sm text-zinc-500">
-          {formatDay(day)} · a new pair at midnight UTC
-        </p>
-      )}
 
       {/* Only on the move that joins the chain, not on every visit after. */}
       <Celebrate burst={burst} count={90} />
