@@ -230,6 +230,30 @@ export function backdropColor(): string {
 }
 
 /**
+ * Land the player is being asked about, on a map where most land isn't.
+ *
+ * The daily draws the whole world and asks about ten countries of it. Those
+ * ten were lifted off the sphere but painted the ordinary land colour, against
+ * a backdrop only a little darker — and two players separately said they
+ * could not tell which countries they were meant to find. One spent over a
+ * minute looking for the last. This is the land colour a good step towards the
+ * coastline stroke: plainly brighter than the backdrop, still a shade of the
+ * land, and nowhere near found, missed or selected.
+ */
+export function raisedLand(): string {
+  return mix(theme.unfound, theme.stroke, 0.35);
+}
+
+/**
+ * The pulse drawn on a country still to be named: the palette's coastline
+ * colour taken halfway to white. In the coastline colour itself it sat among
+ * the coastlines and read as one more of them.
+ */
+export function beaconTone(): string {
+  return mix(theme.stroke, "#ffffff", 0.5);
+}
+
+/**
  * Permanent ice: Greenland, Antarctica and the rest of the white parts.
  *
  * Pale and slightly blue against the teal of everything else, which is what

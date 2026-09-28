@@ -108,7 +108,62 @@ body {
   );
 }
 
+/* A pulse on a country still to be named in the daily. Two rings, half a beat
+   apart, so there is always one on its way out. The element is a point: the
+   globe centres it on the country, and the rings grow out from there. It must
+   never take a click — the country under it is what the player is aiming at. */
+@keyframes beacon {
+  from {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  to {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+
+.beacon {
+  position: relative;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.beacon::before,
+.beacon::after {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: -8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  border: 2px solid var(--beacon);
+  box-shadow:
+    0 0 6px var(--beacon),
+    inset 0 0 4px var(--beacon);
+  pointer-events: none;
+  animation: beacon 2s ease-out infinite;
+}
+
+.beacon::after {
+  animation-delay: 1s;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  /* One still ring rather than none: the marking is the point, the motion is
+     only there to catch the eye. */
+  .beacon::before {
+    animation: none;
+    transform: scale(1.2);
+    opacity: 0.85;
+  }
+
+  .beacon::after {
+    display: none;
+  }
+
   .animate-shake,
   .animate-fade-in,
   .animate-score-pop {

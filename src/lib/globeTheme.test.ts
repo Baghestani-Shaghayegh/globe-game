@@ -3,7 +3,9 @@ import {
   GLOBE_THEMES,
   answerStroke,
   backdropColor,
+  beaconTone,
   landShade,
+  raisedLand,
   setGlobeTheme,
   theme,
   unlockedThemes,
@@ -136,6 +138,42 @@ describe("land shading", () => {
     setGlobeTheme("ember");
     const after = NAMES.map((name) => landShade(name));
     expect(after).not.toEqual(before);
+  });
+});
+
+describe("land in play on the daily", () => {
+  // Two players could not tell which of the daily's countries they were meant
+  // to find. The step up from the backdrop has to be one you can see.
+  it("reads clearly brighter than the backdrop, in every palette", () => {
+    for (const palette of GLOBE_THEMES) {
+      setGlobeTheme(palette.id);
+      for (const name of NAMES) {
+        const shade = landShade(name, raisedLand());
+        expect(lightness(shade) - lightness(backdropColor())).toBeGreaterThan(60);
+        expect(lightness(shade)).toBeGreaterThan(lightness(landShade(name)));
+      }
+    }
+  });
+
+  it("still never comes near a colour that means something", () => {
+    for (const palette of GLOBE_THEMES) {
+      setGlobeTheme(palette.id);
+      for (const name of NAMES) {
+        const shade = landShade(name, raisedLand());
+        expect(apart(shade, theme.found)).toBeGreaterThan(40);
+        expect(apart(shade, theme.missed)).toBeGreaterThan(40);
+        expect(apart(shade, theme.selected)).toBeGreaterThan(40);
+      }
+    }
+  });
+
+  it("pulses in a colour paler than both the coastline and the land", () => {
+    for (const palette of GLOBE_THEMES) {
+      setGlobeTheme(palette.id);
+      expect(beaconTone()).toMatch(/^#[0-9a-f]{6}$/);
+      expect(lightness(beaconTone())).toBeGreaterThan(lightness(theme.stroke));
+      expect(lightness(beaconTone())).toBeGreaterThan(lightness(raisedLand()));
+    }
   });
 });
 

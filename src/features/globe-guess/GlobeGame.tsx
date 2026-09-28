@@ -24,7 +24,9 @@ import { isCorrectGuess } from "../../lib/answerMatch";
 import {
   answerStroke,
   backdropColor,
+  beaconTone,
   landShade,
+  raisedLand,
   theme,
 } from "../../lib/globeTheme";
 import { landMaterial } from "../../lib/globeTerrain";
@@ -155,7 +157,29 @@ function nameLabel(tag: NameTag): HTMLElement {
  */
 const tagLat = (d: object) => (d as NameTag).lat;
 const tagLng = (d: object) => (d as NameTag).lng;
-const tagElement = (d: object) => nameLabel(d as NameTag);
+const tagElement = (d: object) =>
+  "beacon" in d ? beaconMark() : nameLabel(d as NameTag);
+
+/**
+ * A pulse on a country still to be named, under `showInPlay`.
+ *
+ * Colour and height alone did not carry it: at the whole-world view a small
+ * island is a few pixels whatever colour it is, and two players reported
+ * hunting the globe for the daily's last country. The globe's own ring layer
+ * was tried first and drew one-pixel lines that were lost among the
+ * coastlines. This is DOM, like the name tags, so it is the same size on
+ * screen however far out the camera is, and the globe already hides it when
+ * it is round the back.
+ */
+type Beacon = { beacon: true; lat: number; lng: number };
+
+function beaconMark(): HTMLElement {
+  const el = document.createElement("div");
+  el.className = "beacon";
+  el.setAttribute("aria-hidden", "true");
+  el.style.setProperty("--beacon", beaconTone());
+  return el;
+}
 
 /** The whole-world view, sized to this window. Shared by every game. */
 const worldView = () => worldAltitude(window.innerWidth, window.innerHeight);
@@ -456,6 +480,45 @@ export default function GlobeGame({
   const cursorName =
     cursor !== null ? selectable[cursor]?.feature.properties.name : null;
 
+  /**
+   * A pulse on each country still to name, while the round runs. On the
+   * point furthest inside the land rather than the middle of its box, which
+   * for a crescent or a scatter of islands can be open sea.
+   */
+  const beacons = useMemo<Beacon[]>(
+    () =>
+      showInPlay && !summary
+        ? selectable.map(({ feature }) => ({
+            beacon: true,
+            ...labelPoint(feature.geometry),
+          }))
+        : [],
+    [showInPlay, summary, selectable]
+  );
+
+  /**
+   * "Next one": turns the globe to a country still to name, one after
+   * another, without opening it. For the round's last country, which is the
+   * one people lost — the ring only helps once it is on your side of the
+   * world. Close enough that an island fills a thumb's width, held back far
+   * enough that the neighbours are there to place it by.
+   */
+  const [spotlight, setSpotlight] = useState(-1);
+  const showNext = () => {
+    if (!selectable.length) return;
+    const next = (spotlight + 1) % selectable.length;
+    setSpotlight(next);
+    const { centre } = selectable[next];
+    globeRef.current?.pointOfView(
+      {
+        lat: centre.lat,
+        lng: centre.lng,
+        altitude: Math.max(0.7, altitudeFor(centre.span)),
+      },
+      700
+    );
+  };
+
   const reported = useRef(false);
   useEffect(() => {
     if (!summary || reported.current) return;
@@ -616,12 +679,17 @@ export default function GlobeGame({
       if (summary) return { color: theme.missed, answer: true };
       if (selected && selected.properties.name === name)
         return { color: theme.selected, answer: true };
-      return { color: landShade(name), answer: false };
+      // Marked in play: brighter than the backdrop by a clear step, not the
+      // one-shade difference that left players unsure what they were after.
+      return {
+        color: landShade(name, showInPlay ? raisedLand() : theme.unfound),
+        answer: false,
+      };
     },
     // themeId: the palette is a live object, so a swap changes these colours
     // without changing anything else listed here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [backdrop, inPlaySet, foundNames, expired, cursorName, summary, selected, themeId]
+    [backdrop, showInPlay, inPlaySet, foundNames, expired, cursorName, summary, selected, themeId]
   );
 
   /*
@@ -664,7 +732,11 @@ export default function GlobeGame({
     [showInPlay, inPlaySet, backdrop]
   );
 
-  const tags = useMemo(() => (nameTag ? [nameTag] : []), [nameTag]);
+  // One html layer for both: the name under the pointer and the beacons.
+  const tags = useMemo<object[]>(
+    () => (nameTag ? [nameTag, ...beacons] : beacons),
+    [nameTag, beacons]
+  );
 
   if (loadError) {
     return (
@@ -793,6 +865,25 @@ export default function GlobeGame({
           }}
           onKeepPlaying={() => round.setConfirmingExit(false)}
         />
+      )}
+
+      {showInPlay && !summary && selectable.length > 0 && (
+        <div className="absolute inset-x-0 bottom-6 z-20 mx-auto flex w-fit items-center gap-3 rounded-full border border-white/10 bg-[#141b23]/90 py-2 pl-4 pr-2 text-sm backdrop-blur">
+          <span className="flex items-center gap-2 text-zinc-400">
+            <span
+              aria-hidden="true"
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: raisedLand() }}
+            />
+            {selectable.length} left
+          </span>
+          <button
+            onClick={showNext}
+            className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-zinc-100 transition-colors hover:bg-white/15"
+          >
+            Next one
+          </button>
+        </div>
       )}
 
       {summary && round.reviewingMap && (
