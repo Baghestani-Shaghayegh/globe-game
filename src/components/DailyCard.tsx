@@ -2,8 +2,14 @@ import { Link } from "react-router-dom";
 import { playTap } from "../lib/sound";
 
 /**
- * One of today's rounds. Compact and equal-weight: these three are the reason
- * to come back, and none of them is more important than the others.
+ * One of today's rounds, and the biggest thing on the page.
+ *
+ * These were small, equal-weight cards over a grid of six larger ones for
+ * free play, and a new player read the page the way it was drawn: the free
+ * play was the game, the dailies an aside. Jou, looking at it for the first
+ * time, said there were too many buttons and no telling which to press, and
+ * that the dailies should be the thing that stands out. So each is a large
+ * card with a plain call to action, and the rest of the page steps back.
  */
 export default function DailyCard({
   to,
@@ -39,49 +45,65 @@ export default function DailyCard({
   const tone = done
     ? "border-white/10 hover:border-white/20"
     : {
-        sky: "border-sky-400/25 [background-image:linear-gradient(rgba(56,189,248,0.10),rgba(56,189,248,0.10))] hover:border-sky-400/50",
-        rose: "border-rose-400/25 [background-image:linear-gradient(rgba(251,113,133,0.09),rgba(251,113,133,0.09))] hover:border-rose-400/50",
+        sky: "border-sky-400/30 [background-image:linear-gradient(rgba(56,189,248,0.12),rgba(56,189,248,0.04))] hover:border-sky-400/60",
+        rose: "border-rose-400/30 [background-image:linear-gradient(rgba(251,113,133,0.11),rgba(251,113,133,0.04))] hover:border-rose-400/60",
         violet:
-          "border-violet-400/25 [background-image:linear-gradient(rgba(167,139,250,0.09),rgba(167,139,250,0.09))] hover:border-violet-400/50",
+          "border-violet-400/30 [background-image:linear-gradient(rgba(167,139,250,0.11),rgba(167,139,250,0.04))] hover:border-violet-400/60",
+      }[accent];
+
+  const badge = done
+    ? "bg-white/[0.05] text-zinc-500"
+    : {
+        sky: "bg-sky-400/15 text-sky-200",
+        rose: "bg-rose-400/15 text-rose-200",
+        violet: "bg-violet-400/15 text-violet-200",
+      }[accent];
+
+  const action = done
+    ? "bg-white/[0.06] text-zinc-400 group-hover:bg-white/10"
+    : {
+        sky: "bg-sky-300 text-sky-950 group-hover:bg-sky-200",
+        rose: "bg-rose-300 text-rose-950 group-hover:bg-rose-200",
+        violet: "bg-violet-300 text-violet-950 group-hover:bg-violet-200",
       }[accent];
 
   return (
     <Link
       onClick={playTap}
       to={to}
-      className={`group relative flex flex-col gap-1 rounded-2xl border bg-[#0a1420]/95 px-4 py-3.5 backdrop-blur-sm transition-colors ${tone}`}
+      className={`group relative flex items-center gap-4 rounded-2xl border bg-[#0a1420]/95 p-4 backdrop-blur-sm transition-colors sm:flex-col sm:items-start sm:gap-3 sm:p-5 ${tone}`}
     >
-      <span className="flex items-center gap-2">
+      <span
+        aria-hidden="true"
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl [&_svg]:h-6 [&_svg]:w-6 ${badge}`}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
         <span
-          aria-hidden="true"
-          className={done ? "text-zinc-600" : "text-zinc-300"}
+          className={`block text-lg font-semibold ${done ? "text-zinc-400" : "text-zinc-50"}`}
         >
-          {icon}
-        </span>
-        <span className={done ? "font-medium text-zinc-400" : "font-medium text-zinc-100"}>
           {title}
         </span>
-        <span className="ml-auto flex shrink-0 items-center gap-2">
-          {done && (
-            <span
-              aria-label="finished today"
-              className="text-xs font-medium text-emerald-400/80"
-            >
-              ✓
-            </span>
-          )}
-          <span
-            aria-hidden="true"
-            className="text-zinc-600 transition-colors group-hover:text-zinc-300"
-          >
-            ›
-          </span>
+        <span
+          className={`mt-0.5 block text-sm leading-snug ${done ? "text-zinc-500" : "text-zinc-400"}`}
+        >
+          {note}
         </span>
       </span>
       <span
-        className={`text-sm leading-snug ${done ? "text-zinc-500" : "text-zinc-400"}`}
+        className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors sm:mt-1 ${action}`}
       >
-        {note}
+        {done ? (
+          <>
+            <span aria-hidden="true" className="text-emerald-400">
+              ✓{" "}
+            </span>
+            Result
+          </>
+        ) : (
+          "Play"
+        )}
       </span>
     </Link>
   );

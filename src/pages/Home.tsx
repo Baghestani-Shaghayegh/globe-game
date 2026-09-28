@@ -226,17 +226,15 @@ function Picker({
   );
 }
 
-/** One of today's three, or one of the other ways to play. */
+/** One of the other ways to play: a small pill, not a card. */
 function WayToPlay({
   to,
   title,
-  note,
   icon,
   badge,
 }: {
   to: string;
   title: string;
-  note: string;
   icon: React.ReactNode;
   badge?: string;
 }) {
@@ -244,28 +242,19 @@ function WayToPlay({
     <Link
       onClick={playTap}
       to={to}
-      className="group flex items-center gap-3 rounded-xl border border-white/12 bg-[#0a1420]/95 px-4 py-[clamp(0.4rem,1.6vh,1.3rem)] backdrop-blur-sm transition-colors hover:border-white/30 hover:bg-[#0d1928]"
+      className="group flex items-center gap-2 rounded-full border border-white/10 bg-[#0a1420]/90 py-1.5 pl-3 pr-3.5 text-sm backdrop-blur-sm transition-colors hover:border-white/30 hover:bg-[#0d1928]"
     >
-      <span className="shrink-0 text-zinc-400 transition-colors group-hover:text-zinc-200">
+      <span className="shrink-0 text-zinc-500 transition-colors group-hover:text-zinc-300 [&_svg]:h-4 [&_svg]:w-4">
         {icon}
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2">
-          <span className="font-medium text-zinc-100">{title}</span>
-          {badge && (
-            <span className="shrink-0 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-200">
-              {badge}
-            </span>
-          )}
+      <span className="font-medium text-zinc-300 group-hover:text-zinc-100">
+        {title}
+      </span>
+      {badge && (
+        <span className="shrink-0 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-200">
+          {badge}
         </span>
-        <span className="block truncate text-sm text-zinc-400">{note}</span>
-      </span>
-      <span
-        aria-hidden="true"
-        className="shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-300"
-      >
-        ›
-      </span>
+      )}
     </Link>
   );
 }
@@ -380,16 +369,14 @@ export default function Home() {
               </span>
             </div>
 
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            {/* What each one is stays said when it's done: the button says
+                "Result" now, so the line under the title doesn't have to. */}
+            <div className="mt-4 grid gap-3 sm:grid-cols-3 sm:gap-4">
               <DailyCard
                 to="/daily"
                 icon={DAILY_ICONS.hunt}
                 title="Country hunt"
-                note={
-                  doneToday.daily
-                    ? "See your result"
-                    : `Ten countries, ${DAILY_LIMIT_SECONDS / 60} minutes`
-                }
+                note={`Ten countries, ${DAILY_LIMIT_SECONDS / 60} minutes`}
                 accent="sky"
                 done={doneToday.daily}
               />
@@ -397,9 +384,7 @@ export default function Home() {
                 to="/mystery"
                 icon={DAILY_ICONS.mystery}
                 title="Mystery country"
-                note={
-                  doneToday.mystery ? "See your result" : "Warmer or colder clues"
-                }
+                note="Warmer or colder clues"
                 accent="rose"
                 done={doneToday.mystery}
               />
@@ -407,24 +392,27 @@ export default function Home() {
                 to="/connect"
                 icon={DAILY_ICONS.connect}
                 title="Connect"
-                note={
-                  doneToday.connect ? "See your result" : "Link two countries by land"
-                }
+                note="Link two countries by land"
                 accent="violet"
                 done={doneToday.connect}
               />
             </div>
           </section>
 
-          {/* Six cards, not six tabs and a button. Picking the game was a
+          {/* Six tiles, not six tabs and a button. Picking the game was a
               row of tabs, a line of explanation, a dropdown and a Start —
-              four controls to answer one question. Each card is the question
+              four controls to answer one question. Each tile is the question
               and the answer: this is what it asks you, press it to play it.
               The map applies to whichever one you press, so it stays a single
-              control beside the heading rather than one per card. */}
-          <section className="mt-[clamp(0.75rem,2.4vh,2rem)]">
+              control beside the heading rather than one per tile.
+
+              Small, and under the dailies. These were the largest cards on the
+              page, six of them above the fold, and a first-time visitor took
+              them for the main event — Jou said they took too much space and
+              there were too many buttons to know where to start. */}
+          <section className="mt-[clamp(1.25rem,3.2vh,2.5rem)]">
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-              <h2 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
+              <h2 className="text-lg font-semibold tracking-tight text-zinc-200">
                 Play a round
               </h2>
               <div className="flex w-full max-w-[17.5rem] items-center">
@@ -441,30 +429,25 @@ export default function Home() {
               </div>
             </div>
 
-            <ul className="mt-4 grid gap-3.5 sm:grid-cols-2">
+            <ul className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
               {GAME_TYPES.map((type) => (
                 <li key={type.id} className="flex">
                   <Link
                     to={gamePath(type.id, modeId, CLOCK, RULES, ROUND_LENGTH)}
                     onClick={playTap}
-                    className="group flex w-full items-center gap-4 rounded-2xl border border-white/12 bg-[#0a1420]/95 px-5 py-5 backdrop-blur-sm transition-colors hover:border-teal-300/50"
+                    title={type.blurb}
+                    className="group flex w-full items-center gap-3 rounded-xl border border-white/10 bg-[#0a1420]/90 px-3 py-2.5 backdrop-blur-sm transition-colors hover:border-teal-300/50"
                   >
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-300/[0.12] text-teal-200 transition-colors group-hover:bg-teal-300/20 [&_svg]:h-6 [&_svg]:w-6">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-300/[0.1] text-teal-200 transition-colors group-hover:bg-teal-300/20 [&_svg]:h-[1.125rem] [&_svg]:w-[1.125rem]">
                       {GAME_ICONS[type.id]}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-lg font-semibold text-zinc-100">
+                      <span className="block text-sm font-semibold text-zinc-100">
                         {type.label}
                       </span>
-                      <span className="mt-0.5 block text-sm leading-snug text-zinc-400">
+                      <span className="block text-xs leading-snug text-zinc-500">
                         {type.blurb}
                       </span>
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className="shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-300"
-                    >
-                      ›
                     </span>
                   </Link>
                 </li>
@@ -472,37 +455,31 @@ export default function Home() {
             </ul>
           </section>
 
-          <section className="mt-[clamp(0.75rem,2.4vh,1.75rem)]">
-            <h2 className="text-center text-xs uppercase tracking-[0.18em] text-zinc-500">
-              More ways to play
-            </h2>
-            <div className="mt-2.5 grid gap-3 sm:grid-cols-3">
+          {/* Three links in a line rather than three more cards: they are
+              there for whoever goes looking, not to compete with the rest. */}
+          <nav
+            aria-label="More ways to play"
+            className="mt-[clamp(0.75rem,2.4vh,1.5rem)] flex flex-wrap items-center justify-center gap-2"
+          >
+            <WayToPlay
+              to="/practice"
+              title="Practice"
+              badge={duePractice > 0 ? `${duePractice} waiting` : undefined}
+              icon={icons.practice}
+            />
+            {accountsEnabled && (
               <WayToPlay
-                to="/practice"
-                title="Practice"
-                note={
-                  duePractice > 0
-                    ? `${duePractice} waiting`
-                    : "Work on your weak spots"
-                }
-                icon={icons.practice}
+                to="/play-together"
+                title="Play together"
+                icon={icons.together}
               />
-              {accountsEnabled && (
-                <WayToPlay
-                  to="/play-together"
-                  title="Play together"
-                  note="Challenge a friend"
-                  icon={icons.together}
-                />
-              )}
-              <WayToPlay
-                to="/bigger"
-                title="Which is bigger?"
-                note="Compare country sizes"
-                icon={icons.bigger}
-              />
-            </div>
-          </section>
+            )}
+            <WayToPlay
+              to="/bigger"
+              title="Which is bigger?"
+              icon={icons.bigger}
+            />
+          </nav>
 
           <div aria-hidden="true" className="grow-[0.55]" />
 
