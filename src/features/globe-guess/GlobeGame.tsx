@@ -83,6 +83,13 @@ type Props = {
    * answers — knowing a country is in play does not tell you its name.
    */
   showInPlay?: boolean;
+  /**
+   * Leaving mid-round throws the round away instead of filing it: nothing is
+   * saved, and coming back starts it again from the top. Sara's rule for the
+   * daily Country hunt — it is only done once it is finished, the clock runs
+   * out, or the player presses Quit.
+   */
+  leaveDiscards?: boolean;
 };
 
 /**
@@ -194,6 +201,7 @@ export default function GlobeGame({
   pointsMultiplier = 1,
   backdrop = false,
   showInPlay = false,
+  leaveDiscards = false,
 }: Props) {
   // Repaint when the player changes the globe palette.
   const themeId = useGlobeTheme();
@@ -840,6 +848,11 @@ export default function GlobeGame({
       {confirmingFinish && (
         <ConfirmDialog
           title="Quit this round?"
+          body={
+            leaveDiscards
+              ? "This ends today's hunt, and you can't play it again today."
+              : undefined
+          }
           confirmLabel="Quit"
           onConfirm={() => {
             setConfirmingFinish(false);
@@ -852,11 +865,16 @@ export default function GlobeGame({
 
       {round.confirmingExit && (
         <ExitConfirm
+          note={
+            leaveDiscards
+              ? "This round won't be saved. You can start again from the menu."
+              : undefined
+          }
           onFinish={() => {
-            // Nothing answered yet: just go. Ending the round here filed it,
-            // and on the daily that meant a day marked done with nothing
-            // found and no way back in — for somebody who had only looked.
-            if (attempted.size === 0 && expired.size === 0) {
+            // Nothing answered yet, or a round that isn't kept when left: just
+            // go. Ending the round here filed it, and on the daily that meant
+            // a day marked done — for somebody who had only looked.
+            if (leaveDiscards || (attempted.size === 0 && expired.size === 0)) {
               navigate("/");
               return;
             }

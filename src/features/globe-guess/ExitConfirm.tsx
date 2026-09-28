@@ -3,6 +3,8 @@ import ConfirmDialog from "./ConfirmDialog";
 type Props = {
   onFinish: () => void;
   onKeepPlaying: () => void;
+  /** One line on what leaving costs, where that isn't the obvious thing. */
+  note?: string;
 };
 
 /**
@@ -14,10 +16,11 @@ type Props = {
  * whether to walk away, and all of which made walking away feel like paperwork
  * rather than a shame.
  */
-export default function ExitConfirm({ onFinish, onKeepPlaying }: Props) {
+export default function ExitConfirm({ onFinish, onKeepPlaying, note }: Props) {
   return (
     <ConfirmDialog
       title="Sure you want to leave?"
+      body={note}
       confirmLabel="Leave"
       onConfirm={onFinish}
       cancelLabel="Keep playing"

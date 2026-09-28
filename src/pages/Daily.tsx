@@ -286,6 +286,9 @@ export default function Daily() {
       // questions and the answers are their names.
       backdrop
       showInPlay
+      // Leaving part-way doesn't use up the day: the hunt is done only when
+      // it is finished, the clock runs out, or the player presses Quit.
+      leaveDiscards
       onRoundEnd={finish}
     />
   ) : (
