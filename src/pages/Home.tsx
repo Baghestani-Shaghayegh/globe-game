@@ -277,11 +277,7 @@ export default function Home() {
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-page">
       {backdropWanted && (
         <div className="pointer-events-none absolute inset-0 animate-fade-in">
-          {/* Faded right back in light mode: the globe is dark whatever the
-              page is, and at full strength the words on top of it were dark
-              on dark. There it is a watermark, like the globe on an atlas's
-              title page. */}
-          <div className="home-globe h-full w-full">
+          <div className="h-full w-full">
             <Suspense fallback={null}>
               <BackgroundGlobe />
             </Suspense>

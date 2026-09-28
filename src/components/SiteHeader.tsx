@@ -39,7 +39,7 @@ function NavLink({
       className={
         active
           ? "border-b-2 border-teal-300 pb-0.5 font-medium text-zinc-100"
-          : "pb-0.5 text-zinc-400 transition-colors hover:text-zinc-100"
+          : "pb-0.5 text-zinc-300 transition-colors hover:text-zinc-50"
       }
     >
       {children}
@@ -52,7 +52,10 @@ export default function SiteHeader() {
   const { pathname } = useLocation();
 
   return (
-    <header className="relative z-10 w-full px-5 py-4 [text-shadow:0_1px_4px_color-mix(in_srgb,var(--page)_85%,transparent)] sm:px-8 lg:px-12">
+    // A see-through bar of the page colour, blurred, behind the links. On the
+    // home page the globe rises into the header, and the links sat straight on
+    // the land and grid lines — Sara found them hard to read.
+    <header className="relative z-10 w-full border-b border-white/[0.06] bg-page/70 px-5 py-4 backdrop-blur-md [text-shadow:0_1px_4px_color-mix(in_srgb,var(--page)_85%,transparent)] sm:px-8 lg:px-12">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 md:grid md:grid-cols-[1fr_auto_1fr]">
         <Link to="/" onClick={playTap} className="flex items-center gap-2.5">
           <svg
@@ -94,7 +97,7 @@ export default function SiteHeader() {
             className={`flex items-center gap-1.5 text-sm transition-colors ${
               pathname === "/settings"
                 ? "text-zinc-100"
-                : "text-zinc-400 hover:text-zinc-100"
+                : "text-zinc-300 hover:text-zinc-50"
             }`}
           >
             <svg

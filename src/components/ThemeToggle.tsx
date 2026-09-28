@@ -25,7 +25,7 @@ export default function ThemeToggle() {
       }}
       aria-label={light ? "Switch to dark mode" : "Switch to light mode"}
       title={light ? "Dark mode" : "Light mode"}
-      className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/5 hover:text-zinc-100"
+      className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-300 transition-colors hover:bg-white/5 hover:text-zinc-50"
     >
       {light ? (
         // Moon: what you get by pressing it.

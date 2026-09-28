@@ -58,11 +58,6 @@ body {
   color-scheme: light;
 }
 
-/* The home page's globe, as a watermark. See Home.tsx. */
-:root[data-theme="light"] .home-globe {
-  opacity: 0.28;
-}
-
 /* Form controls and scrollbars inside a night scope stay dark too. */
 .night {
   color-scheme: dark;
