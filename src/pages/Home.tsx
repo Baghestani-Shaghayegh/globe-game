@@ -39,6 +39,13 @@ const BackgroundGlobe = lazy(() => import("../components/BackgroundGlobe"));
  * ten of them read as the page ignoring the choice — so the map you pick is
  * now the round you get, and the number beside it is the number you play.
  */
+/**
+ * Play together is off the menu for now, at Sara's call. The page and its
+ * rooms still work, so a link somebody was already sent keeps working;
+ * setting this back to true is all it takes to offer it again.
+ */
+const SHOW_PLAY_TOGETHER = false;
+
 const ROUND_LENGTH = null;
 const CLOCK = null;
 const RULES = "relaxed" as const;
@@ -455,8 +462,8 @@ export default function Home() {
             </ul>
           </section>
 
-          {/* Three links in a line rather than three more cards: they are
-              there for whoever goes looking, not to compete with the rest. */}
+          {/* Links in a line rather than more cards: they are there for
+              whoever goes looking, not to compete with the rest. */}
           <nav
             aria-label="More ways to play"
             className="mt-[clamp(0.75rem,2.4vh,1.5rem)] flex flex-wrap items-center justify-center gap-2"
@@ -467,7 +474,7 @@ export default function Home() {
               badge={duePractice > 0 ? `${duePractice} waiting` : undefined}
               icon={icons.practice}
             />
-            {accountsEnabled && (
+            {SHOW_PLAY_TOGETHER && accountsEnabled && (
               <WayToPlay
                 to="/play-together"
                 title="Play together"
