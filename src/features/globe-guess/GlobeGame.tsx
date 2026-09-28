@@ -331,6 +331,32 @@ export default function GlobeGame({
       .sort((a, b) => a.displayName.localeCompare(b.displayName));
   }, [world, features]);
 
+  /**
+   * Land in the round's part of the world that the round doesn't ask about,
+   * drawn as scenery so the map has no holes in it.
+   *
+   * A countries-only round used to draw only the countries, and every
+   * territory went with the rest: Kosovo, Somaliland, Western Sahara and
+   * Greenland were not grey, they were gone — sea where land should be. A
+   * player reported Kosovo and Somaliland "not showing up altogether".
+   * Anything the mode would take if it were a country is its ground to
+   * draw; the backdrop, when there is one, already draws the whole world.
+   */
+  const scenery = useMemo(() => {
+    if (backdrop) return [];
+    const asked = new Set(features.map((f) => f.properties.name));
+    return world.filter((f) => {
+      if (asked.has(f.properties.name)) return false;
+      const meta = getCountryMeta(f.properties.name);
+      return mode.includes({ ...meta, tier: "country" });
+    });
+  }, [backdrop, world, features, mode]);
+
+  const drawn = useMemo(
+    () => (backdrop ? world : [...features, ...scenery]),
+    [backdrop, world, features, scenery]
+  );
+
   /** The countries the round is actually about, by name. */
   const inPlaySet = useMemo(
     () => new Set(features.map((f) => f.properties.name)),
@@ -541,7 +567,7 @@ export default function GlobeGame({
       // The backdrop is scenery. Clicking it opens nothing rather than opening
       // a country that cannot be scored — a modal you can type into but never
       // get credit for would read as the game being broken.
-      if (backdrop && !inPlaySet.has(name)) return;
+      if (!inPlaySet.has(name)) return;
       setSelected(feature);
     },
     [summary, foundNames, expired, backdrop, inPlaySet]
@@ -582,7 +608,7 @@ export default function GlobeGame({
       // Scenery first, ahead of every other rule — including the one that paints
       // the whole board "missed" once the round is over, which would otherwise
       // turn the entire world red at the end of a daily.
-      if (backdrop && !inPlaySet.has(name))
+      if (!inPlaySet.has(name))
         return { color: backdropColor(), answer: false };
       if (foundNames.has(name)) return { color: theme.found, answer: true };
       if (expired.has(name)) return { color: theme.missed, answer: true };
@@ -632,7 +658,7 @@ export default function GlobeGame({
       // Lifted, so the ones in play stand off the sphere and read as
       // raised even where the colour alone would not carry.
       if (showInPlay && inPlaySet.has(name)) return 0.035;
-      if (backdrop && !inPlaySet.has(name)) return 0.008;
+      if (!inPlaySet.has(name)) return 0.008;
       return 0.012;
     },
     [showInPlay, inPlaySet, backdrop]
@@ -673,7 +699,7 @@ export default function GlobeGame({
         globeMaterial={ocean}
         onGlobeReady={() => setReady(true)}
         {...GLOBE_SURFACE}
-        polygonsData={backdrop ? world : features}
+        polygonsData={drawn}
         polygonCapMaterial={capMaterial}
         htmlElementsData={tags}
         htmlLat={tagLat}
@@ -698,7 +724,7 @@ export default function GlobeGame({
           // No pointer over the scenery. The cursor is the only thing that
           // says "this one isn't yours to click" before you try it.
           const playable =
-            !feature || !backdrop || (name !== undefined && inPlaySet.has(name));
+            !feature || (name !== undefined && inPlaySet.has(name));
           globeClick.setHovered(playable ? feature : null);
         }}
       />

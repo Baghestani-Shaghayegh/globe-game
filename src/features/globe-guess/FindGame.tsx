@@ -318,14 +318,23 @@ export default function FindGame({
           return true;
         });
         const names = playable.map((f) => f.properties.name);
-        // Under backdrop the globe shows every country there is; without it,
-        // only the ones the mode covers, as it always did.
+        // What is drawn is the land, not the questions. Under backdrop that is
+        // the whole world; without it, everything in the mode's part of it —
+        // whatever the mode would take if it were a country.
+        //
+        // It used to be the questions alone, which left holes. A territory in
+        // a countries-only round, a country without a flag in Flags, one
+        // nobody had written a clue for in Famous for: each was simply not
+        // there, sea where land should be. A player reported Kosovo and
+        // Somaliland missing. The backdrop had the same gap, for territories:
+        // Greenland was absent from the daily's globe. What isn't asked is
+        // scenery now, drawn and set back, not deleted.
         setFeatures(
           backdrop
-            ? data.features.filter(
-                (f) => getCountryMeta(f.properties.name).tier === "country"
+            ? data.features
+            : data.features.filter((f) =>
+                mode.includes({ ...getCountryMeta(f.properties.name), tier: "country" })
               )
-            : playable
         );
         setInPlay(names);
         const order = fixedOrder
@@ -681,9 +690,10 @@ export default function FindGame({
         return { color: theme.missed, answer: true };
       if (narrowedTo && !getCountryMeta(name).continents.includes(narrowedTo))
         return { color: theme.sphere, answer: true };
-      // The rest of the world, when the ones in play are being marked: there
-      // to navigate by, not to be read.
-      if (showInPlay && !inPlaySet.has(name))
+      // Everything drawn that isn't asked about: there to navigate by, not
+      // to be read. Marked the same whether or not the round lifts the ones
+      // in play, since a hole was the only other thing it has ever been.
+      if (!inPlaySet.has(name))
         return { color: backdropColor(), answer: false };
       return { color: landShade(name), answer: false };
     },
@@ -726,7 +736,7 @@ export default function FindGame({
       // Off-board scenery keeps no border at all: an outline in the land
       // colour worked while the land was flat, but a lit fill moves and an
       // unlit stroke does not, and the hidden map leaked through the gap.
-      if (showInPlay && !inPlaySet.has(name)) return null;
+      if (!inPlaySet.has(name)) return null;
       const fill = fillFor(name);
       // A border in the one pale stroke vanishes the moment a country is
       // filled in — measured against the palettes it lands at 1.06 on
