@@ -161,6 +161,23 @@ export function heatColor(km: number): string {
   return toHex(RAMP[RAMP.length - 1].rgb);
 }
 
+/**
+ * The scale as a CSS gradient, for the legend. Built from the same stops the
+ * globe is painted with, so the key cannot drift from what it explains.
+ */
+export function heatGradient(): string {
+  const stops = RAMP.map(
+    ({ at, rgb }) => `${toHex(rgb)} ${Math.round(at * 100)}%`
+  );
+  return `linear-gradient(to right, ${stops.join(", ")})`;
+}
+
+/** Distances marked under the legend, and where along it each one falls. */
+// Not 1,000: a tenth of the way along, its label ran into "0 km".
+export const LEGEND_MARKS = [0, 2_500, 5_000, MAX_SCALE_KM].map(
+  (km) => ({ km, at: heat(km) })
+);
+
 
 /** The day's hidden country, the same for everyone. */
 export function mysteryFor(day: string, pool: string[]): string | null {

@@ -28,7 +28,10 @@ import {
   borderKm,
   closeness,
   heatColor,
+  heatGradient,
+  LEGEND_MARKS,
   loadMystery,
+  MAX_SCALE_KM,
   mysteryFor,
   mysteryNumber,
   postMysteryScore,
@@ -569,11 +572,51 @@ export default function Mystery() {
         )}
       </div>
 
-      {result?.solved && (
-        <p className="pointer-events-none absolute inset-x-0 bottom-5 z-10 text-center text-sm text-zinc-500">
-          {formatDay(day)} · a new mystery at midnight UTC
-        </p>
-      )}
+      {/* What the colours mean. Without it a player had to work out for
+          themselves that yellow is warmer than pale blue — Jou asked for a
+          key. Built from the same stops the globe is painted with. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-5 z-10 flex flex-col items-center gap-2 px-4">
+        <div className="w-full max-w-xs rounded-lg border border-white/10 bg-[#141b23]/90 px-3 pb-1.5 pt-2 backdrop-blur">
+          <div className="flex justify-between text-[11px] font-medium uppercase tracking-wider">
+            <span className="text-red-400">Hot</span>
+            <span className="text-blue-400">Cold</span>
+          </div>
+          <div
+            aria-hidden="true"
+            className="mt-1 h-2 rounded-full"
+            style={{ background: heatGradient() }}
+          />
+          <div className="relative mt-1 h-4 text-[10px] tabular-nums text-zinc-500">
+            {LEGEND_MARKS.map(({ km, at }, i) => (
+              <span
+                key={km}
+                className="absolute top-0 whitespace-nowrap"
+                style={{
+                  left: `${at * 100}%`,
+                  // The ends sit inside the bar rather than hanging off it.
+                  transform:
+                    i === 0
+                      ? "none"
+                      : i === LEGEND_MARKS.length - 1
+                        ? "translateX(-100%)"
+                        : "translateX(-50%)",
+                }}
+              >
+                {km === 0
+                  ? "0 km"
+                  : km >= MAX_SCALE_KM
+                    ? `${km.toLocaleString()}+ km`
+                    : km.toLocaleString()}
+              </span>
+            ))}
+          </div>
+        </div>
+        {result?.solved && (
+          <p className="text-center text-sm text-zinc-500">
+            {formatDay(day)} · a new mystery at midnight UTC
+          </p>
+        )}
+      </div>
 
       {/* Only on the guess that solves it: a burst on every reload of a
           finished puzzle would be confetti for opening a page. */}

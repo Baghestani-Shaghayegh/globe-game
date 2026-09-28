@@ -8,6 +8,8 @@ import {
   distanceKm,
   heat,
   heatColor,
+  heatGradient,
+  LEGEND_MARKS,
   loadMystery,
   mysteryFor,
   saveMystery,
@@ -327,5 +329,25 @@ describe("borderKm", () => {
     };
     // The far island is 49 degrees away; the near one touches.
     expect(borderKm(shapeOf(islands), shapeOf(square(1, 0)))).toBe(0);
+  });
+});
+
+describe("the colour key", () => {
+  it("runs from the colour of a touching guess to the colour of a far one", () => {
+    const gradient = heatGradient();
+    expect(gradient.startsWith("linear-gradient(to right, ")).toBe(true);
+    expect(gradient).toContain(`${heatColor(0)} 0%`);
+    expect(gradient).toContain(`${heatColor(MAX_SCALE_KM)} 100%`);
+  });
+
+  it("marks distances in order, from one end of the bar to the other", () => {
+    const at = LEGEND_MARKS.map((mark) => mark.at);
+    expect(at[0]).toBe(0);
+    expect(at[at.length - 1]).toBe(1);
+    expect([...at].sort((a, b) => a - b)).toEqual(at);
+  });
+
+  it("puts each mark where a guess at that distance is painted", () => {
+    for (const { km, at } of LEGEND_MARKS) expect(at).toBe(heat(km));
   });
 });
