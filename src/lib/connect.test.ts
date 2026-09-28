@@ -6,6 +6,7 @@ import {
   isConnected,
   loadConnect,
   parBetween,
+  routeThrough,
   puzzleFor,
   saveConnect,
   scoreFor,
@@ -150,6 +151,52 @@ describe("isConnected", () => {
   it("accepts an empty chain only where the ends already touch", () => {
     expect(isConnected("Portugal", "Spain", [])).toBe(true);
     expect(isConnected("Portugal", "Germany", [])).toBe(false);
+  });
+});
+
+describe("routeThrough", () => {
+  it("walks the countries named, in order", () => {
+    expect(routeThrough("Portugal", "Germany", ["Spain", "France"])).toEqual([
+      "Spain",
+      "France",
+    ]);
+  });
+
+  it("doesn't care what order they were named in", () => {
+    expect(routeThrough("Portugal", "Germany", ["France", "Spain"])).toEqual([
+      "Spain",
+      "France",
+    ]);
+  });
+
+  it("finds the route even when a country named isn't on it", () => {
+    // The bug Ryan hit: one detour used to hold the puzzle open forever.
+    expect(
+      routeThrough("Portugal", "Germany", ["Spain", "France", "Italy"])
+    ).toEqual(["Spain", "France"]);
+  });
+
+  it("takes the shortest route through what was named", () => {
+    expect(
+      routeThrough("Portugal", "Germany", [
+        "Spain",
+        "France",
+        "Switzerland",
+        "Austria",
+      ])
+    ).toEqual(["Spain", "France"]);
+  });
+
+  it("won't invent a country nobody named", () => {
+    expect(routeThrough("Portugal", "Germany", ["France"])).toBeNull();
+  });
+
+  it("is null while the chain still has a gap", () => {
+    expect(routeThrough("Portugal", "Germany", ["Spain", "Italy"])).toBeNull();
+  });
+
+  it("needs nothing at all where the ends already touch", () => {
+    expect(routeThrough("Portugal", "Spain", [])).toEqual([]);
   });
 });
 

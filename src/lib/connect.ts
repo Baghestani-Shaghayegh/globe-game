@@ -61,6 +61,48 @@ export function isConnected(from: string, to: string, chain: string[]): boolean 
 }
 
 /**
+ * The walk from one end to the other through the countries named, or null.
+ *
+ * Not every name has to end up on the route. Players think out loud, and a
+ * country that borders the chain but leads nowhere is a guess made, not a
+ * chain broken — so the puzzle is done the moment some of what was named
+ * walks the whole way. Breadth-first over the named countries alone, so the
+ * route returned is the shortest one they've actually earned.
+ */
+export function routeThrough(
+  from: string,
+  to: string,
+  placed: string[]
+): string[] | null {
+  const allowed = new Set(placed);
+  const cameFrom = new Map<string, string | null>([[from, null]]);
+  const queue = [from];
+
+  while (queue.length) {
+    const at = queue.shift()!;
+    for (const next of neighboursOf(at)) {
+      if (cameFrom.has(next)) continue;
+      if (next !== to && !allowed.has(next)) continue;
+      cameFrom.set(next, at);
+      if (next === to) {
+        const route: string[] = [];
+        // Back to the start, which is an end rather than a step on the way.
+        for (
+          let step = cameFrom.get(to) ?? null;
+          step && step !== from;
+          step = cameFrom.get(step) ?? null
+        ) {
+          route.unshift(step);
+        }
+        return route;
+      }
+      queue.push(next);
+    }
+  }
+  return null;
+}
+
+/**
  * Whether adding this country keeps the chain buildable at all.
  *
  * A country that borders nothing already placed can't be part of a walk, and

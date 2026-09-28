@@ -16,10 +16,10 @@ import Celebrate from "../components/Celebrate";
 import { playSolved, playStep, playWrong } from "../lib/sound";
 import {
   connectable,
-  isConnected,
   loadConnect,
   puzzleFor,
   postConnectScore,
+  routeThrough,
   saveConnect,
   scoreFor,
   touchesChain,
@@ -170,19 +170,25 @@ export default function Connect() {
       }
 
       const chain = [...result.chain, name];
-      // Any order in, but the chain only counts if some arrangement walks it.
-      const ordered = orderChain(result.from, result.to, chain);
+      // Any order in, and the chain counts as soon as some of it walks the
+      // whole way. Names left off the route were still guesses: they cost the
+      // same as a wrong turn rather than holding the puzzle open forever.
+      const route = routeThrough(result.from, result.to, chain);
+      const spare = route
+        ? chain.filter((placed) => !route.includes(placed)).length
+        : 0;
       const next: ConnectResult = {
         ...result,
-        chain: ordered ?? chain,
-        solved: ordered !== null,
+        chain: route ?? chain,
+        solved: route !== null,
+        wrong: result.wrong + spare,
       };
       saveConnect(next);
       setResult(next);
       setTyped("");
-      setNote(ordered ? null : `${display(name)} added.`);
+      setNote(route ? null : `${display(name)} added.`);
 
-      if (ordered) {
+      if (route) {
         // Not awaited, for the same reason the mystery isn't.
         void postConnectScore(next);
         playSolved();
@@ -384,31 +390,4 @@ export default function Connect() {
 
     </div>
   );
-}
-
-/**
- * Puts a set of countries into an order that actually walks from one end to
- * the other, or says it can't yet.
- *
- * Players name countries as they think of them, not in order, so the chain has
- * to be arranged rather than trusted. Small enough to brute force: a chain long
- * enough for this to matter is one nobody is going to finish.
- */
-function orderChain(from: string, to: string, chain: string[]): string[] | null {
-  if (chain.length > 8) return isConnected(from, to, chain) ? chain : null;
-
-  const walk = (used: boolean[], order: string[]): string[] | null => {
-    if (order.length === chain.length) {
-      return isConnected(from, to, order) ? order : null;
-    }
-    for (let i = 0; i < chain.length; i += 1) {
-      if (used[i]) continue;
-      used[i] = true;
-      const found = walk(used, [...order, chain[i]]);
-      used[i] = false;
-      if (found) return found;
-    }
-    return null;
-  };
-  return walk(new Array(chain.length).fill(false), []);
 }
