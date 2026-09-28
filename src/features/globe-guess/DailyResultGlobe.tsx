@@ -43,9 +43,15 @@ const OUTCOME_LABEL: Record<Outcome, string> = {
 type Tag = { lat: number; lng: number; text: string };
 
 function tagElement(d: object): HTMLElement {
-  const el = document.createElement("div");
+  // The globe positions the outer element by writing its transform every
+  // frame, so the lift above the country has to go on an inner one — set on
+  // the outer, it was silently overwritten.
+  const holder = document.createElement("div");
+  holder.style.pointerEvents = "none";
+  const el = holder.appendChild(document.createElement("span"));
   el.textContent = (d as Tag).text;
   el.style.cssText = [
+    "display: inline-block",
     "color: #f4f4f5",
     "font: 500 13px ui-sans-serif, system-ui, sans-serif",
     "white-space: nowrap",
@@ -56,7 +62,7 @@ function tagElement(d: object): HTMLElement {
     "border: 1px solid rgb(255 255 255 / 0.12)",
     "transform: translateY(-18px)",
   ].join(";");
-  return el;
+  return holder;
 }
 const tagLat = (d: object) => (d as Tag).lat;
 const tagLng = (d: object) => (d as Tag).lng;
