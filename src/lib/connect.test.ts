@@ -3,6 +3,9 @@ import {
   MAX_PAR,
   MIN_PAR,
   connectable,
+  gradeFor,
+  hopsFrom,
+  placedOf,
   isConnected,
   loadConnect,
   parBetween,
@@ -369,5 +372,74 @@ describe("resolveName", () => {
   it("returns null for a country with no land borders", () => {
     // Islands aren't in the connectable pool, so they can't be played.
     expect(resolve("Japan")).toBeNull();
+  });
+});
+describe("grading a placed country", () => {
+  const fromHops = hopsFrom("Portugal");
+  const toHops = hopsFrom("Germany");
+  const grade = (name: string) => gradeFor(name, fromHops, toHops, 2);
+
+  it("counts steps over land from a starting country", () => {
+    expect(fromHops.get("Portugal")).toBe(0);
+    expect(fromHops.get("Spain")).toBe(1);
+    expect(fromHops.get("France")).toBe(2);
+  });
+
+  it("calls a country on a shortest route the best", () => {
+    expect(grade("Spain")).toBe("best");
+    expect(grade("France")).toBe("best");
+  });
+
+  it("calls a step or two out of the way near", () => {
+    expect(grade("Switzerland")).toBe("near");
+    expect(grade("Italy")).toBe("near");
+  });
+
+  it("calls a country well out of the way far", () => {
+    expect(grade("Russia")).toBe("far");
+  });
+
+  it("calls a country no road reaches far, rather than failing", () => {
+    expect(grade("Iceland")).toBe("far");
+  });
+});
+
+describe("what's on the board", () => {
+  const base: ConnectResult = {
+    day: "2026-09-10",
+    number: 253,
+    from: "Portugal",
+    to: "Germany",
+    par: 2,
+    chain: ["Spain", "France"],
+    solved: true,
+    wrong: 1,
+  };
+
+  it("keeps the detours after the chain is cut down to the route", () => {
+    expect(placedOf({ ...base, placed: ["Spain", "Italy", "France"] })).toEqual([
+      "Spain",
+      "Italy",
+      "France",
+    ]);
+  });
+
+  it("falls back to the chain on a round saved before placements were kept", () => {
+    expect(placedOf(base)).toEqual(["Spain", "France"]);
+  });
+
+  it("survives a save and a load", () => {
+    saveConnect({ ...base, placed: ["Spain", "Italy", "France"] });
+    expect(loadConnect("2026-09-10")?.placed).toEqual(["Spain", "Italy", "France"]);
+  });
+
+  it("drops a corrupt list of placements rather than trusting it", () => {
+    localStorage.setItem(
+      "worldguess.connect.v1",
+      JSON.stringify({ ...base, placed: ["Spain", 4] })
+    );
+    const loaded = loadConnect("2026-09-10");
+    expect(loaded?.placed).toBeUndefined();
+    expect(loaded && placedOf(loaded)).toEqual(["Spain", "France"]);
   });
 });

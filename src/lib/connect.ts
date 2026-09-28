@@ -45,6 +45,50 @@ export function shortestPath(from: string, to: string): string[] | null {
   return null;
 }
 
+/** Steps over land from one country to every country it can reach. */
+export function hopsFrom(start: string): Map<string, number> {
+  const hops = new Map<string, number>([[start, 0]]);
+  const queue = [start];
+  while (queue.length) {
+    const at = queue.shift()!;
+    for (const next of neighboursOf(at)) {
+      if (hops.has(next)) continue;
+      hops.set(next, hops.get(at)! + 1);
+      queue.push(next);
+    }
+  }
+  return hops;
+}
+
+/**
+ * How a placed country sits against the best way through, the way Travle
+ * colours its guesses: on a shortest route, a short detour off one, or the
+ * wrong way altogether.
+ *
+ * Jou asked for this: with every placed country the same green, a player who
+ * went the long way round could not see which of their picks had cost them,
+ * or how the short route would have gone.
+ */
+export type Grade = "best" | "near" | "far";
+
+/** Extra steps beyond which a detour stops being "near". */
+export const NEAR_DETOUR = 2;
+
+export function gradeFor(
+  name: string,
+  fromHops: Map<string, number>,
+  toHops: Map<string, number>,
+  par: number
+): Grade {
+  const a = fromHops.get(name);
+  const b = toHops.get(name);
+  if (a === undefined || b === undefined) return "far";
+  // A route through here is a + b steps end to end; the shortest is par + 1.
+  const detour = a + b - (par + 1);
+  if (detour <= 0) return "best";
+  return detour <= NEAR_DETOUR ? "near" : "far";
+}
+
 /** How many countries lie between two ends by the shortest route. */
 export function parBetween(from: string, to: string): number | null {
   const path = shortestPath(from, to);
@@ -158,8 +202,18 @@ export type ConnectResult = {
   from: string;
   to: string;
   par: number;
-  /** The countries placed so far, in the order they were named. */
+  /**
+   * The countries placed so far, in the order they were named. Once solved,
+   * only the ones on the route that joined up.
+   */
   chain: string[];
+  /**
+   * Every country placed, on the route or not, in the order named. Kept so a
+   * finished board still shows the detours: the chain is cut down to the
+   * route on solving, and the wrong turns used to vanish with it. Absent on
+   * rounds saved before it was kept; `chain` stands in.
+   */
+  placed?: string[];
   solved: boolean;
   /** Names tried that didn't touch anything placed. */
   wrong: number;
@@ -191,7 +245,16 @@ export function loadConnect(day: string): ConnectResult | null {
     const raw = localStorage.getItem(KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : null;
     if (!isResult(parsed) || parsed.day !== day) return null;
-    return parsed.startedAt ? parsed : { ...parsed, startedAt: Date.now() };
+    const result: ConnectResult = { ...parsed };
+    // A corrupt list of placements is dropped, not trusted: `chain` covers it.
+    if (
+      result.placed !== undefined &&
+      !(Array.isArray(result.placed) &&
+        result.placed.every((name) => typeof name === "string"))
+    ) {
+      delete result.placed;
+    }
+    return result.startedAt ? result : { ...result, startedAt: Date.now() };
   } catch {
     return null;
   }
@@ -203,6 +266,11 @@ export function saveConnect(result: ConnectResult) {
   } catch {
     /* the round still plays out in this tab */
   }
+}
+
+/** Everything the player has put on the board, route or not. */
+export function placedOf(result: ConnectResult): string[] {
+  return result.placed ?? result.chain;
 }
 
 /** Full marks for matching par, less for a longer way round or wrong turns. */

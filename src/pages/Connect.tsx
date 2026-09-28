@@ -8,7 +8,13 @@ import { useLeaveGuard } from "../features/globe-guess/useLeaveGuard";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
 import { GLOBE_SURFACE, useGlobeLook } from "../features/globe-guess/useGlobeLook";
 import { getCountryMeta } from "../data/countries";
-import { backdropColor, theme } from "../lib/globeTheme";
+import {
+  answerStroke,
+  backdropColor,
+  beaconTone,
+  landShade,
+  theme,
+} from "../lib/globeTheme";
 import { landMaterial } from "../lib/globeTerrain";
 import { featureCentre, type Geometry, worldAltitude } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
@@ -16,14 +22,19 @@ import Celebrate from "../components/Celebrate";
 import { playSolved, playStep, playWrong } from "../lib/sound";
 import {
   connectable,
+  gradeFor,
+  hopsFrom,
   loadConnect,
+  placedOf,
   puzzleFor,
   postConnectScore,
   routeThrough,
   saveConnect,
   scoreFor,
+  shortestPath,
   touchesChain,
   type ConnectResult,
+  type Grade,
 } from "../lib/connect";
 import { resolveName } from "../lib/answerMatch";
 
@@ -33,6 +44,22 @@ type CountryFeature = {
 };
 
 const display = (name: string) => getCountryMeta(name).displayName;
+
+/**
+ * Travle's colours, read live so a palette swap follows: green on a shortest
+ * route, amber a short detour off one, red the wrong way.
+ */
+function gradeColor(grade: Grade): string {
+  if (grade === "best") return theme.found;
+  if (grade === "near") return theme.selected;
+  return theme.missed;
+}
+
+const GRADE_LABEL: Record<Grade, string> = {
+  best: "Shortest route",
+  near: "Detour",
+  far: "Off course",
+};
 
 /** The whole-world view, sized to this window. Shared by every game. */
 const worldView = () => worldAltitude(window.innerWidth, window.innerHeight);
@@ -86,6 +113,7 @@ export default function Connect() {
       const spare = saved.chain.filter((placed) => !route.includes(placed)).length;
       const settled: ConnectResult = {
         ...saved,
+        placed: placedOf(saved),
         chain: route,
         solved: true,
         wrong: saved.wrong + spare,
@@ -153,7 +181,35 @@ export default function Connect() {
   }, [viewport.width, viewport.height, ready]);
 
 
-  const chainSet = useMemo(() => new Set(result?.chain ?? []), [result]);
+  /** Everything put on the board, the detours included. */
+  const placedSet = useMemo(
+    () => new Set(result ? placedOf(result) : []),
+    [result]
+  );
+
+  /** Steps from each end to everywhere, for grading what gets placed. */
+  const hops = useMemo(
+    () =>
+      puzzle ? { from: hopsFrom(puzzle.from), to: hopsFrom(puzzle.to) } : null,
+    [puzzle]
+  );
+  const gradeOf = useCallback(
+    (name: string): Grade =>
+      hops && puzzle ? gradeFor(name, hops.from, hops.to, puzzle.par) : "far",
+    [hops, puzzle]
+  );
+
+  /**
+   * One of the shortest ways through, shown at the end to a player who went
+   * the long way round — the other half of what Jou asked for. Only offered
+   * once the puzzle is over; before that it would be the answer.
+   */
+  const shortest = useMemo(() => {
+    if (!puzzle || !result?.solved || result.chain.length <= puzzle.par)
+      return null;
+    const path = shortestPath(puzzle.from, puzzle.to);
+    return path ? path.slice(1, -1) : null;
+  }, [puzzle, result]);
 
   const [burst, setBurst] = useState(0);
 
@@ -173,12 +229,13 @@ export default function Connect() {
         playWrong();
         return;
       }
-      if (chainSet.has(name)) {
+      if (placedSet.has(name)) {
         setNote(`${display(name)} is already in the chain.`);
         playWrong();
         return;
       }
-      if (!touchesChain(result.from, result.to, result.chain, name)) {
+      const placed = placedOf(result);
+      if (!touchesChain(result.from, result.to, placed, name)) {
         // Counted, but not placed: it has to touch something to be a step.
         const next = { ...result, wrong: result.wrong + 1 };
         saveConnect(next);
@@ -189,16 +246,17 @@ export default function Connect() {
         return;
       }
 
-      const chain = [...result.chain, name];
+      const chain = [...placed, name];
       // Any order in, and the chain counts as soon as some of it walks the
       // whole way. Names left off the route were still guesses: they cost the
       // same as a wrong turn rather than holding the puzzle open forever.
       const route = routeThrough(result.from, result.to, chain);
       const spare = route
-        ? chain.filter((placed) => !route.includes(placed)).length
+        ? chain.filter((step) => !route.includes(step)).length
         : 0;
       const next: ConnectResult = {
         ...result,
+        placed: chain,
         chain: route ?? chain,
         solved: route !== null,
         wrong: result.wrong + spare,
@@ -219,7 +277,7 @@ export default function Connect() {
         playStep(chain.length * 2);
       }
     },
-    [result, typed, chainSet]
+    [result, typed, placedSet]
   );
 
   /**
@@ -237,24 +295,61 @@ export default function Connect() {
         result &&
           (name === result.from ||
             name === result.to ||
-            chainSet.has(name))
+            placedSet.has(name))
       ),
-    [result, chainSet]
+    [result, placedSet]
   );
+
+  /**
+   * The colour of a country on the board, or null for one that isn't.
+   *
+   * The ends are pale rather than amber: amber is a detour now. Placed
+   * countries take Travle's colours, so a player who went the long way can
+   * see which of their picks cost them.
+   */
+  const boardColor = useCallback(
+    (name: string): string | null => {
+      if (!result) return null;
+      if (name === result.from || name === result.to) return beaconTone();
+      if (placedSet.has(name)) return gradeColor(gradeOf(name));
+      return null;
+    },
+    [result, placedSet, gradeOf]
+  );
+
+  const solved = result?.solved ?? false;
 
   const capColor = useMemo(
     () => (d: object) => {
       const { name } = (d as CountryFeature).properties;
-      if (!result) return landMaterial(backdropColor());
-      if (name === result.from || name === result.to)
-        return landMaterial(theme.selected, "answer");
-      if (chainSet.has(name)) return landMaterial(theme.found, "answer");
+      const color = boardColor(name);
+      if (color) return landMaterial(color, "answer");
+      // Once it's over, the map comes back: Jou found the route hard to make
+      // out at the end, drawn on a featureless mass with no borders round it.
+      if (solved) return landMaterial(landShade(name));
       // Everything else: land you can see the shape of and nothing more. Its
       // border is hidden too, so a continent reads as one mass rather than a
       // set of countries to count along.
       return landMaterial(backdropColor());
     },
-    [result, chainSet]
+    [boardColor, solved]
+  );
+
+  const strokeColor = useCallback(
+    (d: object) => {
+      const { name } = (d as CountryFeature).properties;
+      const color = boardColor(name);
+      // A border in the country's own colour, darkened until it reads — the
+      // one pale stroke disappears on a filled-in country.
+      if (color) return answerStroke(color);
+      // No line at all off the board while it's in play, rather than one
+      // painted the same as the land under it: the fill is lit and the stroke
+      // is not, so on the sunlit side the outlines came back as darker lines
+      // — handing over the borders this puzzle exists to hide. `null` means
+      // three-globe builds no stroke object.
+      return solved ? theme.stroke : null;
+    },
+    [boardColor, solved]
   );
 
   const navigate = useNavigate();
@@ -314,20 +409,10 @@ export default function Connect() {
         {...GLOBE_SURFACE}
         polygonsData={features}
         polygonCapMaterial={capColor}
-        // No line at all off the board, rather than one painted the same as
-        // the land under it. That worked while the fill was flat; now the fill
-        // is lit and the stroke is not, so on the sunlit side the outlines
-        // came back as darker lines — handing over the borders this puzzle
-        // exists to hide. `null` means three-globe builds no stroke object.
-        polygonStrokeColor={(d) =>
-          onBoard((d as CountryFeature).properties.name) ? theme.stroke : null
+        polygonStrokeColor={strokeColor}
+        polygonAltitude={(d) =>
+          onBoard((d as CountryFeature).properties.name) ? 0.05 : 0.012
         }
-        polygonAltitude={(d) => {
-          const { name } = (d as CountryFeature).properties;
-          return name === result?.from || name === result?.to || chainSet.has(name)
-            ? 0.05
-            : 0.012;
-        }}
         polygonsTransitionDuration={250}
       />
 
@@ -341,7 +426,7 @@ export default function Connect() {
         <div className="rounded-lg border border-white/10 bg-[#141b23]/90 px-3 py-1.5 text-right text-sm backdrop-blur">
           <p className="font-medium text-zinc-100">Connect</p>
           <p className="text-xs tabular-nums text-zinc-500">
-            par {puzzle.par} · {result?.chain.length ?? 0} placed
+            par {puzzle.par} · {result ? placedOf(result).length : 0} placed
           </p>
         </div>
       </div>
@@ -365,6 +450,12 @@ export default function Connect() {
             <p className="text-sm text-zinc-400">
               {[puzzle.from, ...result.chain, puzzle.to].map(display).join(" → ")}
             </p>
+            {shortest && (
+              <p className="max-w-sm text-xs text-zinc-500">
+                Shortest:{" "}
+                {[puzzle.from, ...shortest, puzzle.to].map(display).join(" → ")}
+              </p>
+            )}
           </>
         ) : (
           <>
@@ -393,6 +484,22 @@ export default function Connect() {
             </form>
             {note && <p className="text-xs text-amber-300/80">{note}</p>}
           </>
+        )}
+
+        {/* The key, once there is something on the board to read it by. */}
+        {result && placedOf(result).length > 0 && (
+          <p className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-zinc-500">
+            {(["best", "near", "far"] as const).map((grade) => (
+              <span key={grade} className="flex items-center gap-1.5">
+                <span
+                  aria-hidden="true"
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: gradeColor(grade) }}
+                />
+                {GRADE_LABEL[grade]}
+              </span>
+            ))}
+          </p>
         )}
       </div>
 
