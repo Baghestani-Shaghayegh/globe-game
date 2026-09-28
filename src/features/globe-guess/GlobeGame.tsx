@@ -839,8 +839,8 @@ export default function GlobeGame({
 
       {confirmingFinish && (
         <ConfirmDialog
-          title="Finish already?"
-          confirmLabel="Finish"
+          title="Quit this round?"
+          confirmLabel="Quit"
           onConfirm={() => {
             setConfirmingFinish(false);
             endRun();

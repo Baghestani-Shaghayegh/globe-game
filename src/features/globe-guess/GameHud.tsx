@@ -127,7 +127,7 @@ export default function GameHud({
             onClick={onFinish}
             className="pointer-events-auto rounded-md px-2 py-0.5 text-xs font-medium text-zinc-400 transition-colors hover:bg-white/10 hover:text-zinc-100"
           >
-            Finish
+            Quit
           </button>
         </>
       )}
