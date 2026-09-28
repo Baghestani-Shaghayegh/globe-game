@@ -124,9 +124,23 @@ export default function HigherLower() {
     return askable().filter((name) => drawable.has(name));
   }, [features]);
 
+  /**
+   * The countries asked about lately, so a question can't come back around
+   * while it is still fresh in mind. Long enough to cover a few rounds,
+   * short enough that a streak never runs out of countries to ask.
+   */
+  const recent = useRef<string[]>([]);
+  const remember = useCallback((...names: string[]) => {
+    recent.current = [...names, ...recent.current].slice(0, 8);
+  }, []);
+
   useEffect(() => {
-    if (pool.length && !pair) setPair(nextPair(pool));
-  }, [pool, pair]);
+    if (pool.length && !pair) {
+      const first = nextPair(pool);
+      if (first) remember(first.left, first.right);
+      setPair(first);
+    }
+  }, [pool, pair, remember]);
 
   const shapes = useMemo(() => {
     if (!pair) return { left: "", right: "" };
@@ -167,12 +181,17 @@ export default function HigherLower() {
         setVerdict(null);
         // A correct answer keeps the winner on screen, so it plays as a chain
         // rather than a series of unrelated questions.
-        setPair(
-          nextPair(pool, Math.random, correct ? bigger(pair.left, pair.right) : undefined)
+        const next = nextPair(
+          pool,
+          Math.random,
+          correct ? bigger(pair.left, pair.right) : undefined,
+          recent.current
         );
+        if (next) remember(next.left, next.right);
+        setPair(next);
       }, 1600);
     },
-    [pair, verdict, pool, scores.streak, scores.best]
+    [pair, verdict, pool, scores.streak, scores.best, remember]
   );
 
 

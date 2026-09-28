@@ -39,21 +39,33 @@ export function bigger(a: string, b: string): string {
 /**
  * A pair to ask about.
  *
+ * `keep` is the country held on screen from the round before, which makes the
+ * game a chain rather than a series of unrelated questions. `recent` is what
+ * has been asked lately and shouldn't come straight back: with the winner
+ * carried over, a repeated challenger means the identical question twice in a
+ * row, which is how Pakistan v Mauritius came up twice for one player.
+ *
  * Bounded rather than looping until it finds one: a pool where nothing is
  * comparable would otherwise spin forever, and returning null is something the
- * caller can actually handle.
+ * caller can actually handle. The freshness pass is dropped before giving up,
+ * so a small pool still gets a question rather than nothing.
  */
 export function nextPair(
   pool = askable(),
   random: () => number = Math.random,
-  avoid?: string
+  keep?: string,
+  recent: string[] = []
 ): Pair | null {
-  for (let attempt = 0; attempt < 300; attempt += 1) {
-    // Keeping one country on screen between rounds makes it a chain rather
-    // than a series of unrelated questions.
-    const left = avoid ?? pool[Math.floor(random() * pool.length)];
-    const right = pool[Math.floor(random() * pool.length)];
-    if (comparable(left, right)) return { left, right };
+  const lately = new Set(recent);
+
+  for (const skipRecent of [true, false]) {
+    for (let attempt = 0; attempt < 300; attempt += 1) {
+      const left = keep ?? pool[Math.floor(random() * pool.length)];
+      const right = pool[Math.floor(random() * pool.length)];
+      if (!comparable(left, right)) continue;
+      if (skipRecent && (lately.has(right) || (!keep && lately.has(left)))) continue;
+      return { left, right };
+    }
   }
   return null;
 }

@@ -111,6 +111,23 @@ describe("nextPair", () => {
     }
   });
 
+  it("doesn't ask the same question twice in a row", () => {
+    // The bug a player hit: the winner stays on screen, and the challenger
+    // came back at random, so the identical pair was asked again.
+    for (let i = 0; i < 200; i += 1) {
+      const pair = nextPair(askable(), Math.random, "Pakistan", ["Mauritius"]);
+      expect(pair!.right).not.toBe("Mauritius");
+    }
+  });
+
+  it("asks something rather than nothing when the pool is nearly spent", () => {
+    // Everything comparable has been seen lately: freshness gives way.
+    const pool = askable();
+    const pair = nextPair(pool, Math.random, "Japan", pool);
+    expect(pair).not.toBeNull();
+    expect(comparable(pair!.left, pair!.right)).toBe(true);
+  });
+
   it("gives up rather than spinning when nothing is comparable", () => {
     // Two countries of near-identical size and nothing else to choose from.
     const twins = Object.entries(AREA_KM2)
