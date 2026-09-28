@@ -28,6 +28,12 @@ If nothing is left, say so on the Left line rather than dropping it. The You
 line is a single concrete action — a decision to make, something to test on
 her machine, a reply to send — never a vague "let me know".
 
+## References
+
+Sites Sara has pointed at are listed in `docs/REFERENCES.md`, each with what
+it is for. Read it before planning new features or a redesign, and add to it
+whenever she shares another one.
+
 ## Branches
 
 Develop on `develop`, promote to `main` when asked. Never push to `main`
