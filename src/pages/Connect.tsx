@@ -344,16 +344,22 @@ export default function Connect() {
       saveConnect(next);
       setResult(next);
       setTyped("");
+      // Said the way it is painted. Only a pick well off the way is a miss:
+      // red, with the shake. "Brazil isn't connected yet" suggested it might
+      // be, on a walk from China to Qatar — it never could.
+      const offCourse = gradeOf(name) === "far";
       if (route) {
         setNote(null);
         setMiss(false);
+      } else if (offCourse) {
+        flagMiss(`${display(name)} is off course.`);
       } else if (connected) {
         setNote(`${display(name)} added.`);
         setMiss(false);
       } else {
-        // On the board in red, and said as a miss. "Not connected yet"
-        // rather than "wrong": it may still join up as the chain grows.
-        flagMiss(`${display(name)} isn't connected yet.`);
+        // On the way, just not joined up to anything yet — this one can be.
+        setNote(`${display(name)} added, not joined to your chain yet.`);
+        setMiss(false);
       }
       // A pick that doesn't join up is usually somewhere else entirely —
       // Brazil, on a walk from China to Qatar — and round the back of the
@@ -373,13 +379,13 @@ export default function Connect() {
         void postConnectScore(next);
         playSolved();
         setBurst((n) => n + 1);
-      } else if (connected) {
+      } else if (!offCourse) {
         // Each country placed steps the note up, so a chain being built is
         // audibly going somewhere. A miss has already made its own sound.
         playStep(chain.length * 2);
       }
     },
-    [result, placedSet, pool, setHighlighted, centres, flagMiss]
+    [result, placedSet, pool, setHighlighted, centres, flagMiss, gradeOf]
   );
 
   const submit = (event: FormEvent) => {
