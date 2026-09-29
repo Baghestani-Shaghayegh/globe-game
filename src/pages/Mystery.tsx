@@ -403,10 +403,10 @@ export default function Mystery() {
       </div>
 
       {/* The prompt never eats a click meant for the globe, and stays out of
-          its way: the top right-hand corner on a wide screen, the
+          its way: beside the globe on a wide screen, the
           bottom edge on a phone, where the globe fills the width. It sat top
           and centre, over the very part of the map the hunt was about. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 mx-auto flex w-[min(20rem,calc(100vw-1.5rem))] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-raised/90 px-5 py-3 text-center backdrop-blur lg:inset-x-auto lg:bottom-auto lg:right-4 lg:top-4 lg:mx-0">
+      <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 mx-auto flex w-[min(20rem,calc(100vw-1.5rem))] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-raised/90 px-5 py-3 text-center backdrop-blur lg:inset-x-auto lg:bottom-auto beside-globe lg:mx-0">
         {result?.solved || result?.gaveUp ? (
           <>
             <p

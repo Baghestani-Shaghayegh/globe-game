@@ -31,15 +31,21 @@ function Card({
   onPick,
   verdict,
   disabled,
+  winner,
 }: {
   name: string;
   shape: string;
   onPick: () => void;
   verdict: Verdict;
   disabled: boolean;
+  /** The bigger of the pair, once judged. */
+  winner: string | null;
 }) {
   const judged = verdict !== null;
-  const isWinner = judged && bigger(verdict.picked, name) === name && true;
+  // Compared against the other card, not the one picked: measured against the
+  // pick, the picked card was always "bigger" than itself, so a wrong answer
+  // put BIGGER under both countries.
+  const isWinner = judged && winner === name;
   // Once judged, the truth is shown regardless of what was picked.
   const revealed = judged;
   const chosen = judged && verdict.picked === name;
@@ -257,6 +263,7 @@ export default function HigherLower() {
                 onPick={() => pick(pair.left)}
                 verdict={verdict}
                 disabled={verdict !== null}
+                winner={verdict ? bigger(pair.left, pair.right) : null}
               />
               <div className="flex items-center justify-center">
                 <span className="text-sm uppercase tracking-wider text-zinc-600">
@@ -269,23 +276,20 @@ export default function HigherLower() {
                 onPick={() => pick(pair.right)}
                 verdict={verdict}
                 disabled={verdict !== null}
+                winner={verdict ? bigger(pair.left, pair.right) : null}
               />
             </div>
 
-            <p
-              className={`mt-6 text-center text-sm ${
-                verdict
-                  ? verdict.correct
-                    ? "text-emerald-300"
-                    : "text-rose-300"
-                  : "text-transparent"
-              }`}
-            >
+            {/* No line under the cards: their colours, the areas and the
+                "bigger" label already say how it went, and Sara found the
+                sentence repeating them unnecessary. Kept for screen readers,
+                which can't see the colours. */}
+            <p className="sr-only" aria-live="polite">
               {verdict
                 ? verdict.correct
                   ? "Right."
                   : `No — ${display(bigger(pair.left, pair.right))} is bigger.`
-                : "placeholder"}
+                : ""}
             </p>
           </>
         )}

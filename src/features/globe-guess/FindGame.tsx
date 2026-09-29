@@ -835,11 +835,11 @@ export default function FindGame({
       {/* Out of the globe's way. It sat top and centre, which is where the
           globe is — a tall flag or outline covered the Arctic and half of
           Europe, the very places a player might need to look. On a wide
-          screen it goes to the top right-hand corner; on a phone, where
+          screen it goes beside the globe; on a phone, where
           the globe fills the width, to the bottom edge below it. */}
       {!summary && target && (
         <div
-          className={`pointer-events-none absolute inset-x-0 bottom-4 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-raised/90 px-5 py-2.5 text-center backdrop-blur lg:inset-x-auto lg:bottom-auto lg:right-4 lg:top-4 lg:mx-0 lg:max-w-sm ${
+          className={`pointer-events-none absolute inset-x-0 bottom-4 z-10 mx-auto flex w-fit max-w-[calc(100vw-1.5rem)] flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-raised/90 px-5 py-2.5 text-center backdrop-blur lg:inset-x-auto lg:bottom-auto beside-globe lg:mx-0 lg:max-w-sm ${
             wrongName ? "animate-shake" : ""
           }`}
         >
