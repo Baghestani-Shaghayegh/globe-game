@@ -455,7 +455,7 @@ export default function Connect() {
 
   if (loadError || !puzzle) {
     return (
-      <div className="night flex min-h-screen flex-col items-center justify-center gap-3 bg-page px-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-page px-6 text-center">
         <p className="text-zinc-100">
           {loadError ? "Couldn't load the map data." : "No puzzle for today."}
         </p>
@@ -479,7 +479,7 @@ export default function Connect() {
    * link is in it — opening it and turning straight round has cost nothing.
    */
   return (
-    <div className="night relative h-screen w-screen overflow-hidden bg-page">
+    <div className="relative h-screen w-screen overflow-hidden bg-page">
       <Globe
         ref={globeRef}
         width={viewport.width}

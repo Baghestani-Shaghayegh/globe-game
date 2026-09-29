@@ -220,7 +220,7 @@ export default function DailyResultGlobe({ countries, outcomes }: Props) {
     <section className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
       <div
         ref={box}
-        className="night relative h-[340px] overflow-hidden rounded-2xl border border-white/10 bg-page sm:h-[460px]"
+        className="relative h-[340px] overflow-hidden rounded-2xl border border-white/10 bg-page sm:h-[460px]"
       >
         {size.width > 0 && (
           <Globe

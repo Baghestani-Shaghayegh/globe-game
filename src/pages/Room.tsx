@@ -406,7 +406,7 @@ export default function Room() {
 
   // ---- The match ------------------------------------------------------------
   return (
-    <div className="night relative h-screen w-screen overflow-hidden bg-page">
+    <div className="relative h-screen w-screen overflow-hidden bg-page">
       {target && features.length > 0 && (
         <MatchGlobe
           features={features}

@@ -155,7 +155,7 @@ function Appearance() {
   return (
     <Row
       title="Appearance"
-      hint="The rounds themselves stay dark: the globe is a night scene either way."
+      hint="Everywhere, the games included. By day the globe palette is drawn in a lighter version of itself."
     >
       <div className="flex flex-wrap gap-1.5">
         {APPEARANCES.map((option) => (

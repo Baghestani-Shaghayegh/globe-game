@@ -9,6 +9,8 @@
  * index.html can read it before anything renders — otherwise a light-mode
  * player sees a dark flash on every load.
  */
+import { setGlobesByDay } from "./globeTheme";
+
 export type Appearance = "dark" | "light" | "system";
 
 const KEY = "worldguess.appearance.v1";
@@ -52,6 +54,8 @@ function paint(choice: Appearance) {
   if (typeof document === "undefined") return;
   const mode = resolved(choice);
   document.documentElement.dataset.theme = mode;
+  // The globes follow the page: light mode draws them by daylight.
+  setGlobesByDay(mode === "light");
   document
     .querySelector('meta[name="theme-color"]')
     ?.setAttribute("content", BAR[mode]);

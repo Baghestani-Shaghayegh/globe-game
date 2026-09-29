@@ -1,6 +1,6 @@
 /**
  * Writes src/theme-light.css: light mode, made by flipping Tailwind's colour
- * scales end for end, and the "night" scopes that stay dark inside it.
+ * scales end for end.
  *
  *   node scripts/build-theme-light.mjs
  *
@@ -23,15 +23,12 @@ const value = (name) => {
 };
 
 const light = [];
-const night = [];
 for (const family of FAMILIES) {
   for (const step of STEPS) {
     light.push(`  --color-${family}-${step}: ${value(`${family}-${MIRROR(step)}`)};`);
-    night.push(`  --color-${family}-${step}: ${value(`${family}-${step}`)};`);
   }
 }
 light.push(`  --color-white: ${value("zinc-950")};`);
-night.push(`  --color-white: ${value("white")};`);
 
 writeFileSync(
   "src/theme-light.css",
@@ -49,13 +46,6 @@ writeFileSync(
 ${light.join("\n")}
 }
 
-/*
- * Night scopes stay dark in light mode: the full-screen globe games are a
- * night scene either way, and their panels sit on that dark globe.
- */
-:root[data-theme="light"] .night {
-${night.join("\n")}
-}
 `
 );
 console.log("wrote src/theme-light.css");

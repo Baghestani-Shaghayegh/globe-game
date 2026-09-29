@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { globesByDay } from "./globeTheme";
 
 // Sample terrain in globe coordinates so the grain continues across borders.
 // View-space lighting keeps the sun above the viewer's left shoulder.
@@ -71,7 +72,11 @@ const materials = new Map<string, THREE.ShaderMaterial>();
  */
 export type Surface = "land" | "ice" | "answer";
 
-export function landTones(color: string, kind: Surface = "land") {
+export function landTones(
+  color: string,
+  kind: Surface = "land",
+  day: boolean = globesByDay()
+) {
   const base = new THREE.Color(color);
   const reference = new THREE.Color("#23616a");
   const tint = (hex: string) => {
@@ -90,6 +95,17 @@ export function landTones(color: string, kind: Surface = "land") {
     // The light falls on the map; it does not fall on the answers.
     return { base, shadow: base, highlight: base };
   }
+  if (day) {
+    // By daylight the land is pale, and the night ramp — tuned for dark teal
+    // — scaled it past white on the sunlit side (burnt out, with a pink cast
+    // where one channel clipped first) and into grey on the far one. A
+    // gentler fall-off, both ways.
+    return {
+      base,
+      shadow: base.clone().multiplyScalar(kind === "ice" ? 0.8 : 0.72),
+      highlight: base.clone().lerp(new THREE.Color("#ffffff"), 0.18),
+    };
+  }
   return {
     base,
     shadow: kind === "ice" ? base.clone().multiplyScalar(0.24) : tint("#123d48"),
@@ -101,7 +117,7 @@ export function landMaterial(
   color: string,
   kind: Surface = "land"
 ): THREE.ShaderMaterial {
-  const key = `${color}:${kind}`;
+  const key = `${color}:${kind}:${globesByDay() ? "day" : "night"}`;
   const existing = materials.get(key);
   if (existing) return existing;
   const tones = landTones(color, kind);

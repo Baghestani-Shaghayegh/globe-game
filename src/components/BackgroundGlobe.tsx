@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
 import { iceShade, theme } from "../lib/globeTheme";
-import { subscribeToAppearance } from "../lib/appearance";
 import { forgetLandMaterials, landMaterial } from "../lib/globeTerrain";
 import { type Geometry } from "../lib/geo";
 import { GLOBE_BOX, globeCanvas } from "../lib/globePlacement";
@@ -30,26 +29,6 @@ const ICE = new Set([
  */
 const FIELD_OF_VIEW = 20;
 
-/**
- * The menu globe in light mode: a pale sea, light land and darker coastlines,
- * drawn at full strength like the dark one.
- *
- * The palettes are all night scenes — dark sea, lit land — and on a light page
- * the words over the globe are dark, so the first light mode faded the globe
- * to a watermark to keep them readable. That hid it; Sara asked where it had
- * gone. A day-lit globe keeps it on the page and the dark words readable over
- * it. The rounds keep the chosen palette: they stay dark in both modes.
- */
-const DAY = {
-  sea: "#c9dde4",
-  seaGlow: "#a9c4cd",
-  land: "#9cc7c0",
-  ice: "#f3f7f8",
-  coast: "#5e8f89",
-  side: "#b7cdd3",
-} as const;
-
-const currentMode = () => document.documentElement.dataset.theme ?? "dark";
 const ALTITUDE_WIDE = 4.82;
 const ALTITUDE_NARROW = 6.28;
 
@@ -72,18 +51,6 @@ export default function BackgroundGlobe() {
     height: window.innerHeight,
   });
   const ocean = useGlobeLook(globeRef, ready);
-  const day = useSyncExternalStore(subscribeToAppearance, currentMode) === "light";
-  const daySea = useMemo(
-    () =>
-      new THREE.MeshPhongMaterial({
-        color: DAY.sea,
-        emissive: DAY.seaGlow,
-        emissiveIntensity: 0.35,
-        shininess: 0,
-      }),
-    []
-  );
-  useEffect(() => () => daySea.dispose(), [daySea]);
 
   useEffect(() => {
     let cancelled = false;
@@ -156,19 +123,14 @@ export default function BackgroundGlobe() {
     return (d: object) => {
       const { name } = (d as Feature).properties;
       const ice = ICE.has(name);
-      const colour = day
-        ? ice
-          ? DAY.ice
-          : DAY.land
-        : ice
-          ? iceShade()
-          : theme.idle;
-      return landMaterial(colour, ice ? "ice" : "land");
+      // By day `theme` holds the lightened palette, so this is the same line
+      // in both modes.
+      return landMaterial(ice ? iceShade() : theme.idle, ice ? "ice" : "land");
     };
     // themeId is not read here — the colours come from the live `theme` — but
     // a palette change makes every cached material the wrong colour.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [themeId, day]);
+  }, [themeId]);
 
   // Offset rather than centred. On a phone there is no room to put it beside
   // anything, so it stays where it was.
@@ -191,10 +153,8 @@ export default function BackgroundGlobe() {
           logarithmicDepthBuffer: true,
         }}
         backgroundColor="rgba(0,0,0,0)"
-        globeMaterial={day ? daySea : ocean}
+        globeMaterial={ocean}
         {...GLOBE_SURFACE}
-        polygonStrokeColor={day ? () => DAY.coast : GLOBE_SURFACE.polygonStrokeColor}
-        polygonSideColor={day ? () => DAY.side : GLOBE_SURFACE.polygonSideColor}
         polygonsData={features}
         // A lit material rather than a flat colour: this is what puts the sun
         // on the upper left and lets the lower hemisphere fall into shadow.

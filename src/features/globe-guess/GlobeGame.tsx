@@ -748,7 +748,7 @@ export default function GlobeGame({
 
   if (loadError) {
     return (
-      <div className="night flex min-h-screen flex-col items-center justify-center gap-3 bg-page px-6">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-page px-6">
         <p className="text-zinc-100">Couldn't load the map data.</p>
         <Link
           to="/"
@@ -762,7 +762,7 @@ export default function GlobeGame({
 
   return (
     <div
-      className="night relative h-screen w-screen overflow-hidden bg-page"
+      className="relative h-screen w-screen overflow-hidden bg-page"
       onPointerDown={globeClick.onPointerDown}
       onPointerUp={globeClick.onPointerUp}
     >

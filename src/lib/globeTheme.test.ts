@@ -4,6 +4,7 @@ import {
   answerStroke,
   backdropColor,
   beaconTone,
+  dayPalette,
   landShade,
   raisedLand,
   setGlobeTheme,
@@ -174,6 +175,39 @@ describe("land in play on the daily", () => {
       expect(lightness(beaconTone())).toBeGreaterThan(lightness(theme.stroke));
       expect(lightness(beaconTone())).toBeGreaterThan(lightness(raisedLand()));
     }
+  });
+});
+
+describe("the palettes by daylight", () => {
+  // Light mode draws every globe in a lightened version of the chosen
+  // palette. The colours a round is read from keep their own values, so what
+  // has to be measured is that the land they sit on hasn't come up to meet
+  // them.
+  it("keeps found, missed and selected clear of the lighter land", () => {
+    for (const { palette } of GLOBE_THEMES) {
+      const day = dayPalette(palette);
+      for (const land of [day.unfound, day.idle]) {
+        expect(apart(land, day.found)).toBeGreaterThan(40);
+        expect(apart(land, day.missed)).toBeGreaterThan(40);
+        expect(apart(land, day.selected)).toBeGreaterThan(40);
+      }
+    }
+  });
+
+  it("draws a pale sea with land darker than it, and coastlines darker still", () => {
+    for (const { palette } of GLOBE_THEMES) {
+      const day = dayPalette(palette);
+      expect(lightness(day.sphere)).toBeGreaterThan(lightness(palette.sphere));
+      expect(lightness(day.sphere)).toBeGreaterThan(lightness(day.unfound));
+      expect(lightness(day.stroke)).toBeLessThan(lightness(day.unfound));
+    }
+  });
+
+  it("stays a version of the palette it came from", () => {
+    const [first, second] = GLOBE_THEMES;
+    expect(dayPalette(first.palette).unfound).not.toBe(
+      dayPalette(second.palette).unfound
+    );
   });
 });
 

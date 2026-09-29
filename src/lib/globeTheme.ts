@@ -250,7 +250,9 @@ export function raisedLand(): string {
  * the coastlines and read as one more of them.
  */
 export function beaconTone(): string {
-  return mix(theme.stroke, "#ffffff", 0.5);
+  // By day the land is pale and the coastline dark, so the pulse is drawn in
+  // the coastline colour itself: pale on pale disappears.
+  return day ? theme.stroke : mix(theme.stroke, "#ffffff", 0.5);
 }
 
 /**
@@ -385,18 +387,77 @@ function mix(from: string, to: string, amount: number): string {
 
 const listeners = new Set<() => void>();
 
+/** The page behind a globe in light mode — the same as the page itself. */
+const DAY_PAGE = "#f3f1ec";
+
+/**
+ * A palette by daylight, for light mode.
+ *
+ * Every palette is a night scene: dark sea, lit land. In light mode the globes
+ * used to stay dark inside a light site, and Sara asked for light everywhere.
+ * Rather than a second palette drawn by hand for each of the seven — which
+ * would fall out of step the first time one changed — each is lightened here:
+ * the sea most of the way to white, the land half of it, the coastline darker
+ * so it still reads on pale land. Found, missed and selected keep their own
+ * colours, because those are what a round is read from; the tests measure
+ * that they stay clear of the lighter land.
+ */
+export function dayPalette(palette: Palette): Palette {
+  return {
+    page: DAY_PAGE,
+    // Towards a pale sky blue rather than white: lightened to white alone,
+    // the sea came out a flat grey.
+    sphere: mix(palette.sphere, "#d4eaf4", 0.82),
+    stroke: mix(palette.stroke, "#000000", 0.4),
+    atmosphere: palette.atmosphere,
+    idle: mix(palette.idle, "#ffffff", 0.5),
+    unfound: mix(palette.unfound, "#ffffff", 0.5),
+    found: palette.found,
+    missed: palette.missed,
+    selected: palette.selected,
+  };
+}
+
+let day = false;
+
+/** Puts the chosen palette on every globe, by day or by night. */
+function applyPalette() {
+  const chosen = themeById(activeId).palette;
+  Object.assign(theme, day ? dayPalette(chosen) : chosen);
+  shadeCache.clear();
+  globeMaterial.color.set(theme.sphere);
+  for (const listener of listeners) listener();
+}
+
 export function activeThemeId(): string {
   return activeId;
 }
 
+/** Whether the globes are drawn by daylight, for light mode. */
+export function globesByDay(): boolean {
+  return day;
+}
+
+/**
+ * What the globes are painted in right now: the palette and the time of day.
+ * The key the globes re-render on — a palette change and a switch to light
+ * mode both have to repaint them.
+ */
+export function globeLookKey(): string {
+  return day ? `${activeId}:day` : activeId;
+}
+
 export function setGlobeTheme(id: string) {
-  const chosen = themeById(id);
-  activeId = chosen.id;
-  Object.assign(theme, chosen.palette);
-  shadeCache.clear();
-  globeMaterial.color.set(chosen.palette.sphere);
-  setGlobeThemeId(chosen.id);
-  for (const listener of listeners) listener();
+  activeId = themeById(id).id;
+  setGlobeThemeId(activeId);
+  applyPalette();
+}
+
+/** Light mode on or off, for the globes. Called by the appearance setting. */
+export function setGlobesByDay(on: boolean) {
+  if (on === day) return;
+  day = on;
+  applyPalette();
 }
 
 /** For React: re-render whatever is on screen when the palette changes. */

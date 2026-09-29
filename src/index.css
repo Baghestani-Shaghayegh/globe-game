@@ -3,8 +3,7 @@
 
 /*
  * The surfaces, by what they are rather than what colour they are, so light
- * mode can swap them. Inline, so a utility reads the variable where it is used
- * — a night scope inside a light page resolves its own values.
+ * mode can swap them. Inline, so a utility reads the variable where it is used.
  */
 @theme inline {
   --color-page: var(--page);
@@ -14,8 +13,7 @@
   --color-modal: var(--modal);
 }
 
-:root,
-.night {
+:root {
   /* Behind everything: the night sky the globe hangs in. */
   --page: #07111c;
   /* Cards laid on the page. */
@@ -39,14 +37,6 @@
   --medal-locked: #e8e5de;
 }
 
-:root[data-theme="light"] .night {
-  --page: #07111c;
-  --surface: #0a1420;
-  --raised: #141b23;
-  --sunken: #0b1624;
-  --modal: #102030;
-}
-
 html,
 body {
   background: var(--page);
@@ -58,10 +48,6 @@ body {
   color-scheme: light;
 }
 
-/* Form controls and scrollbars inside a night scope stay dark too. */
-.night {
-  color-scheme: dark;
-}
 
 @keyframes shake {
   0%,

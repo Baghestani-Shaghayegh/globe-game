@@ -5,6 +5,8 @@ import AdSlot from "../components/AdSlot";
 import SiteHeader, { SiteFooter } from "../components/SiteHeader";
 import { DAILY_ICONS } from "../components/gameIcons";
 import { playTap } from "../lib/sound";
+import { globesByDay } from "../lib/globeTheme";
+import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
 import { getCountryMeta } from "../data/countries";
 import {
   GAME_TYPES,
@@ -213,7 +215,7 @@ function GameCard({
         style={{ clipPath: corner(CUT - 1) }}
         className="flex h-full flex-col bg-surface"
       >
-        <span className="night relative block aspect-video overflow-hidden bg-page">
+        <span className="relative block aspect-video overflow-hidden bg-page">
           <img
             src={image}
             alt=""
@@ -243,6 +245,9 @@ function GameCard({
 
 export default function Home() {
   const backdropWanted = useBackdropWanted();
+  // Re-renders when light mode switches the globes, and so the card pictures.
+  useGlobeTheme();
+  const day = globesByDay();
 
   const [modeId, setModeId] = useState<ModeId>("easy");
 
@@ -426,7 +431,8 @@ export default function Home() {
                 >
                   <GameCard
                     to={game.to}
-                    image={`/cards/${game.id}.jpg`}
+                    // Pictures of the game as it looks in the mode you're in.
+                    image={`/cards/${day ? "light/" : ""}${game.id}.jpg`}
                     title={game.title}
                     note={game.note}
                     badge={game.badge}
