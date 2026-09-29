@@ -87,6 +87,23 @@ export default function Connect() {
   const [result, setResult] = useState<ConnectResult | null>(null);
   const [typed, setTyped] = useState("");
   const [note, setNote] = useState<string | null>(null);
+  /**
+   * Whether the note is a miss: said in red, with a shake of the panel, the
+   * way a wrong answer lands in the other games. A pick that didn't join the
+   * chain used to be announced as "added" in the same tone as one that did.
+   */
+  const [miss, setMiss] = useState(false);
+  const [shaking, setShaking] = useState(false);
+  const shakeTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(shakeTimer.current), []);
+  const flagMiss = useCallback((text: string) => {
+    setNote(text);
+    setMiss(true);
+    setShaking(true);
+    window.clearTimeout(shakeTimer.current);
+    shakeTimer.current = window.setTimeout(() => setShaking(false), 400);
+    playWrong();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -288,19 +305,16 @@ export default function Connect() {
 
       const name = resolveName(text, pool);
       if (!name) {
-        setNote(`No country called "${text.trim()}".`);
+        flagMiss(`No country called "${text.trim()}".`);
         setDidYouMean(nearestNames(text, pool));
-        playWrong();
         return;
       }
       if (name === result.from || name === result.to) {
-        setNote(`${display(name)} is already one of the ends.`);
-        playWrong();
+        flagMiss(`${display(name)} is already one of the ends.`);
         return;
       }
       if (placedSet.has(name)) {
-        setNote(`${display(name)} is already in the chain.`);
-        playWrong();
+        flagMiss(`${display(name)} is already in the chain.`);
         return;
       }
       const placed = placedOf(result);
@@ -330,13 +344,17 @@ export default function Connect() {
       saveConnect(next);
       setResult(next);
       setTyped("");
-      setNote(
-        route
-          ? null
-          : connected
-            ? `${display(name)} added.`
-            : `${display(name)} added — it isn't joined to your chain yet.`
-      );
+      if (route) {
+        setNote(null);
+        setMiss(false);
+      } else if (connected) {
+        setNote(`${display(name)} added.`);
+        setMiss(false);
+      } else {
+        // On the board in red, and said as a miss. "Not connected yet"
+        // rather than "wrong": it may still join up as the chain grows.
+        flagMiss(`${display(name)} isn't connected yet.`);
+      }
       // A pick that doesn't join up is usually somewhere else entirely —
       // Brazil, on a walk from China to Qatar — and round the back of the
       // globe its colour tells nobody anything. Turn to it.
@@ -355,13 +373,13 @@ export default function Connect() {
         void postConnectScore(next);
         playSolved();
         setBurst((n) => n + 1);
-      } else {
+      } else if (connected) {
         // Each country placed steps the note up, so a chain being built is
-        // audibly going somewhere.
+        // audibly going somewhere. A miss has already made its own sound.
         playStep(chain.length * 2);
       }
     },
-    [result, placedSet, pool, setHighlighted, centres]
+    [result, placedSet, pool, setHighlighted, centres, flagMiss]
   );
 
   const submit = (event: FormEvent) => {
@@ -518,7 +536,7 @@ export default function Connect() {
           corner on a wide screen, the bottom edge on a phone. The par
           and the count live in here too — they had a box of their own in the
           same corner, which said "Connect" on a page that already says it. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 mx-auto flex w-[min(22rem,calc(100vw-1.5rem))] flex-col items-center gap-2 rounded-xl border border-white/10 bg-raised/90 px-5 py-3 text-center backdrop-blur lg:inset-x-auto lg:bottom-auto lg:right-4 lg:top-4 lg:mx-0">
+      <div className={`pointer-events-none absolute inset-x-0 bottom-3 z-10 mx-auto flex w-[min(22rem,calc(100vw-1.5rem))] flex-col items-center gap-2 rounded-xl border border-white/10 bg-raised/90 px-5 py-3 text-center backdrop-blur lg:inset-x-auto lg:bottom-auto lg:right-4 lg:top-4 lg:mx-0 ${shaking ? "animate-shake" : ""}`}>
         <p className="text-xs uppercase tracking-wider text-zinc-500">
           Walk from
         </p>
@@ -619,7 +637,13 @@ export default function Connect() {
                 Add
               </button>
             </form>
-            {note && <p className="text-xs text-amber-300/80">{note}</p>}
+            {note && (
+              <p
+                className={`text-xs ${miss ? "font-medium text-rose-400" : "text-zinc-400"}`}
+              >
+                {note}
+              </p>
+            )}
             {didYouMean.length > 0 && (
               <p className="pointer-events-auto text-xs text-zinc-400">
                 Did you mean{" "}
