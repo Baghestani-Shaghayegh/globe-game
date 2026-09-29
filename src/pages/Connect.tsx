@@ -304,24 +304,13 @@ export default function Connect() {
         return;
       }
       const placed = placedOf(result);
-      if (!touchesChain(result.from, result.to, placed, name)) {
-        // Counted, but not placed: it has to touch something to be a step.
-        const next = { ...result, wrong: result.wrong + 1 };
-        saveConnect(next);
-        setResult(next);
-        // Names what it has to touch. "Anything you've placed" meant the two
-        // ends as well as the chain, which nobody reading it could know — and
-        // before the first country it described an empty board.
-        setNote(
-          placed.length === 0
-            ? `${display(name)} doesn't border ${display(result.from)} or ${display(result.to)}.`
-            : `${display(name)} doesn't border ${display(result.from)}, ${display(result.to)} or any country you've added.`
-        );
-        setTyped("");
-        playWrong();
-        return;
-      }
-
+      // Any country goes on the board, touching the chain or not, and takes
+      // its colour: the way Travle plays. It used to be refused unless it
+      // bordered something already placed, which left "Off course" in the key
+      // with almost nothing ever painted in it — the far-off guesses it was
+      // for were the very ones turned away. A pick that never joins the route
+      // still costs a wrong turn when the chain is done, as a detour does.
+      const connected = touchesChain(result.from, result.to, placed, name);
       const chain = [...placed, name];
       // Any order in, and the chain counts as soon as some of it walks the
       // whole way. Names left off the route were still guesses: they cost the
@@ -341,7 +330,25 @@ export default function Connect() {
       saveConnect(next);
       setResult(next);
       setTyped("");
-      setNote(route ? null : `${display(name)} added.`);
+      setNote(
+        route
+          ? null
+          : connected
+            ? `${display(name)} added.`
+            : `${display(name)} added — it isn't joined to your chain yet.`
+      );
+      // A pick that doesn't join up is usually somewhere else entirely —
+      // Brazil, on a walk from China to Qatar — and round the back of the
+      // globe its colour tells nobody anything. Turn to it.
+      if (!connected && !route) {
+        const at = centres.get(name);
+        if (at) {
+          globeRef.current?.pointOfView(
+            { ...at, altitude: globeRef.current.pointOfView().altitude },
+            900
+          );
+        }
+      }
 
       if (route) {
         // Not awaited, for the same reason the mystery isn't.
@@ -354,7 +361,7 @@ export default function Connect() {
         playStep(chain.length * 2);
       }
     },
-    [result, placedSet, pool, setHighlighted]
+    [result, placedSet, pool, setHighlighted, centres]
   );
 
   const submit = (event: FormEvent) => {

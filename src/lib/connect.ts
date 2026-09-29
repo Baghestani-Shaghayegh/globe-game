@@ -147,11 +147,12 @@ export function routeThrough(
 }
 
 /**
- * Whether adding this country keeps the chain buildable at all.
+ * Whether a country touches anything already on the board — either end or a
+ * country placed.
  *
- * A country that borders nothing already placed can't be part of a walk, and
- * saying so at the moment it is typed beats letting someone build a chain of
- * eight that was broken at the second step.
+ * No longer a gate: any country can be placed, as in Travle. This only says
+ * whether a new one joins up yet, so the note under the box can tell the
+ * player when it doesn't.
  */
 export function touchesChain(
   from: string,
