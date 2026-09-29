@@ -122,7 +122,11 @@ export default function Mystery() {
   // Pick the day's round back up, or start one.
   useEffect(() => {
     if (!answer) return;
-    const saved = loadMystery(day);
+    // Only a finished mystery comes back. One left part-way starts again from
+    // nothing — Sara's rule for all three dailies: leaving without finishing
+    // or giving up doesn't use up the day, and doesn't carry over either.
+    const loaded = loadMystery(day);
+    const saved = loaded && (loaded.solved || loaded.gaveUp) ? loaded : null;
     setResult(
       saved ?? {
         day,
@@ -634,7 +638,11 @@ export default function Mystery() {
           finished puzzle would be confetti for opening a page. */}
       <Celebrate burst={burst} count={90} />
       {leaving && (
-        <ExitConfirm onFinish={leave} onKeepPlaying={() => setLeaving(false)} />
+        <ExitConfirm
+          note="Your guesses won't be kept. You can start again from the menu."
+          onFinish={leave}
+          onKeepPlaying={() => setLeaving(false)}
+        />
       )}
 
     </div>

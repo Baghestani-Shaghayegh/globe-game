@@ -224,6 +224,8 @@ export type ConnectResult = {
    * `loadConnect` fills it in on the way past.
    */
   startedAt?: number;
+  /** How long it took, stamped the moment it was solved. */
+  ms?: number;
 };
 
 const KEY = "worldguess.connect.v1";
@@ -290,7 +292,7 @@ export function postConnectScore(result: ConnectResult): Promise<boolean> {
     points: scoreFor(result) * DAILY_MULTIPLIER,
     found: 1,
     total: 1,
-    ms: elapsedMs(result.startedAt),
+    ms: result.ms ?? elapsedMs(result.startedAt),
     // Neither a streak nor a hint exists in this game; the crowns pass over it.
     bestStreak: 0,
     hintsUsed: 0,

@@ -17,7 +17,9 @@ import {
 } from "../lib/globeTheme";
 import { landMaterial } from "../lib/globeTerrain";
 import { featureCentre, type Geometry, worldAltitude } from "../lib/geo";
-import { dayKey, formatDay } from "../lib/daily";
+import { dayKey, elapsedMs, formatDay } from "../lib/daily";
+import { formatDuration } from "../lib/records";
+import ConfirmDialog from "../features/globe-guess/ConfirmDialog";
 import Celebrate from "../components/Celebrate";
 import { playSolved, playStep, playWrong } from "../lib/sound";
 import {
@@ -118,14 +120,18 @@ export default function Connect() {
         chain: route,
         solved: true,
         wrong: saved.wrong + spare,
+        ms: elapsedMs(saved.startedAt),
       };
       saveConnect(settled);
       setResult(settled);
       void postConnectScore(settled);
       return;
     }
+    // Otherwise only a solved puzzle comes back. One left part-way starts
+    // again from nothing — Sara's rule for all three dailies: leaving without
+    // finishing doesn't use up the day, and doesn't carry over either.
     setResult(
-      saved ?? {
+      (saved?.solved ? saved : null) ?? {
         day,
         number: puzzle.number,
         from: puzzle.from,
@@ -215,6 +221,49 @@ export default function Connect() {
   const [burst, setBurst] = useState(0);
 
   /**
+   * The clock, counting up from when this attempt began. Shown, and filed with
+   * the score as before; the points themselves still come from the route.
+   */
+  const [now, setNow] = useState(() => Date.now());
+  const running = !!result && !result.solved;
+  useEffect(() => {
+    if (!running) return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [running]);
+  const shownMs = result
+    ? result.solved
+      ? (result.ms ?? elapsedMs(result.startedAt))
+      : Math.max(0, now - (result.startedAt ?? now))
+    : 0;
+
+  /**
+   * Starting over: an empty chain and a fresh clock. Under the rule that
+   * leaving part-way starts the puzzle again, this is the same thing without
+   * the trip to the menu — so it gives nothing away that leaving doesn't.
+   */
+  const [confirmingRestart, setConfirmingRestart] = useState(false);
+  const startOver = () => {
+    if (!result || result.solved) return;
+    const fresh: ConnectResult = {
+      ...result,
+      chain: [],
+      placed: [],
+      solved: false,
+      wrong: 0,
+      startedAt: Date.now(),
+      ms: undefined,
+    };
+    saveConnect(fresh);
+    setResult(fresh);
+    setNow(Date.now());
+    setTyped("");
+    setNote(null);
+    setDidYouMean([]);
+    setConfirmingRestart(false);
+  };
+
+  /**
    * The list under the box, as in the mystery country. Without it the
    * spelling of "Democratic Republic of the Congo" was part of the puzzle,
    * and the box had no way to say what it would take.
@@ -287,6 +336,7 @@ export default function Connect() {
         chain: route ?? chain,
         solved: route !== null,
         wrong: result.wrong + spare,
+        ...(route ? { ms: elapsedMs(result.startedAt) } : {}),
       };
       saveConnect(next);
       setResult(next);
@@ -471,7 +521,8 @@ export default function Connect() {
         </p>
         {!result?.solved && (
           <p className="text-xs tabular-nums text-zinc-500">
-            Par {puzzle.par} · {result ? placedOf(result).length : 0} added
+            Par {puzzle.par} · {result ? placedOf(result).length : 0} added ·{" "}
+            {formatDuration(shownMs)}
           </p>
         )}
 
@@ -479,7 +530,8 @@ export default function Connect() {
           <>
             <p className="text-sm text-emerald-300">
               Connected in {result.chain.length}{" "}
-              {result.chain.length === 1 ? "step" : "steps"} · par {result.par} ·{" "}
+              {result.chain.length === 1 ? "step" : "steps"} ·{" "}
+              {formatDuration(shownMs)} · par {result.par} ·{" "}
               {scoreFor(result).toLocaleString()} points
             </p>
             <p className="text-sm text-zinc-400">
@@ -597,13 +649,38 @@ export default function Connect() {
             ))}
           </p>
         )}
+
+        {/* Played down, like the mystery's give-up: a way to clear a chain
+            that went wrong, not a button to reach for. */}
+        {result && !result.solved && placedOf(result).length > 0 && (
+          <button
+            onClick={() => setConfirmingRestart(true)}
+            className="pointer-events-auto text-xs text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+          >
+            Start over
+          </button>
+        )}
       </div>
 
 
       {/* Only on the move that joins the chain, not on every visit after. */}
       <Celebrate burst={burst} count={90} />
+      {confirmingRestart && (
+        <ConfirmDialog
+          title="Start over?"
+          body="Your chain and the clock go back to zero."
+          confirmLabel="Start over"
+          onConfirm={startOver}
+          cancelLabel="Keep going"
+          onCancel={() => setConfirmingRestart(false)}
+        />
+      )}
       {leaving && (
-        <ExitConfirm onFinish={leave} onKeepPlaying={() => setLeaving(false)} />
+        <ExitConfirm
+          note="Your chain won't be kept. You can start again from the menu."
+          onFinish={leave}
+          onKeepPlaying={() => setLeaving(false)}
+        />
       )}
 
     </div>
