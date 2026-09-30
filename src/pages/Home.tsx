@@ -468,7 +468,7 @@ export default function Home() {
                   id: "practice",
                   to: "/practice",
                   title: "Practice",
-                  note: "The countries you keep missing.",
+                  note: "What you learned, back for another look.",
                   badge: duePractice > 0 ? `${duePractice} waiting` : undefined,
                 },
                 {

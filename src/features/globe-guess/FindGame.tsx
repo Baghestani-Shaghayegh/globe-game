@@ -9,6 +9,7 @@ import ExitConfirm from "./ExitConfirm";
 import ConfirmDialog from "./ConfirmDialog";
 import { useRound } from "./useRound";
 import { recordRound } from "../../lib/countryStats";
+import { pulseMark } from "./globeMarks";
 import { useGlobeClick } from "./useGlobeClick";
 import { useLeaveGuard } from "./useLeaveGuard";
 import { getCountryMeta } from "../../data/countries";
@@ -199,7 +200,11 @@ function nameLabel(tag: NameTag): HTMLElement {
  */
 const tagLat = (d: object) => (d as NameTag).lat;
 const tagLng = (d: object) => (d as NameTag).lng;
-const tagElement = (d: object) => nameLabel(d as NameTag);
+const tagElement = (d: object) =>
+  "beacon" in d ? pulseMark() : nameLabel(d as NameTag);
+
+/** A pulse on a country still to find, under `showInPlay` — as GlobeGame. */
+type Beacon = { beacon: true; lat: number; lng: number };
 
 /** The whole-world view, sized to this window. Shared by every game. */
 const worldView = () => worldAltitude(window.innerWidth, window.innerHeight);
@@ -759,7 +764,25 @@ export default function FindGame({
     [revealed, showInPlay, inPlaySet]
   );
 
-  const tags = useMemo(() => (nameTag ? [nameTag] : []), [nameTag]);
+  /**
+   * A pulse on each country still to be asked, under `showInPlay`, the same
+   * glow the Country hunt has. Practice asks about eight countries anywhere
+   * on the globe; raised a shade they were easy to lose, and a small island
+   * not at all.
+   */
+  const beacons = useMemo<Beacon[]>(() => {
+    if (!showInPlay || summary) return [];
+    const byName = new Map(features.map((f) => [f.properties.name, f]));
+    return queue.flatMap((name) => {
+      const feature = byName.get(name);
+      return feature ? [{ beacon: true as const, ...labelPoint(feature.geometry) }] : [];
+    });
+  }, [showInPlay, summary, features, queue]);
+
+  const tags = useMemo(
+    () => (nameTag ? [nameTag, ...beacons] : beacons),
+    [nameTag, beacons]
+  );
 
   if (loadError) {
     return (
@@ -799,7 +822,7 @@ export default function FindGame({
         htmlElementsData={tags}
         htmlLat={tagLat}
         htmlLng={tagLng}
-        htmlAltitude={0.02}
+        htmlAltitude={showInPlay ? 0.04 : 0.02}
         htmlElement={tagElement}
         htmlTransitionDuration={0}
         polygonStrokeColor={strokeColor}

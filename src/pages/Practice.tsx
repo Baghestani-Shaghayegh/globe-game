@@ -1,14 +1,16 @@
 import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import FindGame from "../features/globe-guess/FindGame";
-import GlobeGame from "../features/globe-guess/GlobeGame";
 import type { RoundOutcome } from "../features/globe-guess/FindGame";
+import LessonRun, { Flag } from "../features/learn/LessonRun";
+import { useLessons } from "../features/learn/useLessons";
 import { getCountryMeta } from "../data/countries";
 import { flagUrl } from "../data/flags";
 import { cluesFor } from "../data/clues";
 import { GAME_TYPES, type GameType, type Mode } from "../data/modes";
 import { allCountries } from "../lib/countryStats";
 import {
+  BOX_DAYS,
   boxHint,
   boxLabel,
   loadDeck,
@@ -17,8 +19,36 @@ import {
   recallsFrom,
   saveReview,
   TOP_BOX,
+  type Recall,
 } from "../lib/practice";
+import { playTap } from "../lib/sound";
 import { choiceClass } from "../components/choice";
+
+/**
+ * Practice: the countries due for another look, asked again.
+ *
+ * It used to be a plain game round over whatever you'd missed elsewhere — a
+ * test, with nothing in it to learn from. Now the default is the lesson's own
+ * Find-then-Name, with a direction after a wrong click, a first letter after a
+ * wrong name and the answer after two. And lessons feed it: every country
+ * learned comes back here, the ones that needed help first. A lesson teaches a
+ * country; this is what makes it stay.
+ */
+
+/** How to ask. "review" is the lesson's Find-then-Name; the rest are games. */
+type Way = "review" | Exclude<GameType, "name" | "find">;
+
+const WAYS: { id: Way; label: string; blurb: string }[] = [
+  {
+    id: "review",
+    label: "Find & name",
+    blurb: "Find each one, then name it. Hints after a miss.",
+  },
+  ...GAME_TYPES.filter(
+    (t): t is (typeof GAME_TYPES)[number] & { id: Way } =>
+      t.id !== "name" && t.id !== "find"
+  ),
+];
 
 /** A mode built for one drill: the countries this session is about. */
 function practiceMode(names: string[]): Mode {
@@ -41,38 +71,47 @@ function readSession(): { queue: string[]; mastered: number } {
   return { queue: nextSession(), mastered: masteredCount() };
 }
 
-/** Countries this game type can actually pose a question about. */
-function askable(type: GameType, names: string[]): string[] {
+/** Countries this way of asking can actually pose a question about. */
+function askable(way: Way, names: string[]): string[] {
   return names.filter((name) => {
-    if (type === "flag") return flagUrl(name) !== null;
-    if (type === "famous") return cluesFor(name).length > 0;
+    if (way === "flag") return flagUrl(name) !== null;
+    if (way === "famous") return cluesFor(name).length > 0;
     return true;
   });
 }
 
+const display = (name: string) => getCountryMeta(name).displayName;
+
+/** When a country is back, from the box it has just been put in. */
+function backIn(box: number): string {
+  const days = BOX_DAYS[Math.max(0, Math.min(TOP_BOX, box))];
+  if (days === 0) return "Again now";
+  if (days === 1) return "Back tomorrow";
+  return `Back in ${days} days`;
+}
+
 export default function Practice() {
-  const [type, setType] = useState<GameType>("find");
-  const [playing, setPlaying] = useState<string[] | null>(null);
+  const [way, setWay] = useState<Way>("review");
+  const [playing, setPlaying] = useState<{ way: Way; names: string[] } | null>(null);
   const [justDone, setJustDone] = useState<{ clean: number; total: number } | null>(
     null
   );
+  const map = useLessons();
 
-  // Both come from the deck, so they are read together and replaced together
-  // — deriving one from the other would only pretend they were independent.
+  // Both come from the deck, so they are read together and replaced together.
   // Read once per visit, so the queue can't shuffle under the player while
   // they are looking at it.
   const [{ queue, mastered }, setSession] = useState(readSession);
-  const worst = useMemo(() => {
+  const rows = useMemo(() => {
     const deck = loadDeck();
     return queue.map((name) => ({
       name,
-      display: getCountryMeta(name).displayName,
       box: deck[name]?.box ?? 0,
       stat: allCountries().find((row) => row.geoName === name) ?? null,
     }));
   }, [queue]);
 
-  const finish = useCallback((outcome: RoundOutcome) => {
+  const finishGame = useCallback((outcome: RoundOutcome) => {
     const recalls = recallsFrom(outcome);
     saveReview(recalls);
     const values = Object.values(recalls);
@@ -84,46 +123,57 @@ export default function Practice() {
     setSession(readSession());
   }, []);
 
-  if (playing) {
-    return type === "name" ? (
-      <GlobeGame
-        mode={practiceMode(playing)}
-        limitMs={null}
-        ruleset="relaxed"
-        onRoundEnd={finish}
-        record={false}
-        // The same whole-world view Find it already had. Drawn alone the
-        // eight are specks on an empty sphere, which is no way to learn where
-        // they are; drawn against the rest of the map, and raised out of it,
-        // they are eight places rather than eight shapes. Only they can be
-        // clicked — the backdrop is there to navigate by.
-        backdrop
-        showInPlay
+  const backToList = () => {
+    setPlaying(null);
+    setSession(readSession());
+  };
+
+  if (playing?.way === "review" && map && map !== "error") {
+    return (
+      <LessonRun
+        // A second go is a new run from the top, not the old one carried on.
+        key={playing.names.join("|")}
+        countries={playing.names}
+        features={map.features}
+        meet={false}
+        heading="Practice"
+        back={{ label: "Practice", onClick: backToList }}
+        onFinish={(recalls) => saveReview(recalls)}
+        done={(recalls) => (
+          <ReviewDone
+            recalls={recalls}
+            onAgain={(names) => {
+              playTap();
+              setPlaying({ way: "review", names });
+            }}
+            onBack={backToList}
+          />
+        )}
       />
-    ) : (
+    );
+  }
+
+  if (playing && playing.way !== "review") {
+    return (
       <FindGame
-        mode={practiceMode(playing)}
+        mode={practiceMode(playing.names)}
         limitMs={null}
         ruleset="relaxed"
-        type={type}
-        fixedOrder={playing}
-        onRoundEnd={finish}
+        type={playing.way}
+        fixedOrder={playing.names}
+        onRoundEnd={finishGame}
         record={false}
-        // The whole world, with the ones being drilled raised out of it. On
-        // their own the eight were specks on an empty sphere, which is no way
-        // to learn where they are.
-        //
-        // The backdrop stays clickable here, unlike in Name it. This game
-        // asks "where is Burundi?", so clicking Brazil is a wrong answer and
-        // deserves to be told so — refusing the click would narrow the whole
-        // world down to eight candidates and hand over the answer.
+        // The whole world, with the ones being drilled raised out of it and
+        // pulsing, as the Country hunt's are. The backdrop stays clickable:
+        // clicking Brazil when asked for Burundi is a wrong answer and
+        // deserves to be told so.
         backdrop
         showInPlay
       />
     );
   }
 
-  const ready = askable(type, queue);
+  const ready = askable(way, queue);
 
   return (
     <div className="min-h-screen bg-page px-5 py-10 sm:px-8 lg:px-12">
@@ -139,14 +189,14 @@ export default function Practice() {
           Practice
         </h1>
         <p className="mt-2 text-sm text-zinc-500">
-          Countries you've missed come back here. Each one you get right
-          waits longer before it comes back.
+          Countries from your lessons and the ones you've missed come back
+          here. Each one you get right waits longer before it comes back.
         </p>
 
         {justDone && (
           <p className="mt-5 rounded-xl border border-emerald-400/25 bg-emerald-400/[0.07] px-4 py-3 text-sm text-emerald-200">
-            {justDone.clean} of {justDone.total} clean. The ones you got move
-            further out; the ones you didn't come back tomorrow.
+            {justDone.clean} of {justDone.total} clean. The ones you got wait
+            longer; the ones you didn't are ready to go again.
           </p>
         )}
 
@@ -155,14 +205,19 @@ export default function Practice() {
             <p className="text-zinc-100">Nothing due.</p>
             <p className="mt-2 text-sm text-zinc-500">
               {mastered > 0
-                ? `${mastered} ${mastered === 1 ? "country is" : "countries are"} put away for now. Play a round and anything you slip on will turn up here.`
-                : "Play a few rounds — the countries you miss will collect here."}
+                ? `${mastered} ${mastered === 1 ? "country is" : "countries are"} put away for now.`
+                : "Finish a lesson and its countries come back here."}
             </p>
+            <Link
+              to="/learn"
+              onClick={playTap}
+              className="mt-4 inline-block rounded-full bg-teal-300 px-5 py-2 text-sm font-semibold text-teal-950 transition-colors hover:bg-teal-200"
+            >
+              Go to lessons →
+            </Link>
           </div>
         ) : (
           <>
-            {/* A header row, because the two numbers on the right were
-                unlabelled and one of them was five dots. */}
             <div className="mt-5 flex items-center gap-3 px-4 pb-1.5 text-[11px] uppercase tracking-wider text-zinc-600">
               <span>Country</span>
               <span className="ml-auto w-20 text-right">Times missed</span>
@@ -170,13 +225,14 @@ export default function Practice() {
             </div>
 
             <ul className="divide-y divide-white/[0.05] overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]">
-              {worst.map((entry) => (
+              {rows.map((entry) => (
                 <li
                   key={entry.name}
                   className="flex items-center gap-3 px-4 py-2.5 text-sm"
                 >
-                  <span className="text-zinc-100">{entry.display}</span>
-                  {!askable(type, [entry.name]).length && (
+                  <Flag name={entry.name} className="h-4 w-6 shrink-0" />
+                  <span className="text-zinc-100">{display(entry.name)}</span>
+                  {!askable(way, [entry.name]).length && (
                     <span className="text-xs text-zinc-600">
                       not asked this way
                     </span>
@@ -184,9 +240,6 @@ export default function Practice() {
                   <span className="ml-auto w-20 text-right tabular-nums text-xs text-rose-300/70">
                     {entry.stat && entry.stat.missed > 0 ? entry.stat.missed : "—"}
                   </span>
-                  {/* Words, not dots. The ladder is a run of clean answers, so
-                      that is what it says; the tooltip carries what getting it
-                      right again would buy. */}
                   <span
                     title={boxHint(entry.box)}
                     className={`w-24 text-right text-xs ${
@@ -203,25 +256,20 @@ export default function Practice() {
               ))}
             </ul>
 
-            {/* Below the list rather than above it. Up there it read as a
-                filter on the countries, which it never was — the same eight
-                are drilled whichever is picked. It is a choice about the
-                round you are about to start, so it lives with the button
-                that starts it. */}
             <div className="mt-7 rounded-xl border border-white/10 bg-white/[0.03] p-4">
               <p className="text-sm text-zinc-200">
-                How should I ask about these {worst.length}?
+                How should I ask about these {rows.length}?
               </p>
               <p className="mt-0.5 text-xs text-zinc-500">
-                {GAME_TYPES.find((option) => option.id === type)?.blurb}
+                {WAYS.find((option) => option.id === way)?.blurb}
               </p>
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {GAME_TYPES.map((option) => (
+                {WAYS.map((option) => (
                   <button
                     key={option.id}
-                    onClick={() => setType(option.id)}
-                    aria-pressed={type === option.id}
-                    className={choiceClass(type === option.id)}
+                    onClick={() => setWay(option.id)}
+                    aria-pressed={way === option.id}
+                    className={choiceClass(way === option.id)}
                   >
                     {option.label}
                   </button>
@@ -230,8 +278,12 @@ export default function Practice() {
             </div>
 
             <button
-              onClick={() => setPlaying(ready)}
-              disabled={ready.length === 0}
+              onClick={() => {
+                playTap();
+                setJustDone(null);
+                setPlaying({ way, names: ready });
+              }}
+              disabled={ready.length === 0 || (way === "review" && !map)}
               className="mt-3 w-full rounded-lg bg-amber-400/15 py-2.5 text-sm font-medium text-amber-200 transition-colors hover:bg-amber-400/25 disabled:opacity-40"
             >
               Practise {ready.length}{" "}
@@ -239,8 +291,8 @@ export default function Practice() {
             </button>
             {ready.length < queue.length && (
               <p className="mt-2.5 text-center text-xs text-zinc-600">
-                {queue.length - ready.length} of them can't be asked this way —
-                no flag or clue on file.
+                {queue.length - ready.length} of them can't be asked this way.
+                No flag or clue on file.
               </p>
             )}
             <p className="mt-4 text-center text-xs text-zinc-600">
@@ -249,6 +301,76 @@ export default function Practice() {
           </>
         )}
       </main>
+    </div>
+  );
+}
+
+/**
+ * The end of a practice run: how each one went and when it's back. The ones
+ * that needed the answer are due again straight away, so going again is the
+ * obvious next thing — asked twice in a sitting is how a slip gets fixed.
+ */
+function ReviewDone({
+  recalls,
+  onAgain,
+  onBack,
+}: {
+  recalls: Record<string, Recall>;
+  onAgain: (names: string[]) => void;
+  onBack: () => void;
+}) {
+  // Read after the run was filed, so the boxes are the new ones.
+  const [deck] = useState(loadDeck);
+  const [again] = useState(() => nextSession());
+  const names = Object.keys(recalls);
+  const clean = names.filter((name) => recalls[name] === "clean").length;
+
+  return (
+    <div>
+      <p className="text-xs font-medium uppercase tracking-wider text-emerald-300">
+        Practice done
+      </p>
+      <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-50">
+        {clean} of {names.length} without help
+      </h1>
+      <ul className="mt-4 space-y-2">
+        {names.map((name) => (
+          <li key={name} className="flex items-center gap-3">
+            <Flag name={name} className="h-5 w-7 shrink-0" />
+            <span className="min-w-0 flex-1 truncate text-sm text-zinc-100">
+              {recalls[name] === "clean" ? "✓ " : ""}
+              {display(name)}
+            </span>
+            <span
+              className={`shrink-0 text-xs ${
+                recalls[name] === "clean" ? "text-zinc-500" : "text-amber-300"
+              }`}
+            >
+              {backIn(deck[name]?.box ?? 0)}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-6 flex flex-col gap-2">
+        {again.length > 0 && (
+          <button
+            onClick={() => onAgain(again)}
+            autoFocus
+            className="rounded-lg bg-teal-300 px-4 py-2.5 text-sm font-semibold text-teal-950 transition-colors hover:bg-teal-200"
+          >
+            Go again · {again.length} →
+          </button>
+        )}
+        <button
+          onClick={() => {
+            playTap();
+            onBack();
+          }}
+          className="rounded-lg border border-white/15 px-4 py-2.5 text-sm text-zinc-300 transition-colors hover:text-zinc-100"
+        >
+          Back to practice
+        </button>
+      </div>
     </div>
   );
 }
