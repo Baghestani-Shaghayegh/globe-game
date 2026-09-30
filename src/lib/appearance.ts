@@ -1,9 +1,10 @@
 /**
  * Light or dark, for the pages around the games.
  *
- * Dark by default, because that is what the game has always looked like and
- * the globe is a night scene either way. "Match device" follows the system
- * setting, and keeps following it if it changes while the page is open.
+ * Dark by default, because that is what the game has always looked like. The
+ * sun and moon in the header is the one control; it sets "light" or "dark".
+ * "system" (follow the device) is still honoured for anyone who chose it when
+ * Settings offered it, and keeps following the device while the page is open.
  *
  * Kept under its own key rather than inside the prefs object so the script in
  * index.html can read it before anything renders — otherwise a light-mode
@@ -14,12 +15,6 @@ import { setGlobesByDay } from "./globeTheme";
 export type Appearance = "dark" | "light" | "system";
 
 const KEY = "worldguess.appearance.v1";
-
-export const APPEARANCES: { id: Appearance; label: string }[] = [
-  { id: "dark", label: "Dark" },
-  { id: "light", label: "Light" },
-  { id: "system", label: "Match device" },
-];
 
 function isAppearance(value: unknown): value is Appearance {
   return value === "dark" || value === "light" || value === "system";

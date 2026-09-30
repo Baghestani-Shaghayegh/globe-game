@@ -49,25 +49,6 @@ body {
 }
 
 
-/*
- * A round's question panel on a wide screen: just past the globe's right-hand
- * edge, level with its top, rather than in the corner of the window.
- *
- * In the corner it cleared the globe, but on a big monitor it was a long way
- * from it — Sara's eye had to cross half the screen between the question and
- * the map. A round draws the globe 88% as wide as the window's shorter side
- * (FILL in lib/geo.ts), so its edge sits 44vmin from the middle, and the panel
- * can follow it. Where there isn't room beside the globe it stops at the
- * window's edge instead.
- */
-@media (min-width: 1024px) {
-  .beside-globe {
-    top: max(1rem, calc(50% - 44vmin));
-    left: min(calc(50% + 44vmin + 1.5rem), calc(100% - 23rem));
-    right: auto;
-  }
-}
-
 @keyframes shake {
   0%,
   100% {

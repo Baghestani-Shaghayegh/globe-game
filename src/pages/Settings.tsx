@@ -16,12 +16,6 @@ import {
   subscribeToConsent,
 } from "../lib/consent";
 import { GLOBE_THEMES, activeThemeId } from "../lib/globeTheme";
-import {
-  APPEARANCES,
-  appearance,
-  setAppearance,
-  subscribeToAppearance,
-} from "../lib/appearance";
 import { PageShell } from "../components/SiteHeader";
 import PaletteSwatch from "../components/PaletteSwatch";
 
@@ -148,30 +142,6 @@ function Cookies() {
   );
 }
 
-/** Dark, light, or whatever the device is set to. */
-function Appearance() {
-  const choice = useSyncExternalStore(subscribeToAppearance, appearance);
-
-  return (
-    <Row
-      title="Appearance"
-      hint="Everywhere, the games included. By day the globe palette is drawn in a lighter version of itself."
-    >
-      <div className="flex flex-wrap gap-1.5">
-        {APPEARANCES.map((option) => (
-          <button
-            key={option.id}
-            onClick={() => setAppearance(option.id)}
-            aria-pressed={choice === option.id}
-            className={choiceClass(choice === option.id)}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </Row>
-  );
-}
 
 export default function Settings() {
   const [hints, setHints] = useState(hintsEnabled);
@@ -185,8 +155,6 @@ export default function Settings() {
       </h1>
 
       <Panel>
-        <Appearance />
-
         {/* One button each, not a pair. "On / Off" asks the player to work
             out which of the two words is the state and which is the choice on
             offer; the icon is the state, and the words beside it are what

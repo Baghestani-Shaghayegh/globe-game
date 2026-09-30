@@ -538,11 +538,11 @@ export default function Connect() {
         </button>
       </div>
 
-      {/* Out of the globe's way, as in the other games: beside the globe on a
+      {/* Out of the globe's way, as in the other games: under the back button on a
           wide screen, the bottom edge on a phone. The par
           and the count live in here too — they had a box of their own in the
           same corner, which said "Connect" on a page that already says it. */}
-      <div className={`pointer-events-none absolute inset-x-0 bottom-3 z-10 mx-auto flex w-[min(22rem,calc(100vw-1.5rem))] flex-col items-center gap-2 rounded-xl border border-white/10 bg-raised/90 px-5 py-3 text-center backdrop-blur lg:inset-x-auto lg:bottom-auto beside-globe lg:mx-0 ${shaking ? "animate-shake" : ""}`}>
+      <div className={`pointer-events-none absolute inset-x-0 bottom-3 z-10 mx-auto flex w-[min(22rem,calc(100vw-1.5rem))] flex-col items-center gap-2 rounded-xl border border-white/10 bg-raised/90 px-5 py-3 text-center backdrop-blur lg:inset-x-auto lg:bottom-auto lg:left-4 lg:top-16 lg:mx-0 ${shaking ? "animate-shake" : ""}`}>
         <p className="text-xs uppercase tracking-wider text-zinc-500">
           Walk from
         </p>
