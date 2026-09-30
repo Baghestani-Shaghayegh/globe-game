@@ -7,8 +7,8 @@ import {
 } from "./shareCard";
 
 describe("card shape", () => {
-  it("is the portrait Instagram prefers", () => {
-    expect(CARD_WIDTH / CARD_HEIGHT).toBeCloseTo(4 / 5, 3);
+  it("is full-screen portrait: stories, TikTok and Shorts", () => {
+    expect(CARD_WIDTH / CARD_HEIGHT).toBeCloseTo(9 / 16, 3);
   });
 });
 

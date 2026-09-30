@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import GlobeGame from "../features/globe-guess/GlobeGame";
 import FindGame from "../features/globe-guess/FindGame";
 import DailyResultGlobe from "../features/globe-guess/DailyResultGlobe";
+import ShareResult from "../components/ShareResult";
+import ChallengeBanner from "../components/ChallengeBanner";
+import { CARD_FOUND, CARD_MISSED } from "../features/globe-guess/RoundShare";
 import type { RoundOutcome } from "../features/globe-guess/FindGame";
 import { getCountryMeta } from "../data/countries";
 import { cluesFor } from "../data/clues";
@@ -248,6 +251,35 @@ export default function Daily() {
                 )
                 .join("")}
             </p>
+            {/* Today's only: a challenge on yesterday's hunt would send a
+                friend to a round they can't play. */}
+            {result.day === dayKey() && (
+              <div className="mx-auto mt-6 max-w-sm border-t border-white/[0.07] pt-5">
+                <ShareResult
+                  mine={{
+                    game: `daily:${result.day}`,
+                    score: result.found,
+                    higherWins: true,
+                    ms: result.ms,
+                    said: `found ${result.found}/${result.total} in ${formatDuration(result.ms)}`,
+                  }}
+                  text={`I found ${result.found}/${result.total} in ${formatDuration(result.ms)} on today's WorldGuess Country hunt.`}
+                  filename={`worldguess-hunt-${result.day}.png`}
+                  card={(features) => ({
+                    eyebrow: `Country hunt · ${formatDay(result.day)}`,
+                    title: `${result.found} / ${result.total}`,
+                    subtitle: `${formatDuration(result.ms)} · ${result.points.toLocaleString()} points`,
+                    tiles: result.outcomes.map((o) =>
+                      o === "first" ? CARD_FOUND : o === "retried" ? "#fbbf24" : CARD_MISSED
+                    ),
+                    // The globe, but none of today's ten on it: the card goes
+                    // to people who haven't played yet.
+                    globe: features ? { features, colors: {} } : undefined,
+                    site: window.location.host,
+                  })}
+                />
+              </div>
+            )}
           </div>
 
           {played && (
@@ -276,7 +308,7 @@ export default function Daily() {
     pointsMultiplier: DAILY_MULTIPLIER,
   };
 
-  return challenge.type === "name" ? (
+  const game = challenge.type === "name" ? (
     <GlobeGame
       {...shared}
       // The day's ten are scattered at random across the world, so on their
@@ -303,5 +335,14 @@ export default function Daily() {
       backdrop
       onRoundEnd={finish}
     />
+  );
+  return (
+    <>
+      {game}
+      {/* Opened from a friend's challenge: what to beat, over the game. */}
+      <div className="pointer-events-none fixed inset-x-0 top-16 z-40 flex justify-center px-3 lg:top-4">
+        <ChallengeBanner />
+      </div>
+    </>
   );
 }

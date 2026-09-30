@@ -1,3 +1,6 @@
+import ShareResult from "../components/ShareResult";
+import ChallengeBanner from "../components/ChallengeBanner";
+import { CARD_FOUND, CARD_MISSED } from "../features/globe-guess/RoundShare";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Globe from "react-globe.gl";
 import type { GlobeMethods } from "react-globe.gl";
@@ -529,6 +532,11 @@ export default function Connect() {
         polygonsTransitionDuration={250}
       />
 
+      {/* Opened from a friend's challenge: what to beat. */}
+      <div className="pointer-events-none absolute inset-x-0 top-4 z-30 flex justify-center px-16">
+        <ChallengeBanner />
+      </div>
+
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4">
         <button
           onClick={handleBack}
@@ -577,6 +585,43 @@ export default function Connect() {
             <p className="text-xs text-zinc-600">
               {formatDay(day)} · a new pair at midnight UTC
             </p>
+            {result.day === day && (
+              <div className="pointer-events-auto mt-1 w-full border-t border-white/[0.07] pt-3">
+                <ShareResult
+                  mine={{
+                    game: `connect:${result.day}`,
+                    score: scoreFor(result),
+                    higherWins: true,
+                    ms: shownMs,
+                    said: `linked ${display(puzzle.from)} to ${display(puzzle.to)} for ${scoreFor(result).toLocaleString()} points`,
+                  }}
+                  text={`I linked ${display(puzzle.from)} to ${display(puzzle.to)} in ${result.chain.length} on today's WorldGuess Connect.`}
+                  filename={`worldguess-connect-${result.day}.png`}
+                  card={(features) => {
+                    const wrongTurns = Math.max(0, placedOf(result).length - result.chain.length);
+                    return {
+                      eyebrow: `Connect · ${formatDay(result.day)}`,
+                      title: `${display(puzzle.from)} → ${display(puzzle.to)}`,
+                      subtitle: `${result.chain.length} ${result.chain.length === 1 ? "step" : "steps"} · par ${result.par} · ${formatDuration(shownMs)}`,
+                      // A square per step and one per wrong turn, but not
+                      // the route itself: the card goes to people who
+                      // haven't played. The two ends are public already.
+                      tiles: [
+                        ...result.chain.map(() => CARD_FOUND),
+                        ...Array.from({ length: wrongTurns }, () => CARD_MISSED),
+                      ],
+                      note: wrongTurns
+                        ? `${wrongTurns} wrong ${wrongTurns === 1 ? "turn" : "turns"}`
+                        : undefined,
+                      globe: features
+                        ? { features, colors: { [puzzle.from]: "#a78bfa", [puzzle.to]: "#a78bfa" } }
+                        : undefined,
+                      site: window.location.host,
+                    };
+                  }}
+                />
+              </div>
+            )}
           </>
         ) : (
           <>

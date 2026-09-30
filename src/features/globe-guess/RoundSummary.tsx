@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { formatDuration } from "../../lib/records";
 import { theme } from "../../lib/globeTheme";
@@ -26,6 +27,8 @@ type Props = {
   onPlayAgain: () => void;
   /** Hides the panel so the revealed globe can be studied. */
   onReviewMap: () => void;
+  /** Challenge a friend and share the image; absent where it means nothing. */
+  share?: ReactNode;
 };
 
 export default function RoundSummary({
@@ -43,6 +46,7 @@ export default function RoundSummary({
   missedCount,
   onPlayAgain,
   onReviewMap,
+  share,
 }: Props) {
   // Finishing the lot, or beating your own record. A round given up halfway
   // gets nothing: confetti for that would make the gesture worthless.
@@ -123,6 +127,10 @@ export default function RoundSummary({
               Show on globe
             </button>
           </div>
+        )}
+
+        {share && (
+          <div className="border-t border-white/[0.07] px-6 py-4">{share}</div>
         )}
 
         <div className="flex gap-2 border-t border-white/[0.07] px-6 py-4">

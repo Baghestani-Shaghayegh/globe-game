@@ -23,6 +23,8 @@ import { landMaterial } from "../lib/globeTerrain";
 import { featureCentre, type Geometry, worldAltitude } from "../lib/geo";
 import { dayKey, formatDay } from "../lib/daily";
 import Celebrate from "../components/Celebrate";
+import ShareResult from "../components/ShareResult";
+import ChallengeBanner from "../components/ChallengeBanner";
 import { playSolved, playWarm, playWrong, playLose } from "../lib/sound";
 import {
   borderKm,
@@ -393,6 +395,11 @@ export default function Mystery() {
         }
       />
 
+      {/* Opened from a friend's challenge: what to beat. */}
+      <div className="pointer-events-none absolute inset-x-0 top-4 z-30 flex justify-center px-16">
+        <ChallengeBanner />
+      </div>
+
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4">
         <button
           onClick={handleBack}
@@ -451,6 +458,39 @@ export default function Mystery() {
                   />
                 ))}
             </div>
+            {result.day === day && (
+              <div className="pointer-events-auto mt-3 w-full border-t border-white/[0.07] pt-3">
+                <ShareResult
+                  mine={{
+                    game: `mystery:${result.day}`,
+                    // Any find beats any give-up; then fewer guesses.
+                    score: result.solved ? guesses.length : 1000 + guesses.length,
+                    higherWins: false,
+                    said: result.solved
+                      ? `found it in ${guesses.length} ${guesses.length === 1 ? "guess" : "guesses"}`
+                      : `gave up after ${guesses.length} ${guesses.length === 1 ? "guess" : "guesses"}`,
+                  }}
+                  text={
+                    result.solved
+                      ? `I found today's WorldGuess mystery country in ${guesses.length} ${guesses.length === 1 ? "guess" : "guesses"}.`
+                      : `Today's WorldGuess mystery country beat me.`
+                  }
+                  filename={`worldguess-mystery-${result.day}.png`}
+                  card={(features) => ({
+                    eyebrow: `Mystery country #${result.number}`,
+                    title: result.solved
+                      ? `${guesses.length} ${guesses.length === 1 ? "guess" : "guesses"}`
+                      : "Gave up",
+                    subtitle: formatDay(result.day),
+                    // The trail, oldest first, as on the panel. No names and
+                    // no answer: the card goes to people who haven't played.
+                    tiles: [...guesses].reverse().slice(-40).map((g) => heatColor(g.km)),
+                    globe: features ? { features, colors: {} } : undefined,
+                    site: window.location.host,
+                  })}
+                />
+              </div>
+            )}
           </>
         ) : (
           <>

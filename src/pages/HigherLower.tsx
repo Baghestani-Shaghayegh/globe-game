@@ -1,3 +1,6 @@
+import ShareResult from "../components/ShareResult";
+import ChallengeBanner from "../components/ChallengeBanner";
+import { CARD_FOUND } from "../features/globe-guess/RoundShare";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ExitConfirm from "../features/globe-guess/ExitConfirm";
@@ -158,6 +161,8 @@ export default function HigherLower() {
   }, [pair, features]);
 
   const [burst, setBurst] = useState(0);
+  /** The streak a wrong answer just ended, to share; cleared by the next run. */
+  const [ended, setEnded] = useState(0);
 
   const pick = useCallback(
     (picked: string) => {
@@ -179,8 +184,10 @@ export default function HigherLower() {
           playRecord();
           setBurst((n) => n + 1);
         }
+        setEnded(0);
       } else {
         playLose();
+        if (scores.streak > 0) setEnded(scores.streak);
       }
 
       window.setTimeout(() => {
@@ -242,6 +249,7 @@ export default function HigherLower() {
           </span>
         </div>
 
+        <ChallengeBanner className="mt-4" />
         <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
           Which is bigger?
         </h1>
@@ -283,6 +291,35 @@ export default function HigherLower() {
                 "bigger" label already say how it went, and Sara found the
                 sentence repeating them unnecessary. Kept for screen readers,
                 which can't see the colours. */}
+            {ended > 0 && !verdict && (
+              <div className="mx-auto mt-8 max-w-sm rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                <p className="text-center text-sm text-zinc-300">
+                  That streak ended at{" "}
+                  <span className="font-semibold text-zinc-50">{ended}</span>.
+                </p>
+                <div className="mt-4">
+                  <ShareResult
+                    mine={{
+                      game: "bigger",
+                      score: ended,
+                      higherWins: true,
+                      said: `got ${ended} in a row`,
+                    }}
+                    text={`I got ${ended} in a row on WorldGuess's Which is bigger?`}
+                    filename="worldguess-bigger.png"
+                    card={(features) => ({
+                      eyebrow: "Which is bigger?",
+                      title: `${ended} in a row`,
+                      subtitle: "Countries by land area",
+                      tiles: Array.from({ length: Math.min(ended, 40) }, () => CARD_FOUND),
+                      globe: features ? { features, colors: {} } : undefined,
+                      site: window.location.host,
+                    })}
+                  />
+                </div>
+              </div>
+            )}
+
             <p className="sr-only" aria-live="polite">
               {verdict
                 ? verdict.correct

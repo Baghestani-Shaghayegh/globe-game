@@ -5,6 +5,7 @@ import { useViewport } from "../../lib/useViewport";
 import { Link, useNavigate } from "react-router-dom";
 import GuessModal from "./GuessModal";
 import RoundSummary from "./RoundSummary";
+import RoundShare from "./RoundShare";
 import GameHud from "./GameHud";
 import ExitConfirm from "./ExitConfirm";
 import ConfirmDialog from "./ConfirmDialog";
@@ -932,6 +933,22 @@ export default function GlobeGame({
           missedCount={summary.total - summary.found}
           onPlayAgain={resetRun}
           onReviewMap={() => round.setReviewingMap(true)}
+          share={
+            // Free play only: practice isn't a result, and the daily has its
+            // own result page to share from.
+            record && pointsMultiplier === 1 ? (
+              <RoundShare
+                type={"name"}
+                mode={mode}
+                ruleset={ruleset}
+                limitMs={limitMs}
+                found={[...foundNames]}
+                missed={features.map((f) => f.properties.name).filter((name) => !foundNames.has(name))}
+                ms={summary.ms}
+                points={summary.points}
+              />
+            ) : undefined
+          }
         />
       )}
 

@@ -1,3 +1,5 @@
+import { geoCentroid, geoGraticule10, geoOrthographic, geoPath, type GeoGeometryObjects } from "d3-geo";
+
 /**
  * Turns a result into an image worth posting.
  *
@@ -8,12 +10,24 @@
  * card looks like the game.
  */
 
-/** Instagram's preferred portrait. Fits a feed post and sits fine in a story. */
+/**
+ * Full-screen portrait, 9:16: the shape of an Instagram or Facebook story, a
+ * TikTok and a YouTube Short. The 4:5 feed card it replaced left a band of
+ * blur top and bottom in every one of those, which is where people actually
+ * post a game result now.
+ */
 export const CARD_WIDTH = 1080;
-export const CARD_HEIGHT = 1350;
+export const CARD_HEIGHT = 1920;
+
+export type CardGlobe = {
+  /** The whole map, to draw the land. */
+  features: { properties: { name: string }; geometry: GeoGeometryObjects }[];
+  /** The countries to light up, and in what colour. */
+  colors: Record<string, string>;
+};
 
 export type CardSpec = {
-  /** Small line above the title. */
+  /** Small line above the title: which game. */
   eyebrow: string;
   title: string;
   /** The line under the title — score, count, whatever the mode counts. */
@@ -22,16 +36,31 @@ export type CardSpec = {
   tiles: string[];
   /** Optional line under the tiles. */
   note?: string;
+  /** The result drawn on a globe, turned to face the countries lit. */
+  globe?: CardGlobe;
+  /** Where to play: the site's address, printed at the foot. */
+  site?: string;
 };
 
 const BACKGROUND = "#07111c";
 const INK = "#fafafa";
-const MUTED = "#71717a";
-const ACCENT = "#38bdf8";
+const MUTED = "#8b8b95";
+const ACCENT = "#5eead4";
+const OCEAN = "#082b43";
+const LAND = "#2b6469";
+const BORDER = "rgba(255,255,255,0.16)";
 
-/** The band the tiles are allowed to occupy, between the subtitle and the note. */
-export const TILE_BAND_TOP = 560;
-export const TILE_BAND_HEIGHT = 430;
+/** The globe's place on the card. */
+export const GLOBE = { cx: CARD_WIDTH / 2, cy: 930, r: 380 };
+
+/** The band the tiles are allowed to occupy: under the globe, or in its place. */
+export function tileBand(withGlobe: boolean): { top: number; height: number } {
+  return withGlobe ? { top: 1380, height: 190 } : { top: 620, height: 800 };
+}
+
+/** Kept for the layout tests: the band a card without a globe gives its tiles. */
+export const TILE_BAND_TOP = tileBand(false).top;
+export const TILE_BAND_HEIGHT = tileBand(false).height;
 
 /**
  * How big each tile can be, and how to wrap them.
@@ -76,6 +105,54 @@ function roundedRect(
   ctx.fill();
 }
 
+/**
+ * The result on a globe, turned to face the countries that are lit: the
+ * picture that says "this game" at a glance in a feed of other stories.
+ */
+function drawGlobe(ctx: CanvasRenderingContext2D, globe: CardGlobe) {
+  const lit = globe.features.filter((f) => globe.colors[f.properties.name]);
+  const [lng, lat] = lit.length
+    ? geoCentroid({ type: "FeatureCollection", features: lit.map((f) => ({ type: "Feature", properties: {}, geometry: f.geometry })) } as never)
+    : [10, 20];
+  const projection = geoOrthographic()
+    .scale(GLOBE.r)
+    .translate([GLOBE.cx, GLOBE.cy])
+    .rotate([-lng, -Math.max(-50, Math.min(50, lat))])
+    .clipAngle(90);
+  const path = geoPath(projection, ctx);
+
+  // The sea, with a soft rim of light round the edge as in the game.
+  ctx.fillStyle = OCEAN;
+  ctx.beginPath();
+  path({ type: "Sphere" });
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(94,234,212,0.10)";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  path(geoGraticule10());
+  ctx.stroke();
+
+  for (const feature of globe.features) {
+    ctx.beginPath();
+    path(feature.geometry);
+    ctx.fillStyle = globe.colors[feature.properties.name] ?? LAND;
+    ctx.fill();
+    ctx.strokeStyle = BORDER;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  const rim = ctx.createRadialGradient(GLOBE.cx, GLOBE.cy, GLOBE.r * 0.9, GLOBE.cx, GLOBE.cy, GLOBE.r * 1.08);
+  rim.addColorStop(0, "rgba(94,234,212,0)");
+  rim.addColorStop(0.55, "rgba(94,234,212,0.35)");
+  rim.addColorStop(1, "rgba(94,234,212,0)");
+  ctx.fillStyle = rim;
+  ctx.beginPath();
+  ctx.arc(GLOBE.cx, GLOBE.cy, GLOBE.r * 1.08, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 /** Draws the card and hands back a PNG. */
 export async function drawCard(spec: CardSpec): Promise<Blob> {
   const canvas = document.createElement("canvas");
@@ -89,10 +166,10 @@ export async function drawCard(spec: CardSpec): Promise<Blob> {
 
   // A soft glow behind the middle, echoing the menu.
   const glow = ctx.createRadialGradient(
-    CARD_WIDTH / 2, CARD_HEIGHT * 0.42, 0,
-    CARD_WIDTH / 2, CARD_HEIGHT * 0.42, CARD_WIDTH * 0.75
+    CARD_WIDTH / 2, GLOBE.cy, 0,
+    CARD_WIDTH / 2, GLOBE.cy, CARD_WIDTH * 0.8
   );
-  glow.addColorStop(0, "rgba(56,189,248,0.10)");
+  glow.addColorStop(0, "rgba(56,189,248,0.12)");
   glow.addColorStop(1, "rgba(56,189,248,0)");
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
@@ -100,23 +177,44 @@ export async function drawCard(spec: CardSpec): Promise<Blob> {
   const font = (size: number, weight = "400") =>
     `${weight} ${size}px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
 
+  /**
+   * Sets the largest font up to `size` at which `text` fits the card with a
+   * margin: "North Korea → Switzerland" at the title's full size ran off
+   * both edges.
+   */
+  const fit = (text: string, size: number, weight: string) => {
+    let at = size;
+    ctx.font = font(at, weight);
+    while (at > 28 && ctx.measureText(text).width > CARD_WIDTH - 140) {
+      at -= 4;
+      ctx.font = font(at, weight);
+    }
+  };
+
   ctx.textAlign = "center";
 
+  ctx.fillStyle = INK;
+  ctx.font = font(44, "700");
+  ctx.fillText("WorldGuess", CARD_WIDTH / 2, 150);
+
   ctx.fillStyle = MUTED;
-  ctx.font = font(34, "500");
-  ctx.fillText(spec.eyebrow.toUpperCase(), CARD_WIDTH / 2, 300);
+  fit(spec.eyebrow.toUpperCase(), 34, "500");
+  ctx.fillText(spec.eyebrow.toUpperCase(), CARD_WIDTH / 2, 250);
 
   ctx.fillStyle = INK;
-  ctx.font = font(84, "600");
-  ctx.fillText(spec.title, CARD_WIDTH / 2, 400);
+  fit(spec.title, 104, "700");
+  ctx.fillText(spec.title, CARD_WIDTH / 2, 370);
 
   ctx.fillStyle = ACCENT;
-  ctx.font = font(44, "500");
-  ctx.fillText(spec.subtitle, CARD_WIDTH / 2, 478);
+  fit(spec.subtitle, 46, "500");
+  ctx.fillText(spec.subtitle, CARD_WIDTH / 2, 450);
+
+  if (spec.globe) drawGlobe(ctx, spec.globe);
 
   // Tiles, centred in their band so a short row and a tall block both sit right.
-  const { perRow, size, gap, height } = tileLayout(spec.tiles.length, CARD_WIDTH - 180);
-  const top = TILE_BAND_TOP + Math.max(0, (TILE_BAND_HEIGHT - height) / 2);
+  const band = tileBand(Boolean(spec.globe));
+  const { perRow, size, gap, height } = tileLayout(spec.tiles.length, CARD_WIDTH - 180, band.height);
+  const top = band.top + Math.max(0, (band.height - height) / 2);
   spec.tiles.forEach((colour, i) => {
     const row = Math.floor(i / perRow);
     const col = i % perRow;
@@ -130,18 +228,20 @@ export async function drawCard(spec: CardSpec): Promise<Blob> {
 
   if (spec.note) {
     ctx.fillStyle = MUTED;
-    ctx.font = font(36);
+    ctx.font = font(38);
     // Under the band rather than under the block, so the note never rides
-    // down onto the wordmark when there are a lot of tiles.
-    ctx.fillText(spec.note, CARD_WIDTH / 2, TILE_BAND_TOP + TILE_BAND_HEIGHT + 76);
+    // down onto the foot when there are a lot of tiles.
+    ctx.fillText(spec.note, CARD_WIDTH / 2, band.top + band.height + 80);
   }
 
   ctx.fillStyle = INK;
-  ctx.font = font(46, "600");
-  ctx.fillText("WorldGuess", CARD_WIDTH / 2, CARD_HEIGHT - 140);
-  ctx.fillStyle = MUTED;
-  ctx.font = font(32);
-  ctx.fillText("play it yourself", CARD_WIDTH / 2, CARD_HEIGHT - 92);
+  ctx.font = font(52, "600");
+  ctx.fillText("Can you beat it?", CARD_WIDTH / 2, CARD_HEIGHT - 200);
+  if (spec.site) {
+    ctx.fillStyle = ACCENT;
+    ctx.font = font(38, "500");
+    ctx.fillText(spec.site, CARD_WIDTH / 2, CARD_HEIGHT - 135);
+  }
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(

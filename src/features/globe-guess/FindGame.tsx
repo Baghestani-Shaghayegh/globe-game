@@ -4,6 +4,7 @@ import type { GlobeMethods } from "react-globe.gl";
 import { useViewport } from "../../lib/useViewport";
 import { Link, useNavigate } from "react-router-dom";
 import RoundSummary from "./RoundSummary";
+import RoundShare from "./RoundShare";
 import GameHud from "./GameHud";
 import ExitConfirm from "./ExitConfirm";
 import ConfirmDialog from "./ConfirmDialog";
@@ -1091,6 +1092,22 @@ export default function FindGame({
           missedCount={summary.total - summary.found}
           onPlayAgain={playAgain}
           onReviewMap={() => round.setReviewingMap(true)}
+          share={
+            // Free play only: practice isn't a result, and the daily has its
+            // own result page to share from.
+            record && pointsMultiplier === 1 ? (
+              <RoundShare
+                type={type}
+                mode={mode}
+                ruleset={ruleset}
+                limitMs={limitMs}
+                found={[...foundNames]}
+                missed={asked.filter((name) => !foundNames.has(name))}
+                ms={summary.ms}
+                points={summary.points}
+              />
+            ) : undefined
+          }
         />
       )}
     </div>
