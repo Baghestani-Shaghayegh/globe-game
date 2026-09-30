@@ -373,7 +373,7 @@ export default function Home() {
 
           {/* Learning, on its own line and wider than any game card: it is
               the way in for someone who doesn't know the map yet, and the
-              games below assume you do. PLACEHOLDER COPY — Sara's words. */}
+              games below assume you do. The words follow docs/WRITING.md. */}
           <section className="mt-[clamp(1.25rem,3vh,2.25rem)]">
             <Link
               to="/learn"
@@ -397,22 +397,23 @@ export default function Home() {
                 </span>
                 <span className="flex flex-1 flex-col items-center justify-center gap-1 px-5 py-5 text-center sm:items-start sm:px-7 sm:text-left">
                   <span className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-200/80">
-                    New to the map? Start here
+                    Start here
                   </span>
                   <span className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
                     Learn the world
                   </span>
                   <span className="text-sm leading-snug text-zinc-400">
-                    Five neighbouring countries at a time: meet them, find
-                    them, name them. No clock, no score.
+                    Learn where every country is, a few neighbours at a
+                    time.
                   </span>
                   <span className="mt-3 inline-flex items-center gap-3">
                     <span className="rounded-full bg-teal-300 px-4 py-1.5 text-sm font-semibold text-teal-950 transition-colors group-hover:bg-teal-200">
-                      {learnedCount > 0 ? "Continue learning" : "Start the first lesson"}
+                      {learnedCount > 0 ? "Keep going →" : "Play lesson 1 →"}
                     </span>
                     {learnedCount > 0 && (
                       <span className="text-xs tabular-nums text-zinc-500">
-                        {learnedCount} learned
+                        {learnedCount}
+                        {counts.easy ? ` / ${counts.easy}` : ""} learned
                       </span>
                     )}
                   </span>

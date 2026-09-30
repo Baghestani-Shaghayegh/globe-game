@@ -41,7 +41,7 @@ function LessonCard({
         </span>
         {done ? (
           <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-xs font-medium text-emerald-300">
-            ✓ Learned
+            ✓ Done
           </span>
         ) : next ? (
           <span className="rounded-full bg-teal-300 px-2 py-0.5 text-xs font-semibold text-teal-950">
@@ -113,14 +113,14 @@ export default function Learn() {
   return (
     <PageShell>
       <div className="mx-auto max-w-4xl">
-        {/* PLACEHOLDER COPY — Sara writes the words. */}
+        {/* The words follow docs/WRITING.md. */}
         <div className="mt-5 flex flex-col items-center text-center">
           <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">
             Learn the world
           </h1>
           <p className="mt-2 max-w-lg text-zinc-400">
-            Five neighbouring countries at a time. Meet them, find them on the
-            globe, then name them. No clock, no score.
+            Each lesson is a handful of neighbours, so every country you learn
+            helps you place the next.
           </p>
 
           {lessons.length > 0 && (
@@ -136,7 +136,7 @@ export default function Learn() {
                   />
                 </span>
                 <span className="shrink-0 text-sm tabular-nums text-zinc-400">
-                  {learnedCount} of {total} countries
+                  {learnedCount} / {total} learned
                 </span>
               </div>
               {next && (
@@ -145,9 +145,8 @@ export default function Learn() {
                   onClick={playTap}
                   className="rounded-full bg-teal-300 px-6 py-2.5 text-sm font-semibold text-teal-950 transition-colors hover:bg-teal-200"
                 >
-                  {learnedCount === 0 ? "Start the first lesson" : "Continue"} ·{" "}
-                  {LESSON_CONTINENTS.find((c) => c.id === next.continent)?.name}{" "}
-                  {next.number}
+                  Play {LESSON_CONTINENTS.find((c) => c.id === next.continent)?.name}{" "}
+                  {next.number} →
                 </Link>
               )}
             </div>

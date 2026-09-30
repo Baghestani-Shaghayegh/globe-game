@@ -78,10 +78,9 @@ const display = (name: string) => getCountryMeta(name).displayName;
 
 const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight"];
 
-/** "five", or "Five" to start a sentence. Most lessons are five; a few aren't. */
-function countWord(n: number, capital = false): string {
-  const word = WORDS[n] ?? String(n);
-  return capital ? word[0].toUpperCase() + word.slice(1) : word;
+/** "five". Most lessons are five; a few aren't. */
+function countWord(n: number): string {
+  return WORDS[n] ?? String(n);
 }
 
 /**
@@ -267,7 +266,7 @@ function LessonRun({
       setPhase("name");
       setNote({
         tone: "good",
-        text: `All ${countWord(lesson.countries.length)} found. Now the other way round.`,
+        text: `All ${countWord(lesson.countries.length)} found. Now name them.`,
       });
     } else {
       setPhase("done");
@@ -344,20 +343,20 @@ function LessonRun({
     if (name === current) {
       playCorrect(solved.length);
       setSolved([...solved, name]);
-      advance({ tone: "good", text: `Yes, that's ${display(name)}.` });
+      advance({ tone: "good", text: `✓ ${display(name)}` });
       return;
     }
     if (solved.includes(name)) {
-      setNote({ tone: "hint", text: `You've found ${display(name)} already.` });
+      setNote({ tone: "hint", text: `Already found ${display(name)}.` });
       return;
     }
     const from = centreOf(name);
     const to = centreOf(current);
     miss(name, (count) =>
       count >= MISSES_TO_REVEAL
-        ? `That's ${display(name)}. ${display(current)} is the one pulsing — click it to go on.`
+        ? `That's ${display(name)}. ${display(current)}'s the flashing one.`
         : from && to
-          ? `That's ${display(name)}. ${display(current)} is ${directionFrom(from, to)} of there.`
+          ? `That's ${display(name)}. Head ${directionFrom(from, to)}.`
           : `That's ${display(name)}.`
     );
   };
@@ -415,13 +414,13 @@ function LessonRun({
     if (name === current) {
       playCorrect(solved.length);
       setSolved([...solved, name]);
-      advance({ tone: "good", text: `Yes, ${display(name)}.` });
+      advance({ tone: "good", text: `✓ ${display(name)}` });
       return;
     }
     miss(inLesson.has(name) ? name : null, (count) =>
       count >= MISSES_TO_REVEAL
         ? `It's ${display(current)}.`
-        : `Not ${display(name)}. This one starts with "${display(current)[0]}".`
+        : `Not ${display(name)}. Starts with ${display(current)[0]}.`
     );
   };
 
@@ -631,9 +630,9 @@ function LessonRun({
 
           {phase === "find" && (
             <>
-              <p className="text-sm text-zinc-400">Click on the globe</p>
+              <p className="text-sm text-zinc-400">Where's</p>
               <p className="mt-1 text-3xl font-semibold tracking-tight text-zinc-50">
-                {display(current)}
+                {display(current)}?
               </p>
             </>
           )}
@@ -641,7 +640,7 @@ function LessonRun({
           {phase === "name" && (
             <>
               <p className="text-sm text-zinc-400">
-                What's the country lit up on the globe?
+                Which country is this?
               </p>
               {revealed ? (
                 <button
@@ -649,7 +648,7 @@ function LessonRun({
                   autoFocus
                   className="mt-3 w-full rounded-lg bg-teal-300 px-4 py-2.5 text-sm font-semibold text-teal-950 transition-colors hover:bg-teal-200"
                 >
-                  Got it — next
+                  Next →
                 </button>
               ) : (
                 <form onSubmit={submit} className="mt-3 flex gap-2">
@@ -665,7 +664,7 @@ function LessonRun({
                         setHighlighted(-1);
                       }}
                       onKeyDown={(e) => onKeyDown(e, tryName, () => tryName(typed))}
-                      placeholder="Country name"
+                      placeholder="Type a country"
                       autoComplete="off"
                       autoCorrect="off"
                       spellCheck={false}
@@ -705,7 +704,7 @@ function LessonRun({
                     type="submit"
                     className="rounded-md border border-white/15 bg-white/10 px-3.5 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/15"
                   >
-                    Answer
+                    Guess
                   </button>
                 </form>
               )}
@@ -790,7 +789,7 @@ function Meet({
         <div>
           <dt className="text-xs uppercase tracking-wider text-zinc-500">Borders</dt>
           <dd className="text-zinc-200">
-            {neighbours.length ? neighbours.join(", ") : "None, it's surrounded by sea"}
+            {neighbours.length ? neighbours.join(", ") : "Sea on all sides"}
           </dd>
         </div>
         {fact && (
@@ -813,7 +812,7 @@ function Meet({
           autoFocus
           className="flex-1 rounded-lg bg-teal-300 px-4 py-2.5 text-sm font-semibold text-teal-950 transition-colors hover:bg-teal-200"
         >
-          {last ? "Now find them →" : "Next →"}
+          {last ? "Find them →" : "Next →"}
         </button>
       </div>
     </div>
@@ -829,16 +828,17 @@ function Done({
   next: Lesson | null;
   onNext: (lesson: Lesson) => void;
 }) {
-  const nextContinent = next
-    ? LESSON_CONTINENTS.find((c) => c.id === next.continent)?.name
-    : null;
+  const nameOf = (l: Lesson) =>
+    LESSON_CONTINENTS.find((c) => c.id === l.continent)?.name ?? "";
+  const nextContinent = next ? nameOf(next) : null;
+  const continentName = nameOf(lesson);
   return (
     <div>
       <p className="text-xs font-medium uppercase tracking-wider text-emerald-300">
-        Lesson learned
+        {continentName} {lesson.number} done
       </p>
       <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-50">
-        {countWord(lesson.countries.length, true)} more on your map
+        +{lesson.countries.length} on your map
       </h1>
       <ul className="mt-4 space-y-2">
         {lesson.countries.map((name) => (
@@ -860,7 +860,7 @@ function Done({
             autoFocus
             className="rounded-lg bg-teal-300 px-4 py-2.5 text-sm font-semibold text-teal-950 transition-colors hover:bg-teal-200"
           >
-            Next lesson · {nextContinent} {next.number} →
+            Play {nextContinent} {next.number} →
           </button>
         )}
         <Link

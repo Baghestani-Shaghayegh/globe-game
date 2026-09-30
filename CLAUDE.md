@@ -57,6 +57,8 @@ without being asked — `main` is what deploys.
 
 ## Conventions
 
+- Anything a player reads follows `docs/WRITING.md`: short, concrete, in the
+  game's voice, and free of the patterns that make text read as AI-written.
 - **Every commit message starts with a Conventional Commits prefix** — `feat:`,
   `fix:`, `refactor:`, `perf:`, `test:`, `chore:`, `docs:`. The repo has used
   them since the first commit; a stretch in the middle of September 2026 that
