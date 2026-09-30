@@ -43,6 +43,22 @@ export default defineConfig({
               expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 90 },
             },
           },
+          // The recorded names: which exist is asked of the network first, so a
+          // newly made batch shows up; each clip, once played, is kept. A
+          // remade clip has a new ?v= and so a new cache entry.
+          {
+            urlPattern: ({ url }) => url.pathname === "/voice/manifest.json",
+            handler: "NetworkFirst",
+            options: { cacheName: "worldguess-voice-list" },
+          },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith("/voice/"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "worldguess-voice",
+              expiration: { maxEntries: 450, maxAgeSeconds: 60 * 60 * 24 * 180 },
+            },
+          },
         ],
         // A single-page app: any unknown path is the app, not a 404 — except
         // Supabase and ad traffic, which must never be answered from a cache.

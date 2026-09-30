@@ -26,6 +26,8 @@ const Connect = lazy(() => import("./pages/Connect"));
 // The list cuts the map into lessons; the lesson itself is a globe.
 const Learn = lazy(() => import("./pages/Learn"));
 const LessonPage = lazy(() => import("./pages/LessonPage"));
+// Not linked: for listening through the recorded names before they go out.
+const Voices = lazy(() => import("./pages/Voices"));
 // No globe here, but it draws every outline, so it loads on demand too.
 const HigherLower = lazy(() => import("./pages/HigherLower"));
 
@@ -54,6 +56,7 @@ function App() {
             <Route path="/practice" element={<Practice />} />
             <Route path="/learn" element={<Learn />} />
             <Route path="/learn/:id" element={<LessonPage />} />
+            <Route path="/voices" element={<Voices />} />
             <Route path="/mystery" element={<Mystery />} />
             <Route path="/connect" element={<Connect />} />
             <Route path="/bigger" element={<HigherLower />} />

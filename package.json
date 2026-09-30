@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:multiplayer": "node scripts/test-multiplayer.mjs"
+    "test:multiplayer": "node scripts/test-multiplayer.mjs",
+    "voices": "node scripts/build-voices.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

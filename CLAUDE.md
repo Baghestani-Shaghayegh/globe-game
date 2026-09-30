@@ -51,6 +51,11 @@ without being asked — `main` is what deploys.
   `rm -rf node_modules/.vite` if the dev server was running.
 - The service worker is **off in `vite dev`** on purpose. To exercise offline
   or the update toast, `npm run build && npm run preview`.
+- The recorded country and capital names in `public/voice` are made by
+  `npm run voices`, which needs `GOOGLE_TTS_API_KEY` (Google Cloud
+  Text-to-Speech). Without clips the lessons fall back to the device's voice.
+  Pronunciations to force live in `scripts/voice/lexicon.tsv`; Sara reviews
+  the clips on the unlinked `/voices` page.
 - Ads and the cookie banner stay dark unless `VITE_ADSENSE_CLIENT` and
   `VITE_ADSENSE_SLOT` are set, which they are not in the repo. Set them on the
   command line to see either one.

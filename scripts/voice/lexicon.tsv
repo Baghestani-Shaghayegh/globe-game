@@ -1,0 +1,141 @@
+# How to say the names a voice gets wrong from the spelling.
+#
+# One name per line: the name exactly as the game shows it, a tab, then its
+# British English pronunciation in IPA with the stress marked (ˈ main,
+# ˌ secondary). The sounds follow Wiktionary's English entries (via WikiPron);
+# the stress is added by hand, since WikiPron strips it.
+#
+# Anything not listed here is read from its spelling by the voice, which a
+# good neural voice does well for Portugal and Madrid. This list is for the
+# rest: names not spelled the English way, and the famous traps — Kiribati
+# is "KIRR-ih-bass", Grenada isn't Granada, Dominica isn't the Dominican
+# Republic. After listening on /voices, add or fix a line and run
+# `npm run voices` again; only the lines that changed are remade.
+
+# Countries
+Antigua and Barbuda	ænˈtiːɡə ənd bɑːˈbjuːdə
+Belize	bəˈliːz
+Benin	bɛˈniːn
+Bhutan	buːˈtɑːn
+Brunei	bɹuːˈnaɪ
+Burkina Faso	bɜːˈkiːnə ˈfæsəʊ
+Cabo Verde	ˌkɑːbəʊ ˈvɜːdi
+Comoros	ˈkɒməɹəʊz
+Czechia	ˈtʃɛkiə
+Djibouti	dʒɪˈbuːti
+Dominica	ˌdɒmɪˈniːkə
+Eswatini	ˌɛswɑːˈtiːni
+Gabon	ɡəˈbɒn
+Grenada	ɡɹəˈneɪdə
+Guinea-Bissau	ˈɡɪni bɪˈsaʊ
+Kiribati	ˈkɪɹɪbæs
+Kyrgyzstan	ˌkɪəɡɪˈstɑːn
+Laos	laʊs
+Lesotho	ləˈsuːtuː
+Moldova	mɒlˈdəʊvə
+Myanmar	ˈmjænmɑː
+Nauru	nɑːˈuːɹuː
+Niger	niːˈʒɛə
+Oman	əʊˈmɑːn
+Palau	pəˈlaʊ
+Qatar	ˈkætɑː
+Samoa	səˈməʊə
+Sao Tome and Principe	ˌsaʊ təˈmeɪ ənd ˈpɹɪnsɪpeɪ
+Seychelles	seɪˈʃɛlz
+Suriname	ˌsʊəɹɪˈnæm
+Timor-Leste	ˈtiːmɔː ˈlɛʃteɪ
+Tonga	ˈtɒŋə
+Tuvalu	tuːˈvɑːluː
+Uruguay	ˈjʊəɹəɡwaɪ
+Vanuatu	ˌvænuˈɑːtuː
+
+# Capitals
+Abuja	əˈbuːdʒə
+Addis Ababa	ˌædɪs ˈæbəbə
+Andorra la Vella	ænˌdɔːɹə læ ˈvɛlə
+Antananarivo	ˌæntəˌnænəˈɹiːvəʊ
+Apia	ɑːˈpiːə
+Ashgabat	ˈæʃɡəbæt
+Asmara	æsˈmɑːɹə
+Astana	əˈstɑːnə
+Asuncion	əˌsʊnsiˈəʊn
+Bamako	ˈbæməkəʊ
+Bandar Seri Begawan	ˌbʌndə ˌsɛɹi bəˈɡɑːwən
+Bangui	bɑːŋˈɡiː
+Basseterre	bæsˈtɛə
+Belmopan	ˌbɛlməʊˈpæn
+Bishkek	bɪʃˈkɛk
+Bissau	bɪˈsaʊ
+Bogota	ˌbɒɡəˈtɑː
+Brasilia	bɹəˈzɪliə
+Canberra	ˈkænbəɹə
+Chisinau	ˌkɪʃɪˈnaʊ
+Conakry	ˈkɒnəkɹi
+Dili	ˈdɪli
+Dodoma	ˈdəʊdəmə
+Dushanbe	duːˈʃænbeɪ
+Funafuti	ˌfuːnəˈfuːti
+Gaborone	ˌɡæbəˈɹəʊni
+Gitega	ɡɪˈteɪɡə
+Harare	həˈɹɑːɹeɪ
+Honiara	ˌhəʊniˈɑːɹə
+Islamabad	ɪzˈlɑːməbɑːd
+Juba	ˈdʒuːbə
+Kathmandu	ˌkætmænˈduː
+Khartoum	kɑːˈtuːm
+Kigali	kɪˈɡɑːli
+Kyiv	ˈkiːɪv
+Libreville	ˈliːbɹəvɪl
+Lilongwe	lɪˈlɒŋweɪ
+Ljubljana	ˌljuːbliˈɑːnə
+Lome	ˈləʊmeɪ
+Majuro	məˈdʒʊəɹəʊ
+Malabo	məˈlɑːbəʊ
+Malé	ˈmɑːleɪ
+Managua	məˈnɑːɡwə
+Manama	məˈnæmə
+Maputo	məˈpuːtəʊ
+Maseru	ˈmæsəɹuː
+Mbabane	əmbɑːˈbɑːni
+Mogadishu	ˌmɒɡəˈdɪʃuː
+Montevideo	ˌmɒntɪvɪˈdeɪəʊ
+Moroni	məˈɹəʊni
+N'Djamena	ənˌdʒɑːˈmeɪnə
+Naypyidaw	ˌneɪpjiːˈdɔː
+Ngerulmud	ŋəˈɹuːlmʊd
+Niamey	niˈɑːmeɪ
+Nicosia	ˌnɪkəˈsiːə
+Nouakchott	nuːˈækʃɒt
+Nuku'alofa	ˌnuːkuːəˈləʊfə
+Ouagadougou	ˌwɑːɡəˈduːɡuː
+Palikir	ˈpælɪkɪə
+Paramaribo	ˌpæɹəˈmæɹɪbəʊ
+Phnom Penh	pəˌnɒm ˈpɛn
+Podgorica	ˈpɒdɡɒɹɪtsə
+Port Vila	ˌpɔːt ˈviːlə
+Porto-Novo	ˌpɔːtəʊ ˈnəʊvəʊ
+Praia	ˈpɹaɪə
+Pyongyang	ˌpjɒŋˈjæŋ
+Reykjavik	ˈɹeɪkjəvɪk
+Riyadh	ɹiˈjɑːd
+Roseau	ɹəʊˈzəʊ
+Sanaa	sæˈnɑː
+São Tomé	ˌsaʊ təˈmeɪ
+Skopje	ˈskɒpjeɪ
+Sri Jayawardenepura Kotte	ˌʃɹiː ˌdʒaɪəˌwɑːdənɪˈpʊəɹə ˈkəʊteɪ
+St. George's	sənt ˈdʒɔːdʒɪz
+Sucre	ˈsuːkɹeɪ
+Tarawa	təˈɹɑːwə
+Tashkent	tæʃˈkɛnt
+Tbilisi	təbɪˈliːsi
+Tegucigalpa	təˌɡuːsiˈɡælpə
+Thimphu	tɪmˈpuː
+Ulaanbaatar	ˌuːlɑːnˈbɑːtɑː
+Vaduz	vəˈduːts
+Valletta	vəˈlɛtə
+Vientiane	ˌvjɛnˈtjɑːn
+Vilnius	ˈvɪlniəs
+Windhoek	ˈvɪnthʊk
+Yamoussoukro	ˌjæmʊˈsuːkɹəʊ
+Yaounde	jɑːˈʊndeɪ
+Yerevan	ˌjɛɹəˈvɑːn

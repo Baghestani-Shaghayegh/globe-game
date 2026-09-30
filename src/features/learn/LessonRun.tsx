@@ -23,6 +23,7 @@ import { distanceKm, type Point } from "../../lib/mystery";
 import { directionFrom, landBordersOf } from "../../lib/lessons";
 import type { Recall } from "../../lib/practice";
 import { canSpeak, speak, stopSpeaking } from "../../lib/speech";
+import { loadVoiceManifest } from "../../lib/voices";
 import { playCorrect, playHint, playRoundEnd, playTap, playWrong } from "../../lib/sound";
 import { useGlobeClick } from "../globe-guess/useGlobeClick";
 import { useGlobeTheme } from "../globe-guess/useGlobeTheme";
@@ -185,6 +186,11 @@ export default function LessonRun({
   }, [countries]);
 
   const [phase, setPhase] = useState<Phase>(meet ? "meet" : "find");
+  // Which names have a recorded clip, fetched now so it's there by the time
+  // a speaker is pressed.
+  useEffect(() => {
+    void loadVoiceManifest();
+  }, []);
   const [step, setStep] = useState(0);
   const [misses, setMisses] = useState(0);
   /** Found, in Find; named, in Name. */
