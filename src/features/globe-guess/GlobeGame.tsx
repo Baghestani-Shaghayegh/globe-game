@@ -24,13 +24,13 @@ import { isCorrectGuess } from "../../lib/answerMatch";
 import {
   answerStroke,
   backdropColor,
-  beaconTone,
   landShade,
   raisedLand,
   theme,
 } from "../../lib/globeTheme";
 import { landMaterial } from "../../lib/globeTerrain";
 import { useGlobeTheme } from "./useGlobeTheme";
+import { pulseMark } from "./globeMarks";
 import { GLOBE_SURFACE, useGlobeLook } from "./useGlobeLook";
 import { hintsEnabled } from "../../lib/prefs";
 import {
@@ -165,7 +165,7 @@ function nameLabel(tag: NameTag): HTMLElement {
 const tagLat = (d: object) => (d as NameTag).lat;
 const tagLng = (d: object) => (d as NameTag).lng;
 const tagElement = (d: object) =>
-  "beacon" in d ? beaconMark() : nameLabel(d as NameTag);
+  "beacon" in d ? pulseMark() : nameLabel(d as NameTag);
 
 /**
  * A pulse on a country still to be named, under `showInPlay`.
@@ -180,13 +180,6 @@ const tagElement = (d: object) =>
  */
 type Beacon = { beacon: true; lat: number; lng: number };
 
-function beaconMark(): HTMLElement {
-  const el = document.createElement("div");
-  el.className = "beacon";
-  el.setAttribute("aria-hidden", "true");
-  el.style.setProperty("--beacon", beaconTone());
-  return el;
-}
 
 /** The whole-world view, sized to this window. Shared by every game. */
 const worldView = () => worldAltitude(window.innerWidth, window.innerHeight);

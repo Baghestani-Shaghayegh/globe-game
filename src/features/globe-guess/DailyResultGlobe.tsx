@@ -13,6 +13,7 @@ import {
   worldAltitude,
 } from "../../lib/geo";
 import { useGlobeTheme } from "./useGlobeTheme";
+import { markLat, markLng, namePill } from "./globeMarks";
 import { GLOBE_SURFACE, useGlobeLook } from "./useGlobeLook";
 
 type CountryFeature = {
@@ -42,30 +43,7 @@ const OUTCOME_LABEL: Record<Outcome, string> = {
 
 type Tag = { lat: number; lng: number; text: string };
 
-function tagElement(d: object): HTMLElement {
-  // The globe positions the outer element by writing its transform every
-  // frame, so the lift above the country has to go on an inner one — set on
-  // the outer, it was silently overwritten.
-  const holder = document.createElement("div");
-  holder.style.pointerEvents = "none";
-  const el = holder.appendChild(document.createElement("span"));
-  el.textContent = (d as Tag).text;
-  el.style.cssText = [
-    "display: inline-block",
-    "color: #f4f4f5",
-    "font: 500 13px ui-sans-serif, system-ui, sans-serif",
-    "white-space: nowrap",
-    "pointer-events: none",
-    "padding: 2px 8px",
-    "border-radius: 9999px",
-    "background: rgb(20 27 35 / 0.9)",
-    "border: 1px solid rgb(255 255 255 / 0.12)",
-    "transform: translateY(-18px)",
-  ].join(";");
-  return holder;
-}
-const tagLat = (d: object) => (d as Tag).lat;
-const tagLng = (d: object) => (d as Tag).lng;
+const tagElement = (d: object) => namePill((d as Tag).text);
 
 /**
  * The day's round, on the globe, once it is over.
@@ -242,8 +220,8 @@ export default function DailyResultGlobe({ countries, outcomes }: Props) {
             polygonAltitude={altitude}
             polygonsTransitionDuration={0}
             htmlElementsData={tags}
-            htmlLat={tagLat}
-            htmlLng={tagLng}
+            htmlLat={markLat}
+            htmlLng={markLng}
             htmlAltitude={0.04}
             htmlElement={tagElement}
             htmlTransitionDuration={0}
