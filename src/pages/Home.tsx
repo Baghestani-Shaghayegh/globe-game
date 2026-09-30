@@ -434,7 +434,7 @@ export default function Home() {
           <section className="mt-[clamp(1.75rem,4vh,3rem)]">
             <div className="flex flex-col items-center">
               <h2 className="text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
-                Discover more games
+                More games
               </h2>
               <p className="mt-3 text-xs font-medium uppercase tracking-[0.16em] text-zinc-400">
                 Choose your map
@@ -468,14 +468,14 @@ export default function Home() {
                   id: "practice",
                   to: "/practice",
                   title: "Practice",
-                  note: "Work on your weak spots.",
+                  note: "The countries you keep missing.",
                   badge: duePractice > 0 ? `${duePractice} waiting` : undefined,
                 },
                 {
                   id: "bigger",
                   to: "/bigger",
                   title: "Which is bigger?",
-                  note: "Two countries, pick the larger.",
+                  note: "Two countries, by land area.",
                   badge: undefined,
                 },
               ].map((game) => (

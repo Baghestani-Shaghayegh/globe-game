@@ -183,8 +183,8 @@ function Standing({
       return (
         <span className="text-zinc-500">
           {crown.metric === "streak"
-            ? "Your streaks were set with hints — crowns don't count those."
-            : "You cleared it with hints — crowns don't count those."}
+            ? "Your streaks used hints, and crowns don't count those."
+            : "You cleared it with hints, and crowns don't count those."}
         </span>
       );
     }

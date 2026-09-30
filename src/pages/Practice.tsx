@@ -139,8 +139,8 @@ export default function Practice() {
           Practice
         </h1>
         <p className="mt-2 text-sm text-zinc-500">
-          The countries that keep getting away, asked again on a widening
-          schedule until they don't.
+          Countries you've missed come back here. Each one you get right
+          waits longer before it comes back.
         </p>
 
         {justDone && (

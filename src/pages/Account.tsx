@@ -104,15 +104,11 @@ function WhySignIn() {
   const lines = [
     {
       title: "Get on the leaderboard",
-      body: "Your name and your flag, ranked against everyone else — this week's board and this month's.",
+      body: "Your name and flag on this week's board and this month's.",
     },
     {
       title: "Claim a crown",
-      body: "The hall of fame holds one name per game: whoever cleared all 167 countries fastest. It stays yours until somebody beats it.",
-    },
-    {
-      title: "Play a friend",
-      body: "Open a private room, send the six-letter code, and you both get the same questions at the same time.",
+      body: "The fastest clear of each map puts one name in the hall of fame. It's yours until someone beats it.",
     },
   ];
 

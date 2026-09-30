@@ -54,9 +54,8 @@ export default function Levels() {
           />
         </span>
         <p className="mt-3 text-sm text-zinc-500">
-          Every round earns XP — points scored, plus a bonus for finishing a
-          map and for each badge. Counted from everything you've already
-          played.
+          Every round earns XP: its points, plus a bonus for clearing a map
+          and for each badge. Rounds you've already played count too.
         </p>
       </div>
 

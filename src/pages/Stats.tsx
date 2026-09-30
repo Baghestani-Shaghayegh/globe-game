@@ -321,8 +321,7 @@ export default function Stats() {
 
       {summary.accuracy === null ? (
         <p className="mt-4 text-zinc-400">
-          Nothing measured yet. Play a round and this page fills in with the
-          countries you know and the ones that keep getting away.
+          Nothing here yet. Play a round to see which countries you know.
         </p>
       ) : (
         <>

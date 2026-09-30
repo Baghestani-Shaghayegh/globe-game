@@ -175,7 +175,7 @@ export default function Mystery() {
     (name: string) => {
       if (!result || result.solved || !answer) return;
       if (guessed.has(name)) {
-        setFlash(`${getCountryMeta(name).displayName} — already guessed`);
+        setFlash(`Already guessed ${getCountryMeta(name).displayName}.`);
         playWrong();
         return;
       }

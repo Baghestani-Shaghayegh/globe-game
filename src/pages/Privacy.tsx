@@ -43,8 +43,8 @@ export default function Privacy() {
 
       <Section title="What stays on your device">
         <p>
-          Your records, streaks, badges, level, per-country statistics and
-          practice deck are stored in your browser&rsquo;s local storage. They
+          Your records, streaks, badges, level, per-country statistics,
+          practice deck and finished lessons are stored in your browser&rsquo;s local storage. They
           are not sent anywhere, they are not readable by us, and clearing
           your browser data deletes them for good. There is no backup.
         </p>

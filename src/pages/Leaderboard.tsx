@@ -339,7 +339,7 @@ export default function Leaderboard() {
     if (tab === "fame") {
       return {
         title: "Hall of fame",
-        blurb: "One holder each, until somebody goes quicker.",
+        blurb: "The fastest clear of each map.",
         // Its own line. Buried in the blurb as "set without hints" it read as
         // a description of the holders rather than the rule you are playing
         // under, and it is the rule that costs somebody a record.
@@ -357,7 +357,7 @@ export default function Leaderboard() {
     });
     return {
       title: `${month} leaderboard`,
-      blurb: `Cumulative rankings since ${month} 1st.`,
+      blurb: `Points since ${month} 1.`,
     };
   }, [tab, period]);
   const onBoard =

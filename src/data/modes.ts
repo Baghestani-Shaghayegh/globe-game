@@ -13,23 +13,23 @@ export type GameType =
   | "capital";
 
 export const GAME_TYPES: { id: GameType; label: string; blurb: string }[] = [
-  { id: "name", label: "Name it", blurb: "Click a country, type its name." },
-  { id: "find", label: "Find it", blurb: "We name a country, you find it." },
-  { id: "flag", label: "Flags", blurb: "We show a flag, you find the country." },
+  { id: "name", label: "Name it", blurb: "Click a country and name it." },
+  { id: "find", label: "Find it", blurb: "Where's Peru? Click it on the globe." },
+  { id: "flag", label: "Flags", blurb: "Match the flag to its country." },
   {
     id: "famous",
     label: "Famous for",
-    blurb: "We give a clue, you find the country.",
+    blurb: "“Home of tango.” Which country?",
   },
   {
     id: "outline",
     label: "Outlines",
-    blurb: "We show a shape, you find the country.",
+    blurb: "Just the outline. Which country?",
   },
   {
     id: "capital",
     label: "Capitals",
-    blurb: "We name a capital, you find its country.",
+    blurb: "Lima is the capital of where?",
   },
 ];
 

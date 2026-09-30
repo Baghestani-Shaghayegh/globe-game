@@ -246,8 +246,7 @@ export default function HigherLower() {
           Which is bigger?
         </h1>
         <p className="mt-2 text-sm text-zinc-500">
-          By land area. Pairs are only offered when one is clearly larger, so
-          there are no coin flips.
+          By land area.
         </p>
 
         {!pair ? (

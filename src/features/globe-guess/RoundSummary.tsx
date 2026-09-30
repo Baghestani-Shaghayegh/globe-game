@@ -59,7 +59,7 @@ export default function RoundSummary({
             {completed
               ? `You found all ${total}`
               : endedOnMistake
-                ? "Wrong answer — round over"
+                ? "Wrong answer. Round over."
                 : outOfTime
                   ? "Time's up"
                   : "Run ended"}
