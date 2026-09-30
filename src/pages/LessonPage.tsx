@@ -27,6 +27,7 @@ import {
   markLearned,
   type Lesson,
 } from "../lib/lessons";
+import { canSpeak, speak, stopSpeaking } from "../lib/speech";
 import { playCorrect, playHint, playRoundEnd, playTap, playWrong } from "../lib/sound";
 import { useGlobeClick } from "../features/globe-guess/useGlobeClick";
 import { useGlobeTheme } from "../features/globe-guess/useGlobeTheme";
@@ -744,6 +745,53 @@ function LessonRun({
   );
 }
 
+/**
+ * A speaker next to a name: press it to hear the name said. Hidden where the
+ * browser can't speak. Lit while it talks.
+ */
+function SpeakButton({ text, small = false }: { text: string; small?: boolean }) {
+  const [talking, setTalking] = useState(false);
+  // Moving on to the next country stops the last one mid-word.
+  useEffect(() => {
+    setTalking(false);
+    return () => stopSpeaking();
+  }, [text]);
+  if (!canSpeak()) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setTalking(true);
+        speak(text, () => setTalking(false));
+      }}
+      aria-label={`Say ${text}`}
+      title={`Say ${text}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full transition-colors ${
+        small ? "h-7 w-7" : "h-9 w-9"
+      } ${
+        talking
+          ? "bg-teal-300 text-teal-950"
+          : "text-zinc-400 hover:bg-white/10 hover:text-zinc-100"
+      }`}
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        className={small ? "h-4 w-4" : "h-5 w-5"}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor" stroke="none" />
+        <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+        <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+      </svg>
+    </button>
+  );
+}
+
 function Flag({ name, className }: { name: string; className: string }) {
   const flag = flagUrl(name);
   return flag ? (
@@ -776,14 +824,18 @@ function Meet({
   return (
     <div>
       <Flag name={name} className="h-16 w-24" />
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-50">
+      <h1 className="mt-3 flex items-center gap-2 text-3xl font-semibold tracking-tight text-zinc-50">
         {display(name)}
+        <SpeakButton text={display(name)} />
       </h1>
       <dl className="mt-4 space-y-2.5 text-sm">
         {capital && (
           <div>
             <dt className="text-xs uppercase tracking-wider text-zinc-500">Capital</dt>
-            <dd className="text-zinc-200">{capital}</dd>
+            <dd className="flex items-center gap-1.5 text-zinc-200">
+              {capital}
+              <SpeakButton text={capital} small />
+            </dd>
           </div>
         )}
         <div>
