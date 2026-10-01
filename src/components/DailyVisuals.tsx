@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getCountryMeta } from "../data/countries";
 import { flagUrl } from "../data/flags";
 import type { Outcome } from "../lib/daily";
-import { heatColor, heatGradient } from "../lib/mystery";
+import { heatColor } from "../lib/mystery";
 
 /**
  * The pictures on today's cards: what each puzzle looks like before it's
@@ -15,94 +15,127 @@ const OUTCOME_TILE: Record<Outcome, string> = {
   missed: "bg-rose-400",
 };
 
-/** Ten slots to fill, or filled: green first time, amber retried, red missed. */
+/** Ten targets to find, or found: green first time, amber retried, red missed. */
 export function HuntSlots({ outcomes, count = 10 }: { outcomes?: Outcome[]; count?: number }) {
   return (
-    <span className="grid w-full grid-cols-10 gap-1.5" aria-hidden="true">
+    <span className="grid w-full grid-cols-5 gap-2" aria-hidden="true">
       {Array.from({ length: count }, (_, i) => {
         const o = outcomes?.[i];
-        return (
+        return o ? (
+          <span key={i} className={`h-7 rounded-md shadow-sm ${OUTCOME_TILE[o]}`} />
+        ) : (
           <span
             key={i}
-            className={`aspect-square rounded-[5px] ${
-              o ? OUTCOME_TILE[o] : "border border-dashed border-sky-300/35 bg-sky-300/[0.06]"
-            }`}
-          />
+            className="flex h-7 items-center justify-center rounded-md border border-dashed border-sky-300/50 bg-sky-300/[0.08]"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-sky-300/70" />
+          </span>
         );
       })}
     </span>
   );
 }
 
-/** The heat scale the mystery is played on, or the trail of guesses along it. */
+/**
+ * The mystery's hot-and-cold, as a radar: rings from cold blue out at the
+ * edge to hot red at the middle, where the answer hides. Once played, the
+ * trail of guesses instead, getting warmer.
+ */
 export function MysteryHeat({ kms }: { kms?: number[] }) {
   if (kms && kms.length) {
-    // Oldest first, as the hunt went; the last dozen, which is where it closed in.
-    const trail = [...kms].reverse().slice(-12);
+    // Oldest first, as the hunt went; the last ten, which is where it closed in.
+    const trail = [...kms].reverse().slice(-10);
     return (
-      <span className="flex w-full flex-wrap gap-1.5" aria-hidden="true">
+      <span className="flex w-full flex-wrap justify-center gap-1.5" aria-hidden="true">
         {trail.map((km, i) => (
           <span
             key={i}
-            className="h-5 w-5 rounded-[5px]"
+            className="h-7 w-7 rounded-md shadow-sm"
             style={{ backgroundColor: heatColor(km) }}
           />
         ))}
       </span>
     );
   }
+  const rings = [9000, 6000, 3500, 1800, 600];
   return (
-    <span className="w-full" aria-hidden="true">
-      <span className="relative block h-3 rounded-full" style={{ background: heatGradient() }}>
-        {/* The answer sits at the hot end; you start somewhere in the cold. */}
-        <span className="absolute -top-1.5 left-0 flex h-6 w-6 -translate-x-1/3 items-center justify-center rounded-full border-2 border-white/80 bg-rose-500 text-[11px] font-bold text-white shadow">
-          ?
-        </span>
-      </span>
-      <span className="mt-1.5 flex justify-between text-[10px] font-semibold uppercase tracking-wider">
-        <span className="text-rose-300">Hot</span>
-        <span className="text-sky-300">Cold</span>
-      </span>
-    </span>
+    <svg viewBox="0 0 120 70" className="h-[4.5rem] w-auto" aria-hidden="true">
+      {rings.map((km, i) => (
+        <circle
+          key={km}
+          cx="60"
+          cy="35"
+          r={34 - i * 6.5}
+          fill={heatColor(km)}
+          fillOpacity={0.22 + i * 0.12}
+          stroke={heatColor(km)}
+          strokeOpacity="0.8"
+          strokeWidth="1"
+        />
+      ))}
+      <text
+        x="60"
+        y="40.5"
+        textAnchor="middle"
+        fontSize="15"
+        fontWeight="800"
+        fill="#fff"
+        fontFamily="ui-sans-serif, system-ui, sans-serif"
+      >
+        ?
+      </text>
+    </svg>
   );
 }
 
-function FlagName({ name, align }: { name: string; align: "left" | "right" }) {
+function Flag({ name }: { name: string }) {
   const flag = flagUrl(name);
-  return (
-    <span
-      className={`flex min-w-0 flex-col gap-1 ${align === "right" ? "items-end text-right" : "items-start"}`}
-    >
-      {flag ? (
-        <img src={flag} alt="" className="h-7 w-10 rounded-[3px] object-cover ring-1 ring-white/15" />
-      ) : (
-        <span className="h-7 w-10 rounded-[3px] bg-white/10" />
-      )}
-      <span className="max-w-full truncate text-xs font-medium text-zinc-200">
-        {getCountryMeta(name).displayName}
-      </span>
-    </span>
+  return flag ? (
+    <img
+      src={flag}
+      alt=""
+      className="h-9 w-[3.25rem] rounded-[4px] object-cover shadow-md ring-1 ring-white/20"
+    />
+  ) : (
+    <span className="h-9 w-[3.25rem] rounded-[4px] bg-white/10" />
   );
 }
 
 /**
- * Today's two ends, with the gap between them: dashed until it's walked, a
- * dot per country once it is.
+ * Today's two ends, joined by a route arcing over the map: dashed until it's
+ * walked, solid with a dot per country once it is.
  */
 export function ConnectPair({ from, to, steps }: { from: string; to: string; steps?: number }) {
+  const n = Math.min(steps ?? 0, 7);
   return (
-    <span className="flex w-full items-start gap-2">
-      <FlagName name={from} align="left" />
-      <span className="mt-3.5 flex min-w-6 flex-1 items-center justify-center gap-1" aria-hidden="true">
-        {steps ? (
-          Array.from({ length: Math.min(steps, 8) }, (_, i) => (
-            <span key={i} className="h-2 w-2 shrink-0 rounded-full bg-violet-300" />
-          ))
-        ) : (
-          <span className="h-0 w-full border-t-2 border-dashed border-violet-300/40" />
-        )}
+    <span className="flex w-full flex-col gap-1">
+      <span className="flex w-full items-end">
+        <Flag name={from} />
+        <svg viewBox="0 0 100 40" preserveAspectRatio="none" className="h-10 min-w-0 flex-1" aria-hidden="true">
+          <path
+            d="M4 34 Q50 -6 96 34"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeDasharray={steps ? undefined : "4 5"}
+            vectorEffect="non-scaling-stroke"
+            className="text-violet-300"
+          />
+          {Array.from({ length: n }, (_, i) => {
+            // Points along the same curve, evenly spaced between the ends.
+            const t = (i + 1) / (n + 1);
+            const x = (1 - t) ** 2 * 4 + 2 * (1 - t) * t * 50 + t ** 2 * 96;
+            const y = (1 - t) ** 2 * 34 + 2 * (1 - t) * t * -6 + t ** 2 * 34;
+            return <circle key={i} cx={x} cy={y} r="3.2" className="fill-violet-200" />;
+          })}
+        </svg>
+        <Flag name={to} />
       </span>
-      <FlagName name={to} align="right" />
+      <span className="flex justify-between gap-2 text-xs font-medium text-zinc-200">
+        <span className="truncate">{getCountryMeta(from).displayName}</span>
+        <span className="truncate text-right">{getCountryMeta(to).displayName}</span>
+      </span>
     </span>
   );
 }
