@@ -18,6 +18,9 @@ export type BoardRow = {
   total: number;
   ms: number;
   played_at: string;
+  /** The run itself, and whether its recording was posted to be watched. */
+  score_id?: number;
+  has_replay?: boolean;
 };
 
 /** What a finished round posts. The clock is the server's to set. */
@@ -128,12 +131,20 @@ export async function postScore(
   bucket: string,
   run: PostedRun
 ): Promise<boolean> {
-  if (!supabase) return false;
+  return (await postRun(bucket, run)) !== null;
+}
+
+/**
+ * Files a run and hands back its id, which is what a recording of it is
+ * posted against. Null when it didn't land.
+ */
+export async function postRun(bucket: string, run: PostedRun): Promise<number | null> {
+  if (!supabase) return null;
   const { data } = await supabase.auth.getSession();
   const userId = data.session?.user.id;
-  if (!userId) return false;
+  if (!userId) return null;
 
-  const { error } = await supabase.from("scores").insert({
+  const { data: row, error } = await supabase.from("scores").insert({
     user_id: userId,
     bucket,
     points: Math.round(run.points),
@@ -142,7 +153,7 @@ export async function postScore(
     ms: Math.round(run.ms),
     best_streak: Math.round(run.bestStreak),
     hints_used: Math.round(run.hintsUsed),
-  });
+  }).select("id").single();
 
   // Callers deliberately don't await this — a summary screen should never wait
   // on the network, and the run is saved locally either way. That silence hid
@@ -152,7 +163,7 @@ export async function postScore(
   if (error && import.meta.env.DEV) {
     console.warn(`Score not posted for bucket "${bucket}":`, error.message);
   }
-  return !error;
+  return error ? null : ((row as { id: number } | null)?.id ?? null);
 }
 
 /** A player's standing on the overall board. */

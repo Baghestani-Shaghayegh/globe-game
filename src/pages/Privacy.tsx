@@ -44,7 +44,8 @@ export default function Privacy() {
       <Section title="What stays on your device">
         <p>
           Your records, streaks, badges, level, per-country statistics,
-          practice deck and finished lessons are stored in your browser&rsquo;s local storage. They
+          practice deck, finished lessons and recordings of your last few
+          rounds are stored in your browser&rsquo;s local storage. They
           are not sent anywhere, they are not readable by us, and clearing
           your browser data deletes them for good. There is no backup.
         </p>
@@ -59,8 +60,9 @@ export default function Privacy() {
           An account exists so your name can appear on a leaderboard and so
           you can play against a friend. Making one stores your email address,
           the player name you choose, the flag you pick, and the scores you
-          submit. Other players can see your player name, flag, scores and
-          level; nobody but you sees your email.
+          submit, and the recordings of rounds you choose to post. Other
+          players can see your player name, flag, scores, level and posted
+          recordings; nobody but you sees your email.
         </p>
         <p>
           Accounts and scores are held by Supabase, which runs the database

@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { addRun, bestScore, bestTime, formatDuration } from "../../lib/records";
-import { postScore } from "../../lib/leaderboard";
+import { postRun } from "../../lib/leaderboard";
+import {
+  ReplayRecorder,
+  recordingOn,
+  type Replay,
+  type ReplayEvent,
+  type ReplayGame,
+} from "../../lib/replay";
 import {
   emptyScore,
   formatMultiplier,
@@ -100,6 +107,17 @@ export function useRound(
   // read from here, outside the updater, and the updater stays pure.
   const scoreNow = useRef<Score>(emptyScore);
   const gainId = useRef(0);
+  /** The round being recorded, if recording is on; see lib/replay.ts. */
+  const recorder = useRef<ReplayRecorder | null>(null);
+  /** The result as filed, for the recording's header. */
+  const filed = useRef<Replay["result"] | null>(null);
+  /** The run's id on the board, once posted — what a recording is posted against. */
+  const posted = useRef<Promise<number | null>>(Promise.resolve(null));
+  const mark = useCallback(
+    (event: ReplayEvent extends [number, ...infer Rest] ? Rest : never) =>
+      recorder.current?.mark(event),
+    []
+  );
 
   const applyScore = useCallback((next: (score: Score) => Score) => {
     const updated = next(scoreNow.current);
@@ -109,7 +127,12 @@ export function useRound(
 
   /** Starts the clock the first time it's called; later calls do nothing. */
   const begin = useCallback(() => {
-    if (startedAt.current === null) startedAt.current = performance.now();
+    if (startedAt.current === null) {
+      startedAt.current = performance.now();
+      // Always recorded: it's a few kilobytes. The switch decides whether the
+      // recording is kept at the end, so it can be flipped mid-round.
+      recorder.current = new ReplayRecorder(startedAt.current);
+    }
     if (questionAt.current === null) questionAt.current = performance.now();
   }, []);
 
@@ -135,6 +158,9 @@ export function useRound(
     startedAt.current = null;
     questionAt.current = null;
     recorded.current = false;
+    recorder.current = null;
+    filed.current = null;
+    posted.current = Promise.resolve(null);
     setElapsedMs(0);
     setSummary(null);
     setConfirmingExit(false);
@@ -166,6 +192,7 @@ export function useRound(
       const ms = limitMs === null ? raw : Math.min(raw, limitMs);
       const completed = total > 0 && found === total;
       const points = Math.round(score.points * pointsMultiplier);
+      filed.current = { ms, points, found, total };
 
       // Read the records before filing this run, so we compare against the past.
       const previousTime = bestTime(recordKey);
@@ -183,7 +210,7 @@ export function useRound(
         // Onto the weekly board too, if there's an account behind this run.
         // Deliberately not awaited: the summary shouldn't wait on the network,
         // and the run is already saved locally whether or not this lands.
-        void postScore(recordKey, {
+        posted.current = postRun(recordKey, {
           points,
           found,
           total,
@@ -269,28 +296,58 @@ export function useRound(
           id: ++gainId.current,
         });
         applyScore((s) => scoreCorrect(s, name, ms));
+        mark(["ok", name, scoreNow.current.points]);
       },
-      [applyScore, lapQuestion]
+      [applyScore, lapQuestion, mark]
     ),
-    /** Records a wrong answer, which only costs the streak. */
-    wrong: useCallback(() => {
-      playWrong();
-      applyScore(scoreWrong);
-    }, [applyScore]),
+    /**
+     * Records a wrong answer, which only costs the streak. `name` is the
+     * country clicked or named, for the recording.
+     */
+    wrong: useCallback(
+      (name: string | null = null) => {
+        playWrong();
+        applyScore(scoreWrong);
+        mark(["x", name]);
+      },
+      [applyScore, mark]
+    ),
     /** Moves past a country without answering it, and without a charge. */
-    pass: useCallback(() => {
-      playOther();
-      lapQuestion();
-      applyScore(scorePass);
-    }, [applyScore, lapQuestion]),
+    pass: useCallback(
+      (name?: string) => {
+        playOther();
+        lapQuestion();
+        applyScore(scorePass);
+        if (name) mark(["p", name]);
+      },
+      [applyScore, lapQuestion, mark]
+    ),
     /** Buys a hint for a country, charged to that country's answer. */
     spendHint: useCallback(
       (hint: HintKind, name: string) => {
         playHint();
         applyScore((s) => scoreHint(s, hint, name));
+        mark(["h", hint]);
+        // The answer bought is the country shown, as a pass would show it.
+        if (hint === "answer") mark(["p", name]);
       },
-      [applyScore]
+      [applyScore, mark]
     ),
+    /** Notes what the game itself shows: a country asked, a country picked. */
+    mark,
+    /** Notes where the camera is, for the recording. */
+    look: useCallback(
+      (lat: number, lng: number, altitude: number, force = false) =>
+        recorder.current?.look(lat, lng, altitude, force),
+      []
+    ),
+    /** The round as recorded, once it has ended; null if it wasn't. */
+    finishReplay: useCallback((game: ReplayGame): Replay | null => {
+      if (!recorder.current || !filed.current || !recordingOn()) return null;
+      return recorder.current.finish(game, filed.current);
+    }, []),
+    /** The run's id on the board, or null if it wasn't posted. */
+    postedId: useCallback(() => posted.current, []),
     /** The last award, for the figure that floats up. */
     gain,
     summary,

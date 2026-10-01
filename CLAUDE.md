@@ -56,6 +56,11 @@ without being asked — `main` is what deploys.
   Text-to-Speech). Without clips the lessons fall back to the device's voice.
   Pronunciations to force live in `scripts/voice/lexicon.tsv`; Sara reviews
   the clips on the unlinked `/voices` page.
+- Replays (`lib/replay*.ts`) record a round's moves, not the screen, and
+  render the 9:16 video in the browser with Mediabunny. The sandbox's
+  Chromium has no H.264 encoder, so videos made here are WebM (VP9); real
+  Chrome and Safari make MP4. Posted replays live in the `replays` table,
+  one per score, readable by anyone, writable only by the run's owner.
 - Ads and the cookie banner stay dark unless `VITE_ADSENSE_CLIENT` and
   `VITE_ADSENSE_SLOT` are set, which they are not in the repo. Set them on the
   command line to see either one.

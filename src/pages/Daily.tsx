@@ -4,6 +4,8 @@ import GlobeGame from "../features/globe-guess/GlobeGame";
 import FindGame from "../features/globe-guess/FindGame";
 import DailyResultGlobe from "../features/globe-guess/DailyResultGlobe";
 import ShareResult from "../components/ShareResult";
+import ReplayActions from "../features/replay/ReplayActions";
+import type { Replay } from "../lib/replay";
 import ChallengeBanner from "../components/ChallengeBanner";
 import { CARD_FOUND, CARD_MISSED } from "../features/globe-guess/RoundShare";
 import type { RoundOutcome } from "../features/globe-guess/FindGame";
@@ -114,6 +116,15 @@ function TodaysBoard({ type }: { type: Challenge["type"] }) {
               />
             )}
             <span className="truncate text-zinc-100">{row.username}</span>
+            {row.has_replay && row.score_id && (
+              <Link
+                to={`/replay/${row.score_id}`}
+                aria-label={`Watch ${row.username}'s run`}
+                className="shrink-0 rounded-full border border-white/15 px-2 py-0.5 text-xs text-zinc-300 hover:border-teal-300/60 hover:text-teal-200"
+              >
+                ▶ Watch
+              </Link>
+            )}
             <span className="ml-auto shrink-0 tabular-nums text-zinc-300">
               {row.points.toLocaleString()}
             </span>
@@ -134,6 +145,11 @@ export default function Daily() {
   const day = dayKey();
   const [names, setNames] = useState<string[] | null>(null);
   const [result, setResult] = useState<DailyResult | null>(() => resultFor(day));
+  /** Today's round as just recorded, to watch back and post; not kept past a reload. */
+  const [recorded, setRecorded] = useState<{
+    replay: Replay;
+    postedId: () => Promise<number | null>;
+  } | null>(null);
   const [burst, setBurst] = useState(0);
 
   useEffect(() => {
@@ -180,6 +196,10 @@ export default function Daily() {
       };
       saveResult(saved);
       setResult(saved);
+      if (outcome.replay) {
+        const id = outcome.postedId ?? Promise.resolve(null);
+        setRecorded({ replay: outcome.replay, postedId: () => id });
+      }
       // Fired here rather than on the result screen, so re-opening a finished
       // daily is a record to read and not a party thrown again.
       if (outcome.found.length === challenge.countries.length) {
@@ -281,6 +301,12 @@ export default function Daily() {
               </div>
             )}
           </div>
+
+          {recorded && (
+            <div className="mx-auto mt-4 max-w-sm rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+              <ReplayActions replay={recorded.replay} postedId={recorded.postedId} />
+            </div>
+          )}
 
           {played && (
             <DailyResultGlobe countries={played} outcomes={result.outcomes} />

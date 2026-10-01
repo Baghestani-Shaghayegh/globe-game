@@ -262,9 +262,11 @@ function Card({
         : CROWN_RUN.mode;
 
   return (
-    <Link
-      to={gamePath(type, mode, CROWN_RUN.limit, CROWN_RUN.rules, CROWN_RUN.count)}
-      className={`group flex flex-col rounded-xl border p-4 transition-colors ${
+    // A card you can press anywhere to play, with "Watch the run" as its own
+    // link on top: the play link is stretched over the card rather than
+    // wrapping it, since a link inside a link is two links in one place.
+    <div
+      className={`group relative flex flex-col rounded-xl border p-4 transition-colors focus-within:ring-2 focus-within:ring-teal-300/60 ${
         yours
           ? "border-amber-400/45 bg-amber-400/[0.07] hover:border-amber-400/70"
           : holder
@@ -279,7 +281,12 @@ function Card({
           <p
             className={`font-semibold ${yours ? "text-amber-100" : "text-zinc-100"}`}
           >
-            {crown.title}
+            <Link
+              to={gamePath(type, mode, CROWN_RUN.limit, CROWN_RUN.rules, CROWN_RUN.count)}
+              className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none"
+            >
+              {crown.title}
+            </Link>
           </p>
           <p className="mt-0.5 text-xs text-zinc-500">{crown.feat}</p>
         </div>
@@ -320,6 +327,16 @@ function Card({
         )}
       </div>
 
+      {/* The record as it was played, over the card's stretched play link. */}
+      {!loading && holder?.has_replay && holder.score_id && (
+        <Link
+          to={`/replay/${holder.score_id}`}
+          className="relative z-10 mt-2 inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-300/40 px-2.5 py-1 text-xs font-medium text-amber-200 hover:bg-amber-300/10"
+        >
+          ▶ Watch the run
+        </Link>
+      )}
+
       <p className="mt-2 text-xs">
         {loading ? (
           <span className="block h-3 w-40 animate-pulse rounded bg-white/[0.05]" />
@@ -332,7 +349,7 @@ function Card({
           />
         )}
       </p>
-    </Link>
+    </div>
   );
 }
 

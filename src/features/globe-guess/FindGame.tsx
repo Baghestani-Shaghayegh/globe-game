@@ -9,6 +9,8 @@ import GameHud from "./GameHud";
 import ExitConfirm from "./ExitConfirm";
 import ConfirmDialog from "./ConfirmDialog";
 import { useRound } from "./useRound";
+import { useReplayCamera } from "./useReplayCamera";
+import { keepReplay, type Replay } from "../../lib/replay";
 import { recordRound } from "../../lib/countryStats";
 import { pulseMark } from "./globeMarks";
 import { useGlobeClick } from "./useGlobeClick";
@@ -16,6 +18,7 @@ import { useLeaveGuard } from "./useLeaveGuard";
 import { getCountryMeta } from "../../data/countries";
 import {
   BLITZ_SECONDS,
+  GAME_TYPES,
   recordKey,
   type GameType,
   type Mode,
@@ -75,6 +78,10 @@ export type RoundOutcome = {
   fumbled: string[];
   /** Never got, whether shown, timed out, or the round ended first. */
   missed: string[];
+  /** The round as recorded, if recording was on. */
+  replay?: Replay | null;
+  /** The run's id on the board, once posted, for posting the recording. */
+  postedId?: Promise<number | null>;
 };
 
 type Props = {
@@ -286,16 +293,18 @@ export default function FindGame({
   // while the menu looked them up under "@180", so a timed mode's best time
   // was written somewhere nothing ever read. The round length has to go in
   // too, or a ten-country run shares a bucket with the full list.
-  const round = useRound(
-    recordKey(type, mode.id, limitSeconds, ruleset, count),
-    limitMs,
-    { record, pointsMultiplier }
-  );
+  const bucket = recordKey(type, mode.id, limitSeconds, ruleset, count);
+  const round = useRound(bucket, limitMs, { record, pointsMultiplier });
   const { begin, reset, tick, end, summary, correct, wrong, spendHint, pass } =
     round;
+  const { mark, look, finishReplay } = round;
+  /** This round as recorded, once it's over. */
+  const [replay, setReplay] = useState<Replay | null>(null);
+  useReplayCamera(globeRef, ready && !summary, look);
 
   useEffect(() => {
     reset();
+    setReplay(null);
     setFoundNames(new Set());
     setPassedNames(new Set());
     setQueue([]);
@@ -403,8 +412,10 @@ export default function FindGame({
   // answered: a revealed answer holds the screen for a moment first.
   const { startQuestion } = round;
   useEffect(() => {
-    if (target) startQuestion();
-  }, [target, startQuestion]);
+    if (!target) return;
+    startQuestion();
+    mark(["q", target]);
+  }, [target, startQuestion, mark]);
   const targetLabel = target ? getCountryMeta(target).displayName : "";
 
   /**
@@ -504,7 +515,7 @@ export default function FindGame({
     // Wrong country — flash it, say something about where it landed, and
     // leave the same target in place to retry.
     setFumbled((prev) => new Set(prev).add(target));
-    wrong();
+    wrong(name);
     setWrongName(name);
     setMissNote(missQuip(name, target, kmBetween(name, target)));
     window.clearTimeout(wrongTimer.current);
@@ -530,7 +541,7 @@ export default function FindGame({
    */
   const handleSkip = () => {
     if (!target || revealed) return;
-    pass();
+    pass(target);
     setPassedNames((prev) => new Set(prev).add(target));
     advance();
   };
@@ -628,13 +639,25 @@ export default function FindGame({
       found: [...foundNames],
       fumbled: got,
     });
+    const recording = finishReplay({
+      type,
+      mode: mode.id,
+      label: `${GAME_TYPES.find((t) => t.id === type)?.label ?? ""} · ${mode.name}`,
+      bucket,
+      ...(backdrop ? { inPlay: asked } : {}),
+    });
+    if (recording && record) keepReplay(recording);
+    setReplay(recording);
     onRoundEnd?.({
       points: summary.points,
       ms: summary.ms,
       found: [...foundNames],
       fumbled: got,
       missed: asked.filter((name) => !foundNames.has(name)),
+      replay: recording,
+      postedId: round.postedId(),
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, at the end
   }, [summary, onRoundEnd, foundNames, fumbled, attempted, passedNames, asked]);
   /**
    * "Yes, I'm leaving" has to actually leave. It used to end the round and
@@ -1092,6 +1115,8 @@ export default function FindGame({
           missedCount={summary.total - summary.found}
           onPlayAgain={playAgain}
           onReviewMap={() => round.setReviewingMap(true)}
+          replay={replay}
+          postedId={round.postedId}
           share={
             // Free play only: practice isn't a result, and the daily has its
             // own result page to share from.

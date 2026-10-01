@@ -121,6 +121,9 @@ export type CrownHolder = {
   found: number;
   total: number;
   played_at: string;
+  /** The holding run, and whether its recording can be watched. */
+  score_id?: number;
+  has_replay?: boolean;
 };
 
 /**

@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import type { Replay } from "../../lib/replay";
+import ReplayActions from "../replay/ReplayActions";
 import { formatDuration } from "../../lib/records";
 import { theme } from "../../lib/globeTheme";
 import Celebrate from "../../components/Celebrate";
@@ -28,7 +30,10 @@ type Props = {
   /** Hides the panel so the revealed globe can be studied. */
   onReviewMap: () => void;
   /** Challenge a friend and share the image; absent where it means nothing. */
-  share?: ReactNode;
+  share?: ReactNode;  /** The round as recorded, to watch back, post or save as video. */
+  replay?: Replay | null;
+  /** The run's id on the board, to post the recording against. */
+  postedId?: () => Promise<number | null>;
 };
 
 export default function RoundSummary({
@@ -47,6 +52,8 @@ export default function RoundSummary({
   onPlayAgain,
   onReviewMap,
   share,
+  replay,
+  postedId,
 }: Props) {
   // Finishing the lot, or beating your own record. A round given up halfway
   // gets nothing: confetti for that would make the gesture worthless.
@@ -126,6 +133,12 @@ export default function RoundSummary({
             >
               Show on globe
             </button>
+          </div>
+        )}
+
+        {replay && (
+          <div className="border-t border-white/[0.07] px-6 py-3">
+            <ReplayActions replay={replay} postedId={postedId} />
           </div>
         )}
 

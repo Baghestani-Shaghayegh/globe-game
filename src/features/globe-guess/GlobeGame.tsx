@@ -10,6 +10,8 @@ import GameHud from "./GameHud";
 import ExitConfirm from "./ExitConfirm";
 import ConfirmDialog from "./ConfirmDialog";
 import { useRound } from "./useRound";
+import { useReplayCamera } from "./useReplayCamera";
+import { keepReplay, type Replay } from "../../lib/replay";
 import { recordRound } from "../../lib/countryStats";
 import { useGlobeClick } from "./useGlobeClick";
 import { useLeaveGuard } from "./useLeaveGuard";
@@ -17,6 +19,7 @@ import type { RoundOutcome } from "./FindGame";
 import { getCountryMeta } from "../../data/countries";
 import {
   BLITZ_SECONDS,
+  GAME_TYPES,
   recordKey,
   type Mode,
   type Ruleset,
@@ -249,13 +252,14 @@ export default function GlobeGame({
   const [hintsOn] = useState(hintsEnabled);
   const limitSeconds = limitMs === null ? null : Math.round(limitMs / 1000);
   // Seconds, not milliseconds, and with the round length — see FindGame.
-  const round = useRound(
-    recordKey("name", mode.id, limitSeconds, ruleset, count),
-    limitMs,
-    { record, pointsMultiplier }
-  );
+  const bucket = recordKey("name", mode.id, limitSeconds, ruleset, count);
+  const round = useRound(bucket, limitMs, { record, pointsMultiplier });
   const { begin, reset, tick, end, summary, correct, wrong, spendHint } =
     round;
+  const { mark, look, finishReplay } = round;
+  /** This round as recorded, once it's over. */
+  const [replay, setReplay] = useState<Replay | null>(null);
+  useReplayCamera(globeRef, ready && !summary, look);
 
   const resetRun = useCallback(() => {
     reset();
@@ -269,6 +273,7 @@ export default function GlobeGame({
     setHintLetter(null);
     setExpired(new Set());
     setSecondsLeft(BLITZ_SECONDS);
+    setReplay(null);
   }, [reset]);
 
   useEffect(() => {
@@ -533,6 +538,15 @@ export default function GlobeGame({
       found: [...foundNames],
       fumbled: got,
     });
+    const recording = finishReplay({
+      type: "name",
+      mode: mode.id,
+      label: `${GAME_TYPES.find((t) => t.id === "name")?.label ?? ""} · ${mode.name}`,
+      bucket,
+      ...(backdrop ? { inPlay: features.map((f) => f.properties.name) } : {}),
+    });
+    if (recording && record) keepReplay(recording);
+    setReplay(recording);
     onRoundEnd?.({
       points: summary.points,
       ms: summary.ms,
@@ -541,7 +555,10 @@ export default function GlobeGame({
       missed: features
         .map((f) => f.properties.name)
         .filter((name) => !foundNames.has(name)),
+      replay: recording,
+      postedId: round.postedId(),
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, at the end
   }, [summary, onRoundEnd, foundNames, fumbled, attempted, expired, features]);
   /**
    * "Yes, I'm leaving" has to actually leave. It used to end the round and
@@ -610,7 +627,7 @@ export default function GlobeGame({
       closeModal();
     } else {
       setFumbled((prev) => new Set(prev).add(name));
-      wrong();
+      wrong(name);
       if (ruleset === "sudden") {
         // The round is over; let the shake land before the summary appears.
         setIsWrong(true);
@@ -634,8 +651,9 @@ export default function GlobeGame({
       // get credit for would read as the game being broken.
       if (!inPlaySet.has(name)) return;
       setSelected(feature);
+      mark(["s", name]);
     },
-    [summary, foundNames, expired, backdrop, inPlaySet]
+    [summary, foundNames, expired, backdrop, inPlaySet, mark]
   );
   const globeClick = useGlobeClick<CountryFeature>(selectCountry);
 
@@ -933,6 +951,8 @@ export default function GlobeGame({
           missedCount={summary.total - summary.found}
           onPlayAgain={resetRun}
           onReviewMap={() => round.setReviewingMap(true)}
+          replay={replay}
+          postedId={round.postedId}
           share={
             // Free play only: practice isn't a result, and the daily has its
             // own result page to share from.

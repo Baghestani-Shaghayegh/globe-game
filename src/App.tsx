@@ -26,6 +26,8 @@ const Connect = lazy(() => import("./pages/Connect"));
 // The list cuts the map into lessons; the lesson itself is a globe.
 const Learn = lazy(() => import("./pages/Learn"));
 const LessonPage = lazy(() => import("./pages/LessonPage"));
+// A posted run, played back on a 2D globe: no three.js needed.
+const ReplayPage = lazy(() => import("./pages/ReplayPage"));
 // Not linked: for listening through the recorded names before they go out.
 const Voices = lazy(() => import("./pages/Voices"));
 // No globe here, but it draws every outline, so it loads on demand too.
@@ -57,6 +59,7 @@ function App() {
             <Route path="/learn" element={<Learn />} />
             <Route path="/learn/:id" element={<LessonPage />} />
             <Route path="/voices" element={<Voices />} />
+            <Route path="/replay/:id" element={<ReplayPage />} />
             <Route path="/mystery" element={<Mystery />} />
             <Route path="/connect" element={<Connect />} />
             <Route path="/bigger" element={<HigherLower />} />

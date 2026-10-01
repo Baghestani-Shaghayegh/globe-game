@@ -265,7 +265,8 @@ export async function shareCard(
   blob: Blob,
   { text, filename }: { text: string; filename: string }
 ): Promise<ShareOutcome> {
-  const file = new File([blob], filename, { type: "image/png" });
+  // The blob's own type, so the same hand-off shares a video too.
+  const file = new File([blob], filename, { type: blob.type || "image/png" });
 
   const canShareFiles =
     typeof navigator !== "undefined" &&
