@@ -8,7 +8,8 @@ import {
   setRecordingOn,
   type Replay,
 } from "./replay";
-import { cameraAt, frameAt } from "./replayFrame";
+import { cameraAt, END_HOLD_MS, frameAt } from "./replayFrame";
+import { videoTimeline } from "./replayVideo";
 
 beforeEach(() => localStorage.clear());
 
@@ -109,8 +110,92 @@ describe("what a moment shows", () => {
     expect(f.ripples).toEqual([{ name: "Spain", ok: true, progress: 200 / 700 }]);
   });
 
-  it("shows the result once the round is over", () => {
-    expect(frameAt(sample(), 10_000).over).toBe(true);
+  it("holds the last moment, then shows the result", () => {
+    expect(frameAt(sample(), 10_000).over).toBe(false);
+    expect(frameAt(sample(), 10_000 + END_HOLD_MS).over).toBe(true);
+  });
+});
+
+function mystery(): Replay {
+  return {
+    v: 1,
+    game: { type: "mystery", mode: "daily", label: "Mystery country #12", bucket: "mystery:daily", answer: "Peru" },
+    at: "2026-10-01T10:00:00.000Z",
+    result: { ms: 6000, points: 900, found: 1, total: 1 },
+    cam: [],
+    ev: [
+      [1000, "g", "France", 8200],
+      [3000, "g", "Brazil", 0],
+      [6000, "g", "Peru", 0],
+      [6000, "ok", "Peru", 900],
+    ],
+  };
+}
+
+describe("the daily games, recorded", () => {
+  it("keeps a mystery's guesses and how warm each was", () => {
+    const f = frameAt(mystery(), 3500);
+    expect([...f.heat]).toEqual([
+      ["France", 8200],
+      ["Brazil", 0],
+    ]);
+    expect(f.lastGuess).toEqual({ name: "Brazil", km: 0 });
+    expect(frameAt(mystery(), 6200).found.has("Peru")).toBe(true);
+    expect(parseReplay(mystery())).not.toBeNull();
+  });
+
+  it("grades each country put into a Connect", () => {
+    const r: Replay = {
+      ...mystery(),
+      game: { type: "connect", mode: "daily", label: "Connect #3", bucket: "connect:daily", from: "Spain", to: "Germany", par: 1 },
+      ev: [
+        [800, "c", "Italy", "near"],
+        [2000, "c", "France", "best"],
+      ],
+    };
+    const f = frameAt(r, 2100);
+    expect([...f.placed]).toEqual([
+      ["Italy", "near"],
+      ["France", "best"],
+    ]);
+    expect(f.ripples).toEqual([{ name: "France", ok: true, progress: 100 / 700 }]);
+    expect(parseReplay(r)?.game.par).toBe(1);
+  });
+
+  it("puts a Which is bigger? pair up, then judges it, and counts the run", () => {
+    const r: Replay = {
+      ...mystery(),
+      game: { type: "bigger", mode: "streak", label: "Which is bigger?", bucket: "" },
+      ev: [
+        [0, "b", "Chad", "Peru", "", 0],
+        [1200, "b", "Chad", "Peru", "Chad", 1],
+        [2800, "b", "Chad", "Spain", "", 0],
+        [4000, "b", "Chad", "Spain", "Spain", 0],
+      ],
+    };
+    expect(frameAt(r, 500).pair).toEqual({ left: "Chad", right: "Peru", picked: null, correct: null });
+    expect(frameAt(r, 1500).streak).toBe(1);
+    expect(frameAt(r, 3000).pair?.picked).toBeNull();
+    expect(frameAt(r, 3000).streak).toBe(1);
+    expect(frameAt(r, 4100).pair).toEqual({ left: "Chad", right: "Spain", picked: "Spain", correct: false });
+    expect(frameAt(r, 4100).streak).toBe(0);
+    expect(parseReplay(r)).not.toBeNull();
+  });
+
+  it("turns away malformed daily events", () => {
+    expect(parseReplay({ ...mystery(), ev: [[0, "g", "Peru", "far"]] })).toBeNull();
+    expect(parseReplay({ ...mystery(), ev: [[0, "c", "Peru", 3]] })).toBeNull();
+    expect(parseReplay({ ...mystery(), ev: [[0, "b", "Peru", "Chad", "Chad"]] })).toBeNull();
+    expect(parseReplay({ ...mystery(), game: { ...mystery().game, par: "four" } })).toBeNull();
+  });
+});
+
+describe("the video's ending", () => {
+  it("plays on through the held moment to the result card", () => {
+    const { frames, at } = videoTimeline(6000);
+    const last = at(frames - 1).t;
+    expect(last).toBeGreaterThan(6000 + END_HOLD_MS);
+    expect(at(frames - 1).intro).toBe(0);
   });
 });
 

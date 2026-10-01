@@ -11,9 +11,12 @@ import type { GameType } from "../data/modes";
  * shows not just the time but the run.
  */
 
+/** The games recorded beyond the six globe rounds. */
+export type DailyKind = "mystery" | "connect" | "bigger";
+
 /** Which game a recording is of, enough to label it and draw its prompts. */
 export type ReplayGame = {
-  type: GameType;
+  type: GameType | DailyKind;
   /** The mode's id: "europe", "easy". */
   mode: string;
   /** "Find it · Europe", as the player saw it. */
@@ -22,6 +25,13 @@ export type ReplayGame = {
   bucket: string;
   /** The countries being asked about, when that's less than the whole map. */
   inPlay?: string[];
+  /** Mystery: the country being looked for, shown once the round is over. */
+  answer?: string;
+  /** Connect: the two countries to link. */
+  from?: string;
+  to?: string;
+  /** Connect: the shortest route's length, to say "par 4". */
+  par?: number;
 };
 
 /**
@@ -33,6 +43,10 @@ export type ReplayGame = {
  *   h   a hint bought                   [t, "h", kind]
  *   p   a country passed or shown       [t, "p", name]
  *   s   a country picked to name        [t, "s", name]
+ *   g   a mystery guess, and how far    [t, "g", name, km]
+ *   c   a country put in a Connect      [t, "c", name, "best"|"near"|"far"]
+ *   b   a Which is bigger? pair         [t, "b", left, right, picked, 1 right | 0 wrong]
+ *       (picked "" when the pair is first put up, before any pick)
  */
 export type ReplayEvent =
   | [number, "q", string]
@@ -40,7 +54,10 @@ export type ReplayEvent =
   | [number, "x", string | null]
   | [number, "h", string]
   | [number, "p", string]
-  | [number, "s", string];
+  | [number, "s", string]
+  | [number, "g", string, number]
+  | [number, "c", string, string]
+  | [number, "b", string, string, string, number];
 
 export type Replay = {
   v: 1;
@@ -82,6 +99,11 @@ export class ReplayRecorder {
     this.events.push([this.now(), ...event] as ReplayEvent);
   }
 
+  /** How long it's been running, on the recording's clock. */
+  elapsed(): number {
+    return this.now();
+  }
+
   /** Where the camera is. Thinned to a few samples a second; `force` keeps one. */
   look(lat: number, lng: number, altitude: number, force = false): void {
     const t = this.now();
@@ -119,6 +141,10 @@ export function parseReplay(data: unknown): Replay | null {
   const g = r.game;
   if (!isStr(g.type) || !isStr(g.mode) || !isStr(g.label) || !isStr(g.bucket)) return null;
   if (g.inPlay !== undefined && !(Array.isArray(g.inPlay) && g.inPlay.every(isStr))) return null;
+  for (const field of [g.answer, g.from, g.to]) {
+    if (field !== undefined && !isStr(field)) return null;
+  }
+  if (g.par !== undefined && !isNum(g.par)) return null;
   const res = r.result;
   if (![res.ms, res.points, res.found, res.total].every(isNum)) return null;
   if (!Array.isArray(r.cam) || r.cam.length % 4 !== 0 || r.cam.length > MAX_CAMERA) return null;
@@ -126,9 +152,12 @@ export function parseReplay(data: unknown): Replay | null {
   if (!Array.isArray(r.ev) || r.ev.length > MAX_EVENTS) return null;
   for (const e of r.ev) {
     if (!Array.isArray(e) || !isNum(e[0]) || !isStr(e[1])) return null;
-    const [, kind, a, b] = e as unknown[];
+    const [, kind, a, b, c, d] = e as unknown[];
     const ok =
       (kind === "ok" && isStr(a) && isNum(b)) ||
+      (kind === "g" && isStr(a) && isNum(b)) ||
+      (kind === "c" && isStr(a) && isStr(b)) ||
+      (kind === "b" && isStr(a) && isStr(b) && isStr(c) && isNum(d)) ||
       (kind === "x" && (a === null || isStr(a))) ||
       ((kind === "q" || kind === "h" || kind === "p" || kind === "s") && isStr(a));
     if (!ok) return null;

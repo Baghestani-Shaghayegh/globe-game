@@ -1,6 +1,6 @@
 import { BORDERS, neighboursOf } from "../data/borders";
 import { DAILY_MULTIPLIER, hash, mulberry32, dayNumber, elapsedMs } from "./daily";
-import { postScore } from "./leaderboard";
+import { postRun } from "./leaderboard";
 import { getCountryMeta } from "../data/countries";
 
 /**
@@ -287,9 +287,9 @@ export function scoreFor(result: ConnectResult): number {
 export const CONNECT_BUCKET = "connect:daily";
 
 /** Files a solved connect on the leaderboard, at the daily multiplier. */
-export function postConnectScore(result: ConnectResult): Promise<boolean> {
-  if (!result.solved) return Promise.resolve(false);
-  return postScore(CONNECT_BUCKET, {
+export function postConnectScore(result: ConnectResult): Promise<number | null> {
+  if (!result.solved) return Promise.resolve(null);
+  return postRun(CONNECT_BUCKET, {
     points: scoreFor(result) * DAILY_MULTIPLIER,
     found: 1,
     total: 1,

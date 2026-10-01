@@ -1,5 +1,5 @@
 import type { Replay } from "./replay";
-import { frameAt } from "./replayFrame";
+import { END_HOLD_MS, frameAt } from "./replayFrame";
 import { drawFrame, type ReplayAssets } from "./replayDraw";
 
 /**
@@ -15,7 +15,8 @@ export const VIDEO_WIDTH = 1080;
 export const VIDEO_HEIGHT = 1920;
 const FPS = 30;
 const INTRO_S = 1.2;
-const OUTRO_S = 2.8;
+/** The held last moment, then the result card. */
+const OUTRO_S = END_HOLD_MS / 1000 + 2.8;
 /** The round itself is squeezed into at most this long. */
 const MAX_MAIN_S = 40;
 
@@ -39,7 +40,8 @@ export function videoTimeline(ms: number): { frames: number; at: (i: number) => 
         return { t: 0, intro: fade };
       }
       if (i < intro + main) return { t: ((i - intro) / FPS) * 1000 * speed, intro: 0 };
-      return { t: ms, intro: 0 };
+      // Real time from the end, so the last moment holds and then the card comes up.
+      return { t: ms + ((i - intro - main) / FPS) * 1000, intro: 0 };
     },
   };
 }

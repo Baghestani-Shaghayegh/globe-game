@@ -10,6 +10,9 @@ import { capitalOf } from "../data/capitals";
 import { cluesFor } from "../data/clues";
 import { flagUrl } from "../data/flags";
 import { labelPoint, type Geometry } from "./geo";
+import { areaOf } from "../data/areas";
+import { bigger, formatArea } from "./higherLower";
+import { heatColor } from "./mystery";
 import type { Replay } from "./replay";
 import { clock, type Frame } from "./replayFrame";
 
@@ -44,6 +47,9 @@ const LIT = "#fbbf24";
 const INK = "#fafafa";
 const MUTED = "#9ca3af";
 const ACCENT = "#5eead4";
+/** Connect's two ends, as on its share card. */
+const ENDS = "#a78bfa";
+const GRADE: Record<string, string> = { best: FOUND, near: LIT, far: MISSED };
 
 /** Loads what drawing needs: the map, and the flags a flag round asked. */
 export async function loadReplayAssets(replay: Replay): Promise<ReplayAssets> {
@@ -125,6 +131,9 @@ export function drawFrame(
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, W, H);
 
+  const kind = replay.game.type;
+  const { answer, from, to } = replay.game;
+
   // ---- The globe -----------------------------------------------------------
   const cx = W / 2;
   const cy = H * 0.56;
@@ -136,84 +145,170 @@ export function drawFrame(
     .clipAngle(90);
   const path = geoPath(projection, ctx);
 
-  const glow = ctx.createRadialGradient(cx, cy, r * 0.92, cx, cy, r * 1.08);
-  glow.addColorStop(0, "rgba(94,234,212,0)");
-  glow.addColorStop(0.5, "rgba(94,234,212,0.28)");
-  glow.addColorStop(1, "rgba(94,234,212,0)");
-  ctx.fillStyle = glow;
-  ctx.beginPath();
-  ctx.arc(cx, cy, r * 1.08, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = OCEAN;
-  ctx.beginPath();
-  path({ type: "Sphere" });
-  ctx.fill();
-
-  ctx.strokeStyle = "rgba(94,234,212,0.09)";
-  ctx.lineWidth = Math.max(1, 1.2 * u);
-  ctx.beginPath();
-  path(geoGraticule10());
-  ctx.stroke();
-
-  const inPlay = replay.game.inPlay ? new Set(replay.game.inPlay) : null;
-  const naming = replay.game.type === "name";
-  const colour = (name: string): string => {
-    if (name === frame.wrong) return MISSED;
-    if (name === frame.revealed) return LIT;
-    if (frame.found.has(name)) return FOUND;
-    if (naming && name === frame.target) return LIT;
-    if (inPlay) return inPlay.has(name) ? IN_PLAY : LAND;
-    return IN_PLAY;
-  };
-  ctx.lineWidth = Math.max(0.6, 0.9 * u);
-  ctx.strokeStyle = "rgba(255,255,255,0.18)";
-  for (const f of assets.features) {
+  if (kind !== "bigger") {
+    const glow = ctx.createRadialGradient(cx, cy, r * 0.92, cx, cy, r * 1.08);
+    glow.addColorStop(0, "rgba(94,234,212,0)");
+    glow.addColorStop(0.5, "rgba(94,234,212,0.28)");
+    glow.addColorStop(1, "rgba(94,234,212,0)");
+    ctx.fillStyle = glow;
     ctx.beginPath();
-    path(f.geometry);
-    ctx.fillStyle = colour(f.properties.name);
+    ctx.arc(cx, cy, r * 1.08, 0, Math.PI * 2);
     ctx.fill();
+
+    ctx.fillStyle = OCEAN;
+    ctx.beginPath();
+    path({ type: "Sphere" });
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(94,234,212,0.09)";
+    ctx.lineWidth = Math.max(1, 1.2 * u);
+    ctx.beginPath();
+    path(geoGraticule10());
     ctx.stroke();
+
+    const inPlay = replay.game.inPlay ? new Set(replay.game.inPlay) : null;
+    const naming = replay.game.type === "name";
+    const colour = (name: string): string => {
+      if (kind === "mystery") {
+        // The answer once it's found or handed over; every guess its heat.
+        if (name === answer && frame.found.has(name)) return FOUND;
+        if (name === answer && frame.revealed === name) return heatColor(0);
+        const km = frame.heat.get(name);
+        return km === undefined ? LAND : heatColor(km);
+      }
+      if (kind === "connect") {
+        if (name === from || name === to) return ENDS;
+        const grade = frame.placed.get(name);
+        return grade ? (GRADE[grade] ?? LAND) : LAND;
+      }
+      if (name === frame.wrong) return MISSED;
+      if (name === frame.revealed) return LIT;
+      if (frame.found.has(name)) return FOUND;
+      if (naming && name === frame.target) return LIT;
+      if (inPlay) return inPlay.has(name) ? IN_PLAY : LAND;
+      return IN_PLAY;
+    };
+    ctx.lineWidth = Math.max(0.6, 0.9 * u);
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    for (const f of assets.features) {
+      ctx.beginPath();
+      path(f.geometry);
+      ctx.fillStyle = colour(f.properties.name);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // Ripples where the player clicked, and the name on what they hit.
+    for (const ripple of frame.ripples) {
+      const at = assets.labels.get(ripple.name);
+      const xy = at && projection(at);
+      if (!xy) continue;
+      ctx.strokeStyle = ripple.ok ? FOUND : MISSED;
+      ctx.globalAlpha = 1 - ripple.progress;
+      ctx.lineWidth = 5 * u;
+      ctx.beginPath();
+      ctx.arc(xy[0], xy[1], (14 + 70 * ripple.progress) * u, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    const pill = (name: string, tone: string) => {
+      const at = assets.labels.get(name);
+      const xy = at && projection(at);
+      if (!xy) return;
+      const text = display(name);
+      ctx.font = font(30, "600");
+      const w = ctx.measureText(text).width + 32 * u;
+      const h = 48 * u;
+      const x = xy[0] - w / 2;
+      const y = xy[1] - h - 22 * u;
+      ctx.fillStyle = "rgba(10,16,24,0.88)";
+      roundRect(ctx, x, y, w, h, h / 2);
+      ctx.fill();
+      ctx.strokeStyle = tone;
+      ctx.lineWidth = 2 * u;
+      ctx.stroke();
+      ctx.fillStyle = INK;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, xy[0], y + h / 2);
+      ctx.textBaseline = "alphabetic";
+    };
+    if (kind === "mystery") {
+      // The newest guess is named where it is, as the game turns to it.
+      if (frame.revealed) pill(frame.revealed, heatColor(0));
+      else if (frame.right) pill(frame.right, FOUND);
+      else if (frame.lastGuess) pill(frame.lastGuess.name, heatColor(frame.lastGuess.km));
+    } else if (kind === "connect") {
+      if (from) pill(from, ENDS);
+      if (to) pill(to, ENDS);
+      const newest = [...frame.placed].pop();
+      if (newest) pill(newest[0], GRADE[newest[1]] ?? LAND);
+    } else {
+      if (frame.wrong) pill(frame.wrong, MISSED);
+      if (frame.right) pill(frame.right, FOUND);
+      if (frame.revealed) pill(frame.revealed, LIT);
+    }
   }
 
-  // Ripples where the player clicked, and the name on what they hit.
-  for (const ripple of frame.ripples) {
-    const at = assets.labels.get(ripple.name);
-    const xy = at && projection(at);
-    if (!xy) continue;
-    ctx.strokeStyle = ripple.ok ? FOUND : MISSED;
-    ctx.globalAlpha = 1 - ripple.progress;
-    ctx.lineWidth = 5 * u;
-    ctx.beginPath();
-    ctx.arc(xy[0], xy[1], (14 + 70 * ripple.progress) * u, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  }
-  const pill = (name: string, tone: string) => {
-    const at = assets.labels.get(name);
-    const xy = at && projection(at);
-    if (!xy) return;
-    const text = display(name);
+  // ---- Which is bigger?: the pair, side by side ---------------------------
+  if (kind === "bigger" && frame.pair) {
+    const pair = frame.pair;
+    const gap = 90 * u;
+    const cardW = (W - 2 * 60 * u - gap) / 2;
+    const cardH = 1000 * u;
+    const top = H * 0.3;
+    const winner = pair.picked ? bigger(pair.left, pair.right) : null;
+    [pair.left, pair.right].forEach((name, i) => {
+      const x = 60 * u + i * (cardW + gap);
+      const chosen = pair.picked === name;
+      const tone = chosen ? (pair.correct ? FOUND : MISSED) : null;
+      ctx.fillStyle = tone ? (pair.correct ? "rgba(52,211,153,0.10)" : "rgba(251,113,133,0.10)") : "rgba(255,255,255,0.04)";
+      roundRect(ctx, x, top, cardW, cardH, 36 * u);
+      ctx.fill();
+      ctx.strokeStyle = tone ?? "rgba(255,255,255,0.12)";
+      ctx.lineWidth = 3 * u;
+      ctx.stroke();
+      const f = assets.byName.get(name);
+      if (f) {
+        const shape = geoMercator().fitExtent(
+          [
+            [x + 40 * u, top + 80 * u],
+            [x + cardW - 40 * u, top + cardH * 0.6],
+          ],
+          f.geometry
+        );
+        ctx.beginPath();
+        geoPath(shape, ctx)(f.geometry);
+        ctx.fillStyle = tone ?? (pair.picked ? "#52525b" : ACCENT);
+        ctx.fill();
+      }
+      ctx.textAlign = "center";
+      ctx.fillStyle = INK;
+      let size = 44;
+      ctx.font = font(size, "700");
+      while (size > 24 && ctx.measureText(display(name)).width > cardW - 40 * u) {
+        size -= 2;
+        ctx.font = font(size, "700");
+      }
+      ctx.fillText(display(name), x + cardW / 2, top + cardH * 0.73);
+      if (pair.picked) {
+        ctx.fillStyle = "#d4d4d8";
+        ctx.font = font(32, "500");
+        ctx.fillText(formatArea(areaOf(name) ?? 0), x + cardW / 2, top + cardH * 0.82);
+        if (name === winner) {
+          ctx.fillStyle = FOUND;
+          ctx.font = font(28, "700");
+          ctx.fillText("BIGGER", x + cardW / 2, top + cardH * 0.91);
+        }
+      }
+    });
+    ctx.fillStyle = MUTED;
     ctx.font = font(30, "600");
-    const w = ctx.measureText(text).width + 32 * u;
-    const h = 48 * u;
-    const x = xy[0] - w / 2;
-    const y = xy[1] - h - 22 * u;
-    ctx.fillStyle = "rgba(10,16,24,0.88)";
-    roundRect(ctx, x, y, w, h, h / 2);
-    ctx.fill();
-    ctx.strokeStyle = tone;
-    ctx.lineWidth = 2 * u;
-    ctx.stroke();
+    ctx.fillText("OR", cx, top + cardH / 2);
     ctx.fillStyle = INK;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(text, xy[0], y + h / 2);
-    ctx.textBaseline = "alphabetic";
-  };
-  if (frame.wrong) pill(frame.wrong, MISSED);
-  if (frame.right) pill(frame.right, FOUND);
-  if (frame.revealed) pill(frame.revealed, LIT);
+    ctx.font = font(64, "700");
+    ctx.fillText("Which is bigger?", cx, top - 60 * u);
+  }
 
   // ---- The top: who, what, and the clock -----------------------------------
   const top = ctx.createLinearGradient(0, 0, 0, H * 0.32);
@@ -221,7 +316,8 @@ export function drawFrame(
   top.addColorStop(0.75, "rgba(7,17,28,0.8)");
   top.addColorStop(1, "rgba(7,17,28,0)");
   ctx.fillStyle = top;
-  ctx.fillRect(0, 0, W, H * 0.32);
+  // Over the globe only: the bigger cards have nothing under them to fade.
+  if (kind !== "bigger") ctx.fillRect(0, 0, W, H * 0.32);
 
   ctx.textAlign = "center";
   ctx.fillStyle = INK;
@@ -244,12 +340,27 @@ export function drawFrame(
     ctx.fillText(label, x, 272 * u);
   };
   const shownT = Math.min(frame.t, replay.result.ms);
-  stat(W * 0.2, clock(shownT), "TIME");
-  stat(W * 0.5, `${frame.found.size}/${replay.result.total}`, "FOUND");
-  stat(W * 0.8, frame.points.toLocaleString(), "POINTS");
+  if (kind === "mystery") {
+    const closest = Math.min(...frame.heat.values());
+    stat(W * 0.2, clock(shownT), "TIME");
+    stat(W * 0.5, String(frame.heat.size), "GUESSES");
+    stat(W * 0.8, frame.heat.size ? `${closest.toLocaleString()} km` : "–", "CLOSEST");
+  } else if (kind === "connect") {
+    stat(W * 0.2, clock(shownT), "TIME");
+    stat(W * 0.5, String(frame.placed.size), "PLACED");
+    stat(W * 0.8, String(replay.game.par ?? "–"), "PAR");
+  } else if (kind === "bigger") {
+    stat(W * 0.3, clock(shownT), "TIME");
+    stat(W * 0.7, String(frame.streak), "IN A ROW");
+  } else {
+    stat(W * 0.2, clock(shownT), "TIME");
+    stat(W * 0.5, `${frame.found.size}/${replay.result.total}`, "FOUND");
+    stat(W * 0.8, frame.points.toLocaleString(), "POINTS");
+  }
 
   // ---- The question --------------------------------------------------------
-  if (frame.target && !frame.over) {
+  const asking = kind === "mystery" || kind === "connect" ? !frame.over : frame.target && !frame.over;
+  if (asking) {
     const boxW = 760 * u;
     const boxH = 190 * u;
     const bx = cx - boxW / 2;
@@ -261,12 +372,12 @@ export function drawFrame(
     ctx.lineWidth = 2 * u;
     ctx.stroke();
 
-    const t = frame.target;
-    const ask = (kicker: string, text: string, size = 64) => {
+    const t = frame.target ?? "";
+    const ask = (kicker: string, text: string, size = 64, tone = INK) => {
       ctx.fillStyle = MUTED;
       ctx.font = font(26, "600");
       ctx.fillText(kicker, cx, by + 58 * u);
-      ctx.fillStyle = INK;
+      ctx.fillStyle = tone;
       let at = size;
       ctx.font = font(at, "700");
       while (at > 26 && ctx.measureText(text).width > boxW - 60 * u) {
@@ -276,6 +387,23 @@ export function drawFrame(
       ctx.fillText(text, cx, by + 138 * u);
     };
     switch (replay.game.type) {
+      case "mystery": {
+        const g = frame.lastGuess;
+        if (answer && frame.revealed === answer) ask("IT WAS", display(answer), 64, heatColor(0));
+        else if (!g) ask("FIND THE MYSTERY COUNTRY", "Warmer means closer", 48);
+        else if (g.km === 0 && g.name === answer) ask("FOUND IT", display(g.name), 64, FOUND);
+        else
+          ask(
+            display(g.name).toUpperCase(),
+            g.km === 0 ? "Touching" : `${g.km.toLocaleString()} km away`,
+            64,
+            heatColor(g.km)
+          );
+        break;
+      }
+      case "connect":
+        ask("WALK FROM", `${display(from ?? "")} → ${display(to ?? "")}`, 56);
+        break;
       case "find":
         ask("WHERE'S", `${display(t)}?`);
         break;
@@ -340,16 +468,41 @@ export function drawFrame(
     ctx.fillStyle = MUTED;
     ctx.font = font(34, "500");
     ctx.fillText(replay.game.label.toUpperCase(), cx, H * 0.36);
+    const res = replay.result;
+    const guesses = replay.ev.filter((e) => e[1] === "g").length;
+    const [big, line] =
+      kind === "mystery"
+        ? [
+            res.found ? "Found it" : "Gave up",
+            `${display(answer ?? "")} · ${guesses} ${guesses === 1 ? "guess" : "guesses"} · ${clock(res.ms)}`,
+          ]
+        : kind === "connect"
+          ? [
+              `${res.found} ${res.found === 1 ? "step" : "steps"}`,
+              `par ${replay.game.par ?? "–"} · ${clock(res.ms)} · ${res.points.toLocaleString()} points`,
+            ]
+          : kind === "bigger"
+            ? [`${res.points} in a row`, `${clock(res.ms)} · countries by land area`]
+            : [
+                `${res.found} / ${res.total}`,
+                `${clock(res.ms)} · ${res.points.toLocaleString()} points`,
+              ];
     ctx.fillStyle = INK;
-    ctx.font = font(150, "800");
-    ctx.fillText(`${replay.result.found} / ${replay.result.total}`, cx, H * 0.47);
+    let bigSize = 150;
+    ctx.font = font(bigSize, "800");
+    while (bigSize > 60 && ctx.measureText(big).width > W - 120 * u) {
+      bigSize -= 6;
+      ctx.font = font(bigSize, "800");
+    }
+    ctx.fillText(big, cx, H * 0.47);
     ctx.fillStyle = ACCENT;
-    ctx.font = font(52, "600");
-    ctx.fillText(
-      `${clock(replay.result.ms)} · ${replay.result.points.toLocaleString()} points`,
-      cx,
-      H * 0.53
-    );
+    let lineSize = 52;
+    ctx.font = font(lineSize, "600");
+    while (lineSize > 28 && ctx.measureText(line).width > W - 100 * u) {
+      lineSize -= 2;
+      ctx.font = font(lineSize, "600");
+    }
+    ctx.fillText(line, cx, H * 0.53);
     if (player) {
       ctx.fillStyle = MUTED;
       ctx.font = font(38, "500");

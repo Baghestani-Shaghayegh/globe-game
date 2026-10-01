@@ -1,5 +1,10 @@
 import ShareResult from "../components/ShareResult";
 import ChallengeBanner from "../components/ChallengeBanner";
+import RecordSwitch from "../features/replay/RecordSwitch";
+import ReplayActions from "../features/replay/ReplayActions";
+import { useReplayCamera } from "../features/globe-guess/useReplayCamera";
+import { keepReplay, recordingOn, ReplayRecorder, type Replay } from "../lib/replay";
+import { END_HOLD_MS } from "../lib/replayFrame";
 import { CARD_FOUND, CARD_MISSED } from "../features/globe-guess/RoundShare";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Globe from "react-globe.gl";
@@ -26,6 +31,7 @@ import ConfirmDialog from "../features/globe-guess/ConfirmDialog";
 import Celebrate from "../components/Celebrate";
 import { playSolved, playStep, playWrong } from "../lib/sound";
 import {
+  CONNECT_BUCKET,
   connectable,
   gradeFor,
   hopsFrom,
@@ -150,6 +156,7 @@ export default function Connect() {
     // Otherwise only a solved puzzle comes back. One left part-way starts
     // again from nothing — Sara's rule for all three dailies: leaving without
     // finishing doesn't use up the day, and doesn't carry over either.
+    recorder.current = saved?.solved ? null : new ReplayRecorder();
     setResult(
       (saved?.solved ? saved : null) ?? {
         day,
@@ -164,6 +171,60 @@ export default function Connect() {
       }
     );
   }, [day, puzzle]);
+
+  // The walk as it's played, to watch back and post: each country put down
+  // and how good a step it was, and where the globe looked.
+  const recorder = useRef<ReplayRecorder | null>(null);
+  const [recorded, setRecorded] = useState<{
+    replay: Replay;
+    postedId: () => Promise<number | null>;
+  } | null>(null);
+  const look = useCallback(
+    (lat: number, lng: number, altitude: number, force?: boolean) =>
+      recorder.current?.look(lat, lng, altitude, force),
+    []
+  );
+  const [filming, setFilming] = useState(false);
+  const playing = !!result && !result.solved;
+  useEffect(() => {
+    if (playing) setFilming(true);
+  }, [playing]);
+  useReplayCamera(globeRef, ready && filming, look);
+
+  /** Closes the recording a beat after the chain joins up. */
+  const finishRecording = useCallback(
+    (next: ConnectResult, posted: Promise<number | null>) => {
+      const rec = recorder.current;
+      if (!rec) return;
+      const ms = next.ms ?? elapsedMs(next.startedAt);
+      // Still taking the camera through the hold, so the turn to the end is in it.
+      window.setTimeout(() => {
+        if (recorder.current === rec) recorder.current = null;
+        setFilming(false);
+        if (!recordingOn()) return;
+        const replay = rec.finish(
+          {
+            type: "connect",
+            mode: "daily",
+            label: `Connect #${next.number}`,
+            bucket: CONNECT_BUCKET,
+            from: next.from,
+            to: next.to,
+            par: next.par,
+          },
+          {
+            ms,
+            points: scoreFor(next),
+            found: next.chain.length,
+            total: next.par,
+          }
+        );
+        keepReplay(replay);
+        setRecorded({ replay, postedId: () => posted });
+      }, END_HOLD_MS);
+    },
+    []
+  );
 
   const centres = useMemo(() => {
     const map = new Map<string, { lat: number; lng: number }>();
@@ -276,6 +337,8 @@ export default function Connect() {
     };
     saveConnect(fresh);
     setResult(fresh);
+    // A new attempt, a new recording: the cleared chain isn't part of it.
+    recorder.current = new ReplayRecorder();
     setNow(Date.now());
     setTyped("");
     setNote(null);
@@ -347,6 +410,7 @@ export default function Connect() {
       saveConnect(next);
       setResult(next);
       setTyped("");
+      recorder.current?.mark(["c", name, gradeOf(name)]);
       // Said the way it is painted. Only a pick well off the way is a miss:
       // red, with the shake. "Brazil isn't connected yet" suggested it might
       // be, on a walk from China to Qatar — it never could.
@@ -379,7 +443,7 @@ export default function Connect() {
 
       if (route) {
         // Not awaited, for the same reason the mystery isn't.
-        void postConnectScore(next);
+        finishRecording(next, postConnectScore(next));
         playSolved();
         setBurst((n) => n + 1);
       } else if (!offCourse) {
@@ -388,7 +452,7 @@ export default function Connect() {
         playStep(chain.length * 2);
       }
     },
-    [result, placedSet, pool, setHighlighted, centres, flagMiss, gradeOf]
+    [result, placedSet, pool, setHighlighted, centres, flagMiss, gradeOf, finishRecording]
   );
 
   const submit = (event: FormEvent) => {
@@ -544,6 +608,7 @@ export default function Connect() {
         >
           ← Modes
         </button>
+        {playing && <RecordSwitch />}
       </div>
 
       {/* Out of the globe's way, as in the other games: under the back button on a
@@ -620,6 +685,11 @@ export default function Connect() {
                     };
                   }}
                 />
+              </div>
+            )}
+            {recorded && (
+              <div className="pointer-events-auto mt-1 w-full border-t border-white/[0.07] pt-3">
+                <ReplayActions replay={recorded.replay} postedId={recorded.postedId} />
               </div>
             )}
           </>

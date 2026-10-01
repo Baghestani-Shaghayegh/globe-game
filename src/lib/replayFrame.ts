@@ -25,12 +25,28 @@ export type Frame = {
   ripples: { name: string; ok: boolean; progress: number }[];
   /** Past the end: the result is shown. */
   over: boolean;
+  /** Mystery: each country guessed, and how far it was. */
+  heat: Map<string, number>;
+  /** The newest mystery guess. */
+  lastGuess: { name: string; km: number } | null;
+  /** Connect: each country placed, and how good a step it was. */
+  placed: Map<string, string>;
+  /** Which is bigger?: the pair on screen, and how it went once picked. */
+  pair: { left: string; right: string; picked: string | null; correct: boolean | null } | null;
+  /** Which is bigger?: right answers so far. */
+  streak: number;
 };
 
 const REVEAL_MS = 1800;
 const WRONG_MS = 1200;
 const RIGHT_MS = 1400;
 const RIPPLE_MS = 700;
+/**
+ * The last moment held before the result card: the final answer's name, or
+ * the mystery shown, stays up long enough to read rather than vanishing
+ * under the card the instant the clock stops.
+ */
+export const END_HOLD_MS = 1500;
 
 /** Where the camera was at `t`, eased between the samples either side. */
 export function cameraAt(cam: number[], t: number): Frame["camera"] {
@@ -76,6 +92,11 @@ export function frameAt(replay: Replay, t: number): Frame {
   let wrong: string | null = null;
   let right: string | null = null;
   const ripples: Frame["ripples"] = [];
+  const heat = new Map<string, number>();
+  let lastGuess: Frame["lastGuess"] = null;
+  const placed = new Map<string, string>();
+  let pair: Frame["pair"] = null;
+  let streak = 0;
 
   for (const event of replay.ev) {
     const at = event[0];
@@ -108,6 +129,31 @@ export function frameAt(replay: Replay, t: number): Frame {
       case "p":
         revealed = age < REVEAL_MS ? event[2] : revealed;
         break;
+      case "g":
+        heat.set(event[2], event[3]);
+        lastGuess = { name: event[2], km: event[3] };
+        if (age < RIPPLE_MS) {
+          ripples.push({ name: event[2], ok: event[3] === 0, progress: age / RIPPLE_MS });
+        }
+        break;
+      case "c":
+        placed.set(event[2], event[3]);
+        if (age < RIPPLE_MS) {
+          ripples.push({ name: event[2], ok: event[3] !== "far", progress: age / RIPPLE_MS });
+        }
+        break;
+      case "b": {
+        // A pair put up, then the same pair picked: the verdict stays on
+        // screen until the next pair is put up.
+        if (!event[4]) {
+          pair = { left: event[2], right: event[3], picked: null, correct: null };
+          break;
+        }
+        const correct = event[5] === 1;
+        streak = correct ? streak + 1 : 0;
+        pair = { left: event[2], right: event[3], picked: event[4], correct };
+        break;
+      }
     }
   }
   // A flash belongs to the moment; one long gone shouldn't linger because a
@@ -133,7 +179,12 @@ export function frameAt(replay: Replay, t: number): Frame {
     wrong,
     right,
     ripples,
-    over: t >= replay.result.ms,
+    over: t >= replay.result.ms + END_HOLD_MS,
+    heat,
+    lastGuess,
+    placed,
+    pair,
+    streak,
   };
 }
 

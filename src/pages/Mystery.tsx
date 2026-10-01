@@ -21,10 +21,15 @@ import { useSuggestions } from "../features/globe-guess/useSuggestions";
 import { landShade, theme } from "../lib/globeTheme";
 import { landMaterial } from "../lib/globeTerrain";
 import { featureCentre, type Geometry, worldAltitude } from "../lib/geo";
-import { dayKey, formatDay } from "../lib/daily";
+import { dayKey, elapsedMs, formatDay } from "../lib/daily";
 import Celebrate from "../components/Celebrate";
 import ShareResult from "../components/ShareResult";
 import ChallengeBanner from "../components/ChallengeBanner";
+import RecordSwitch from "../features/replay/RecordSwitch";
+import ReplayActions from "../features/replay/ReplayActions";
+import { useReplayCamera } from "../features/globe-guess/useReplayCamera";
+import { keepReplay, recordingOn, ReplayRecorder, type Replay } from "../lib/replay";
+import { END_HOLD_MS } from "../lib/replayFrame";
 import { playSolved, playWarm, playWrong, playLose } from "../lib/sound";
 import {
   borderKm,
@@ -35,6 +40,7 @@ import {
   loadMystery,
   MAX_SCALE_KM,
   mysteryFor,
+  MYSTERY_BUCKET,
   mysteryNumber,
   postMysteryScore,
   saveMystery,
@@ -129,6 +135,8 @@ export default function Mystery() {
     // or giving up doesn't use up the day, and doesn't carry over either.
     const loaded = loadMystery(day);
     const saved = loaded && (loaded.solved || loaded.gaveUp) ? loaded : null;
+    // A fresh hunt is recorded from its first moment, like every round.
+    recorder.current = saved ? null : new ReplayRecorder();
     setResult(
       saved ?? {
         day,
@@ -173,6 +181,57 @@ export default function Mystery() {
 
   const [burst, setBurst] = useState(0);
 
+  // The hunt as it's played, to watch back and post: each guess and how warm
+  // it was, and where the globe looked.
+  const recorder = useRef<ReplayRecorder | null>(null);
+  const [recorded, setRecorded] = useState<{
+    replay: Replay;
+    /** Only a find goes on the board; a give-up is watched, not posted. */
+    postedId?: () => Promise<number | null>;
+  } | null>(null);
+  const look = useCallback(
+    (lat: number, lng: number, altitude: number, force?: boolean) =>
+      recorder.current?.look(lat, lng, altitude, force),
+    []
+  );
+  const playing = !!result && !result.solved && !result.gaveUp;
+  // Kept on through the hold after the end, so the turn to the answer is in it.
+  const [filming, setFilming] = useState(false);
+  useEffect(() => {
+    if (playing) setFilming(true);
+  }, [playing]);
+  useReplayCamera(globeRef, ready && filming, look);
+
+  /** Closes the recording a beat after the end, once the globe has turned. */
+  const finishRecording = useCallback((next: MysteryResult, posted: Promise<number | null>) => {
+    const rec = recorder.current;
+    if (!rec) return;
+    const ms = elapsedMs(next.startedAt);
+    // Still taking the camera through the hold, so the turn to the end is in it.
+    window.setTimeout(() => {
+      if (recorder.current === rec) recorder.current = null;
+      setFilming(false);
+      if (!recordingOn()) return;
+      const replay = rec.finish(
+        {
+          type: "mystery",
+          mode: "daily",
+          label: `Mystery country #${next.number}`,
+          bucket: MYSTERY_BUCKET,
+          answer: next.answer,
+        },
+        {
+          ms,
+          points: next.solved ? scoreFor(next) : 0,
+          found: next.solved ? 1 : 0,
+          total: 1,
+        }
+      );
+      keepReplay(replay);
+      setRecorded({ replay, postedId: next.solved ? () => posted : undefined });
+    }, END_HOLD_MS);
+  }, []);
+
   const guess = useCallback(
     (name: string) => {
       if (!result || result.solved || !answer) return;
@@ -197,6 +256,7 @@ export default function Mystery() {
       saveMystery(next);
       setResult(next);
       setFlash(null);
+      recorder.current?.mark(["g", name, km]);
 
       // Turn the globe to whatever was just named. Without this a guess on the
       // far side changed a colour nobody could see — you typed China, Africa
@@ -210,7 +270,8 @@ export default function Mystery() {
       if (name === answer) {
         // Not awaited: the summary should never wait on the network, and the
         // result is already saved locally either way.
-        void postMysteryScore(next);
+        recorder.current?.mark(["ok", name, scoreFor(next)]);
+        finishRecording(next, postMysteryScore(next));
         playSolved();
         setBurst((n) => n + 1);
       } else {
@@ -219,7 +280,7 @@ export default function Mystery() {
         playWarm(closeness(km) / 100);
       }
     },
-    [result, answer, guessed, centres, shapes]
+    [result, answer, guessed, centres, shapes, finishRecording]
   );
 
   /**
@@ -251,6 +312,8 @@ export default function Mystery() {
     saveMystery(next);
     setResult(next);
     setFlash(null);
+    recorder.current?.mark(["p", answer]);
+    finishRecording(next, Promise.resolve(null));
     playLose();
     const to = centres.get(answer);
     if (to) globeRef.current?.pointOfView({ ...to, altitude: 1.6 }, 900);
@@ -407,6 +470,7 @@ export default function Mystery() {
         >
           ← Modes
         </button>
+        {playing && <RecordSwitch />}
       </div>
 
       {/* The prompt never eats a click meant for the globe, and stays out of
@@ -489,6 +553,11 @@ export default function Mystery() {
                     site: window.location.host,
                   })}
                 />
+              </div>
+            )}
+            {recorded && (
+              <div className="pointer-events-auto mt-3 w-full border-t border-white/[0.07] pt-3">
+                <ReplayActions replay={recorded.replay} postedId={recorded.postedId} />
               </div>
             )}
           </>

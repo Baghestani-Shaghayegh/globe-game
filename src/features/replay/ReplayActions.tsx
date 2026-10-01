@@ -17,7 +17,8 @@ export default function ReplayActions({
   postedId,
 }: {
   replay: Replay;
-  /** The run's id on the board, once posted; null if it wasn't. */
+  /** The run's id on the board, once posted; null if it wasn't. Left out for a
+   * game with no board, which is watched and saved but not posted. */
   postedId?: () => Promise<number | null>;
 }) {
   const { profile, session } = useAuth();
@@ -74,6 +75,8 @@ export default function ReplayActions({
                   : "Post to board"}
           </button>
         ) : (
+          // Only a run that has a board to go on asks for a sign-in.
+          postedId &&
           !session && (
             <Link
               to="/account"

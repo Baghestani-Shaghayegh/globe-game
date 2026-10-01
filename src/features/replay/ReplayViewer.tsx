@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Replay } from "../../lib/replay";
-import { clock, frameAt } from "../../lib/replayFrame";
+import { clock, END_HOLD_MS, frameAt } from "../../lib/replayFrame";
 import { drawFrame, loadReplayAssets, type ReplayAssets } from "../../lib/replayDraw";
 import { playTap } from "../../lib/sound";
 import SaveVideoButton from "./SaveVideoButton";
@@ -30,7 +30,7 @@ export default function ReplayViewer({
     // A long round starts sped up; nobody watches three minutes at 1×.
     replay.result.ms > 90_000 ? 4 : replay.result.ms > 40_000 ? 2 : 1
   );
-  const end = replay.result.ms + 2500;
+  const end = replay.result.ms + END_HOLD_MS + 2500;
   const who = player ?? replay.player;
 
   useEffect(() => {

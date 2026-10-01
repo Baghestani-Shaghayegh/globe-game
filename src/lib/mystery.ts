@@ -1,7 +1,7 @@
 import { hash, mulberry32 } from "./daily";
 import type { Geometry } from "./geo";
 import { DAILY_MULTIPLIER, dayNumber, elapsedMs } from "./daily";
-import { postScore } from "./leaderboard";
+import { postRun } from "./leaderboard";
 
 /**
  * The mystery country: one hidden country a day, found by guessing and reading
@@ -268,9 +268,9 @@ export const MYSTERY_BUCKET = "mystery:daily";
  * scores nothing, and a row of zeroes would only dilute the "fewest runs wins
  * the tie" rule on the board.
  */
-export function postMysteryScore(result: MysteryResult): Promise<boolean> {
-  if (!result.solved) return Promise.resolve(false);
-  return postScore(MYSTERY_BUCKET, {
+export function postMysteryScore(result: MysteryResult): Promise<number | null> {
+  if (!result.solved) return Promise.resolve(null);
+  return postRun(MYSTERY_BUCKET, {
     points: scoreFor(result) * DAILY_MULTIPLIER,
     // One puzzle, solved. There is no partial credit to describe here.
     found: 1,

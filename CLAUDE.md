@@ -60,7 +60,9 @@ without being asked — `main` is what deploys.
   render the 9:16 video in the browser with Mediabunny. The sandbox's
   Chromium has no H.264 encoder, so videos made here are WebM (VP9); real
   Chrome and Safari make MP4. Posted replays live in the `replays` table,
-  one per score, readable by anyone, writable only by the run's owner.
+  one per score, readable by anyone, writable only by the run's owner. Every
+  game records: the six globe rounds, the daily hunt, Mystery, Connect and
+  Which is bigger? (that one has no board, so it's watched and saved, not posted).
 - Ads and the cookie banner stay dark unless `VITE_ADSENSE_CLIENT` and
   `VITE_ADSENSE_SLOT` are set, which they are not in the repo. Set them on the
   command line to see either one.

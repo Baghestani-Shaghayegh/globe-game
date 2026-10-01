@@ -1,6 +1,9 @@
 import ShareResult from "../components/ShareResult";
 import ChallengeBanner from "../components/ChallengeBanner";
 import { CARD_FOUND } from "../features/globe-guess/RoundShare";
+import RecordSwitch from "../features/replay/RecordSwitch";
+import ReplayActions from "../features/replay/ReplayActions";
+import { keepReplay, recordingOn, ReplayRecorder, type Replay } from "../lib/replay";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ExitConfirm from "../features/globe-guess/ExitConfirm";
@@ -164,11 +167,23 @@ export default function HigherLower() {
   /** The streak a wrong answer just ended, to share; cleared by the next run. */
   const [ended, setEnded] = useState(0);
 
+  // A run, recorded from its first pair to the pick that ends it: each pair
+  // and what was picked. No globe here, so no camera.
+  const recorder = useRef<ReplayRecorder | null>(null);
+  const [recorded, setRecorded] = useState<Replay | null>(null);
+  useEffect(() => {
+    if (!pair) return;
+    recorder.current ??= new ReplayRecorder();
+    recorder.current.mark(["b", pair.left, pair.right, "", 0]);
+  }, [pair]);
+
   const pick = useCallback(
     (picked: string) => {
       if (!pair || verdict) return;
       const correct = bigger(pair.left, pair.right) === picked;
       setVerdict({ picked, correct });
+      const rec = recorder.current;
+      rec?.mark(["b", pair.left, pair.right, picked, correct ? 1 : 0]);
       setScores((current) => {
         const next = score(current, correct);
         if (next.best > current.best) saveBest(next.best);
@@ -185,9 +200,26 @@ export default function HigherLower() {
           setBurst((n) => n + 1);
         }
         setEnded(0);
+        setRecorded(null);
       } else {
         playLose();
         if (scores.streak > 0) setEnded(scores.streak);
+        // The run is over: kept if it got anywhere, and the next pair starts
+        // a new one.
+        recorder.current = null;
+        if (rec && scores.streak > 0 && recordingOn()) {
+          const replay = rec.finish(
+            { type: "bigger", mode: "streak", label: "Which is bigger?", bucket: "" },
+            {
+              ms: rec.elapsed(),
+              points: scores.streak,
+              found: scores.streak,
+              total: scores.streak + 1,
+            }
+          );
+          keepReplay(replay);
+          setRecorded(replay);
+        }
       }
 
       window.setTimeout(() => {
@@ -241,6 +273,9 @@ export default function HigherLower() {
           >
             ← Modes
           </Link>
+          <span className="ml-auto">
+            <RecordSwitch />
+          </span>
           <span className="text-sm tabular-nums text-zinc-400">
             {scores.streak} in a row
             {scores.best > 0 && (
@@ -317,6 +352,11 @@ export default function HigherLower() {
                     })}
                   />
                 </div>
+                {recorded && (
+                  <div className="mt-4 border-t border-white/[0.07] pt-4">
+                    <ReplayActions replay={recorded} />
+                  </div>
+                )}
               </div>
             )}
 
