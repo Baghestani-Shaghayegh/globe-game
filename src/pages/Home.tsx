@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import DailyCard from "../components/DailyCard";
 import AdSlot from "../components/AdSlot";
@@ -18,11 +18,16 @@ import {
 import {
   DAILY_LIMIT_SECONDS,
   DAILY_MULTIPLIER,
+  dailyType,
   dayKey,
+  dayNumber,
   resultFor,
+  type DailyResult,
 } from "../lib/daily";
-import { loadMystery } from "../lib/mystery";
-import { loadConnect } from "../lib/connect";
+import { loadMystery, mysteryNumber, type MysteryResult } from "../lib/mystery";
+import { loadConnect, puzzleFor, type ConnectResult } from "../lib/connect";
+import { formatDuration } from "../lib/records";
+import { ConnectPair, HuntSlots, MysteryHeat, NewIn } from "../components/DailyVisuals";
 import { dueCount } from "../lib/practice";
 import { learnedCountries } from "../lib/lessons";
 import { flagUrl } from "../data/flags";
@@ -252,13 +257,15 @@ export default function Home() {
 
   const [modeId, setModeId] = useState<ModeId>("easy");
 
-  // Which of today's three are finished. Mystery and connect count as done
-  // only when solved — one abandoned halfway is still waiting for you.
-  const [doneToday, setDoneToday] = useState({
-    daily: false,
-    mystery: false,
-    connect: false,
-  });
+  // Today's three, and how each went if it's finished. Mystery and connect
+  // count as done only when over — one abandoned halfway is still waiting.
+  const today = useMemo(dayKey, []);
+  const pair = useMemo(() => puzzleFor(today), [today]);
+  const [played, setPlayed] = useState<{
+    hunt: DailyResult | null;
+    mystery: MysteryResult | null;
+    connect: ConnectResult | null;
+  }>({ hunt: null, mystery: null, connect: null });
   const [duePractice, setDuePractice] = useState(0);
   const [learnedCount, setLearnedCount] = useState(0);
 
@@ -267,19 +274,19 @@ export default function Home() {
   const counts = useModeCounts("name");
 
   useEffect(() => {
-    const today = dayKey();
-    setDoneToday({
-      daily: resultFor(today) !== null,
-      mystery: (() => {
-        const saved = loadMystery(today);
-        return saved?.solved === true || saved?.gaveUp === true;
-      })(),
-      connect: loadConnect(today)?.solved === true,
+    const mystery = loadMystery(today);
+    const connect = loadConnect(today);
+    setPlayed({
+      hunt: resultFor(today),
+      mystery: mystery?.solved || mystery?.gaveUp ? mystery : null,
+      connect: connect?.solved ? connect : null,
     });
     setDuePractice(dueCount());
     setLearnedCount(Object.keys(learnedCountries()).length);
-  }, []);
+  }, [today]);
 
+  const huntType = GAME_TYPES.find((t) => t.id === dailyType(today))?.label ?? "";
+  const guesses = played.mystery?.guesses.length ?? 0;
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-page">
@@ -340,33 +347,62 @@ export default function Home() {
                 {DAILY_MULTIPLIER}× points
               </span>
             </div>
+            <p className="mt-1 text-center text-xs tabular-nums text-zinc-500">
+              Same for everyone · <NewIn />
+            </p>
 
-            {/* What each one is stays said when it's done: the button says
-                "Result" now, so the line under the title doesn't have to. */}
             <div className="mt-4 grid gap-3 sm:grid-cols-3 sm:gap-4">
               <DailyCard
                 to="/daily"
                 icon={DAILY_ICONS.hunt}
+                kicker={`#${dayNumber(today)} · ${huntType}`}
                 title="Country hunt"
-                note={`Ten countries, ${DAILY_LIMIT_SECONDS / 60} minutes`}
+                note={
+                  played.hunt
+                    ? `${played.hunt.found}/${played.hunt.total} in ${formatDuration(played.hunt.ms)}`
+                    : `Ten countries, ${DAILY_LIMIT_SECONDS / 60} minutes`
+                }
+                visual={<HuntSlots outcomes={played.hunt?.outcomes} />}
                 accent="sky"
-                done={doneToday.daily}
+                done={played.hunt !== null}
               />
               <DailyCard
                 to="/mystery"
                 icon={DAILY_ICONS.mystery}
+                kicker={`#${mysteryNumber(today)}`}
                 title="Mystery country"
-                note="Warmer or colder clues"
+                note={
+                  played.mystery
+                    ? played.mystery.solved
+                      ? `Found in ${guesses} ${guesses === 1 ? "guess" : "guesses"}`
+                      : `Gave up after ${guesses}`
+                    : "See how close each guess is"
+                }
+                visual={<MysteryHeat kms={played.mystery?.guesses.map((g) => g.km)} />}
                 accent="rose"
-                done={doneToday.mystery}
+                done={played.mystery !== null}
               />
               <DailyCard
                 to="/connect"
                 icon={DAILY_ICONS.connect}
+                kicker={`#${dayNumber(today)}`}
                 title="Connect"
-                note="Link two countries by land"
+                note={
+                  played.connect
+                    ? `${played.connect.chain.length} ${played.connect.chain.length === 1 ? "step" : "steps"} · par ${played.connect.par}`
+                    : "Link these two by land"
+                }
+                visual={
+                  pair ? (
+                    <ConnectPair
+                      from={pair.from}
+                      to={pair.to}
+                      steps={played.connect?.chain.length}
+                    />
+                  ) : null
+                }
                 accent="violet"
-                done={doneToday.connect}
+                done={played.connect !== null}
               />
             </div>
           </section>
