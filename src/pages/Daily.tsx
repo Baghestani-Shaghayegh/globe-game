@@ -5,6 +5,7 @@ import FindGame from "../features/globe-guess/FindGame";
 import DailyResultGlobe from "../features/globe-guess/DailyResultGlobe";
 import ShareResult from "../components/ShareResult";
 import ReplayActions from "../features/replay/ReplayActions";
+import RecordSwitch from "../features/replay/RecordSwitch";
 import type { Replay } from "../lib/replay";
 import ChallengeBanner from "../components/ChallengeBanner";
 import { CARD_FOUND, CARD_MISSED } from "../features/globe-guess/RoundShare";
@@ -365,6 +366,10 @@ export default function Daily() {
   return (
     <>
       {game}
+      {/* Recording, as on every globe round: on by default, tap to stop. */}
+      <div className="pointer-events-none fixed bottom-4 right-4 z-30">
+        <RecordSwitch />
+      </div>
       {/* Opened from a friend's challenge: what to beat, over the game. */}
       <div className="pointer-events-none fixed inset-x-0 top-16 z-40 flex justify-center px-3 lg:top-4">
         <ChallengeBanner />
