@@ -178,15 +178,23 @@ const KOFI_URL: string = "";
 /**
  * The footer, wherever the masthead is.
  *
- * The links every page needs within reach: a privacy policy an ad network
- * can find from anywhere on the site, not only from the menu, and a way to
- * chip in that asks nothing of anyone who scrolls past it.
+ * The links every page needs within reach: a way to report a bug or send
+ * an idea, a privacy policy an ad network can find from anywhere on the
+ * site, and a way to chip in that asks nothing of anyone who scrolls past it.
  */
 export function SiteFooter({ className = "" }: { className?: string }) {
+  const { pathname } = useLocation();
   return (
     <footer
       className={`relative z-10 flex w-full flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-white/[0.07] px-5 pb-[clamp(0.75rem,2.2vh,1.5rem)] pt-3.5 text-sm text-zinc-500 sm:px-8 lg:px-12 ${className}`}
     >
+      {/* Carries the page it was pressed on, so a bug report says where. */}
+      <Link
+        to={pathname === "/feedback" ? "/feedback" : `/feedback?from=${encodeURIComponent(pathname)}`}
+        className="transition-colors hover:text-zinc-300"
+      >
+        Feedback
+      </Link>
       <Link to="/privacy" className="transition-colors hover:text-zinc-300">
         Privacy
       </Link>

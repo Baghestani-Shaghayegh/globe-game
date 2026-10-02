@@ -11,6 +11,7 @@ import Levels from "./pages/Levels";
 import { AuthProvider } from "./features/account/AuthProvider";
 import Daily from "./pages/Daily";
 import Privacy from "./pages/Privacy";
+import Feedback from "./pages/Feedback";
 import Settings from "./pages/Settings";
 import ConsentBanner from "./components/ConsentBanner";
 import UpdateToast from "./components/UpdateToast";
@@ -54,6 +55,7 @@ function App() {
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/feedback" element={<Feedback />} />
             <Route path="/achievements" element={<Achievements />} />
             <Route path="/levels" element={<Levels />} />
             <Route path="/practice" element={<Practice />} />

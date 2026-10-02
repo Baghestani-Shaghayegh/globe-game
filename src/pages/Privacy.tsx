@@ -9,7 +9,7 @@ import { PageShell } from "../components/SiteHeader";
 const CONTACT = "privacy@worldguess.example";
 
 /** The date the wording below last changed, not the date it was rendered. */
-const UPDATED = "11 September 2026";
+const UPDATED = "2 October 2026";
 
 function Section({
   title,
@@ -73,6 +73,15 @@ export default function Privacy() {
         <p>
           There is no password to lose: signing in means clicking a link we
           email you, or using Google.
+        </p>
+      </Section>
+
+      <Section title="If you send feedback">
+        <p>
+          The feedback page stores what you write, the page you came from,
+          your browser type, and the email address if you give one. If you
+          are signed in, it is linked to your account. Only we can read it,
+          and it is used to fix the game and nothing else.
         </p>
       </Section>
 

@@ -200,6 +200,8 @@ export default function LessonRun({
   const [wrong, setWrong] = useState<string | null>(null);
   const [shake, setShake] = useState(0);
   const [burst, setBurst] = useState(0);
+  /** The end card over the globe; closed to look at the map. */
+  const [endCard, setEndCard] = useState(false);
   /**
    * How each country went, the worse of Find and Name: missed once and got
    * it is "slow", shown the answer is "missed". What the practice deck files.
@@ -245,6 +247,24 @@ export default function LessonRun({
       0
     );
   }, [ready, frame, size]);
+
+  // The end: back out to the whole set, all green now, so the last thing on
+  // the globe is what was learned rather than a close-up of the last answer.
+  // The card follows once the camera has settled.
+  useEffect(() => {
+    if (phase !== "done") return;
+    const globe = globeRef.current;
+    if (globe && size.width) {
+      globe.pointOfView(
+        { ...frame.middle, altitude: frameAltitude(frame.reach, size.width, size.height) },
+        1200
+      );
+    }
+    const id = window.setTimeout(() => setEndCard(true), 1300);
+    return () => window.clearTimeout(id);
+    // Once, when it ends: not again on a resize.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   useEffect(() => {
     const globe = globeRef.current;
@@ -750,6 +770,28 @@ export default function LessonRun({
           {phase === "done" && recalls && done(recalls)}
         </div>
       </aside>
+
+      {/* The end, said properly: over the globe, not only in the panel. */}
+      {phase === "done" && recalls && endCard && (
+        <div
+          role="dialog"
+          aria-label="Finished"
+          className="fixed inset-0 z-40 flex items-center justify-center overflow-y-auto bg-page/55 p-4 backdrop-blur-[2px] animate-fade-in"
+        >
+          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-surface p-6 shadow-2xl">
+            {done(recalls)}
+            <button
+              onClick={() => {
+                playTap();
+                setEndCard(false);
+              }}
+              className="mt-3 w-full text-center text-xs text-zinc-500 underline underline-offset-4 transition-colors hover:text-zinc-300"
+            >
+              See the map
+            </button>
+          </div>
+        </div>
+      )}
 
       <Celebrate burst={burst} count={70} />
     </div>

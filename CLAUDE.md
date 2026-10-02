@@ -63,6 +63,10 @@ without being asked — `main` is what deploys.
   one per score, readable by anyone, writable only by the run's owner. Every
   game records: the six globe rounds, the daily hunt, Mystery, Connect and
   Which is bigger? (that one has no board, so it's watched and saved, not posted).
+- Player feedback (the `/feedback` page, linked from the footer and Settings)
+  lands in the `feedback` table: anyone can insert, nobody can read through
+  the API. Sara reads it in the Supabase dashboard (Table Editor → feedback);
+  `handled` is hers to tick. A trigger stops floods at 30 per 10 minutes.
 - Ads and the cookie banner stay dark unless `VITE_ADSENSE_CLIENT` and
   `VITE_ADSENSE_SLOT` are set, which they are not in the repo. Set them on the
   command line to see either one.

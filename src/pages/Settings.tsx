@@ -223,6 +223,20 @@ export default function Settings() {
         </Panel>
       )}
 
+      <Panel>
+        <Row title="Feedback" hint="A bug, something that felt wrong, or an idea.">
+          <Link
+            to="/feedback?from=%2Fsettings"
+            className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.05] px-3 py-1.5 text-sm font-medium text-zinc-100 transition-colors hover:border-teal-300/50 hover:bg-white/[0.09]"
+          >
+            Send feedback
+            <span aria-hidden="true" className="text-zinc-500">
+              ›
+            </span>
+          </Link>
+        </Row>
+      </Panel>
+
     </PageShell>
   );
 }
