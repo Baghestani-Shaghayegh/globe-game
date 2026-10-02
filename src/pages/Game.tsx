@@ -27,9 +27,9 @@ export default function Game({ type }: { type: GameType }) {
   return (
     <>
       {type === "name" ? <GlobeGame {...props} /> : <FindGame {...props} type={type} />}
-      {/* Recording: on by default, tap to stop. Bottom right, clear of the
-          prompt and the clock. */}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-30">
+      {/* Recording: on by default, tap to stop. Top right on a phone, where
+          the prompt has the bottom edge; bottom right on a wide screen. */}
+      <div className="pointer-events-none fixed right-4 top-4 z-30 lg:bottom-4 lg:top-auto">
         <RecordSwitch />
       </div>
       {/* Opened from a friend's challenge: what to beat, over the game. */}

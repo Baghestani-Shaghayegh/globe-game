@@ -3,6 +3,7 @@ import { getCountryMeta } from "../data/countries";
 import { flagUrl } from "../data/flags";
 import type { Outcome } from "../lib/daily";
 import { heatColor } from "../lib/mystery";
+import type { ClueMark } from "../lib/fiveClues";
 
 /**
  * The pictures on today's cards: what each puzzle looks like before it's
@@ -140,7 +141,43 @@ export function ConnectPair({ from, to, steps }: { from: string; to: string; ste
   );
 }
 
-/** "New in 5h 12m": until midnight UTC, when all three change. */
+const CLUE_TILE: Record<ClueMark, string> = {
+  found: "bg-emerald-400 text-emerald-950",
+  missed: "bg-rose-400 text-rose-950",
+  skipped: "bg-zinc-500 text-zinc-950",
+  unused: "bg-white/10 text-zinc-400",
+};
+
+/**
+ * Five clue cards in a row, hardest first. Face down until played; then how
+ * each went: red a miss, green the one it was found on, grey never needed.
+ */
+export function ClueCards({ marks }: { marks?: ClueMark[] }) {
+  return (
+    <span className="flex w-full justify-center gap-2" aria-hidden="true">
+      {Array.from({ length: 5 }, (_, i) => {
+        const mark = marks?.[i];
+        return mark ? (
+          <span
+            key={i}
+            className={`flex h-12 w-9 items-center justify-center rounded-md text-sm font-bold shadow-sm ${CLUE_TILE[mark]}`}
+          >
+            {i + 1}
+          </span>
+        ) : (
+          <span
+            key={i}
+            className="flex h-12 w-9 items-center justify-center rounded-md border border-dashed border-amber-300/50 bg-amber-300/[0.08] text-sm font-bold text-amber-200/80"
+          >
+            {i + 1}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
+/** "New in 5h 12m": until midnight UTC, when all of today's change. */
 export function NewIn() {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {

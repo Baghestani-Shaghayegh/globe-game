@@ -13,6 +13,7 @@ import { labelPoint, type Geometry } from "./geo";
 import { areaOf } from "../data/areas";
 import { bigger, formatArea } from "./higherLower";
 import { heatColor } from "./mystery";
+import { CLUE_COUNT, dailyClues } from "./fiveClues";
 import type { Replay } from "./replay";
 import { clock, type Frame } from "./replayFrame";
 
@@ -175,6 +176,12 @@ export function drawFrame(
         if (name === answer && frame.revealed === name) return heatColor(0);
         const km = frame.heat.get(name);
         return km === undefined ? LAND : heatColor(km);
+      }
+      if (kind === "clues") {
+        if (name === answer && frame.found.has(name)) return FOUND;
+        if (name === answer && (frame.over || frame.revealed === name)) return LIT;
+        if (frame.missed.includes(name)) return MISSED;
+        return LAND;
       }
       if (kind === "connect") {
         if (name === from || name === to) return ENDS;
@@ -349,6 +356,10 @@ export function drawFrame(
     stat(W * 0.2, clock(shownT), "TIME");
     stat(W * 0.5, String(frame.placed.size), "PLACED");
     stat(W * 0.8, String(replay.game.par ?? "–"), "PAR");
+  } else if (kind === "clues") {
+    stat(W * 0.2, clock(shownT), "TIME");
+    stat(W * 0.5, `${Math.min(CLUE_COUNT, frame.hints.length + 1)}/${CLUE_COUNT}`, "CLUE");
+    stat(W * 0.8, String(frame.missed.length), "MISSES");
   } else if (kind === "bigger") {
     stat(W * 0.3, clock(shownT), "TIME");
     stat(W * 0.7, String(frame.streak), "IN A ROW");
@@ -359,7 +370,10 @@ export function drawFrame(
   }
 
   // ---- The question --------------------------------------------------------
-  const asking = kind === "mystery" || kind === "connect" ? !frame.over : frame.target && !frame.over;
+  const asking =
+    kind === "mystery" || kind === "connect" || kind === "clues"
+      ? !frame.over
+      : frame.target && !frame.over;
   if (asking) {
     const boxW = 760 * u;
     const boxH = 190 * u;
@@ -399,6 +413,38 @@ export function drawFrame(
             64,
             heatColor(g.km)
           );
+        break;
+      }
+      case "clues": {
+        const n = Math.min(CLUE_COUNT, frame.hints.length + 1);
+        const clue = dailyClues(answer ?? "")[n - 1] ?? "";
+        ctx.fillStyle = MUTED;
+        ctx.font = font(26, "600");
+        ctx.fillText(`CLUE ${n} OF ${CLUE_COUNT}`, cx, by + 50 * u);
+        // A clue is a sentence: wrapped onto up to three lines, smaller if
+        // it needs more.
+        const room = boxW - 60 * u;
+        let size = 44;
+        let lines: string[] = [];
+        for (; size >= 26; size -= 2) {
+          ctx.font = font(size, "700");
+          lines = [];
+          let line = "";
+          for (const word of clue.split(" ")) {
+            const next = line ? `${line} ${word}` : word;
+            if (ctx.measureText(next).width > room && line) {
+              lines.push(line);
+              line = word;
+            } else line = next;
+          }
+          if (line) lines.push(line);
+          if (lines.length <= (size > 36 ? 2 : 3)) break;
+        }
+        ctx.fillStyle = frame.found.size ? FOUND : INK;
+        // Centred in the box under the label.
+        const lh = size * 1.2 * u;
+        const top0 = by + 124 * u - ((lines.length - 1) * lh) / 2 + size * 0.35 * u;
+        lines.forEach((l, i) => ctx.fillText(l, cx, top0 + i * lh));
         break;
       }
       case "connect":
@@ -481,6 +527,11 @@ export function drawFrame(
               `${res.found} ${res.found === 1 ? "step" : "steps"}`,
               `par ${replay.game.par ?? "–"} · ${clock(res.ms)} · ${res.points.toLocaleString()} points`,
             ]
+          : kind === "clues"
+            ? [
+                res.found ? `Clue ${CLUE_COUNT + 1 - res.points / 200} of ${CLUE_COUNT}` : "Not found",
+                `${display(answer ?? "")} · ${clock(res.ms)} · ${res.points.toLocaleString()} points`,
+              ]
           : kind === "bigger"
             ? [`${res.points} in a row`, `${clock(res.ms)} · countries by land area`]
             : [

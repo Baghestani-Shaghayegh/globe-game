@@ -85,6 +85,11 @@ without being asked — `main` is what deploys.
 - `theme` in `lib/globeTheme.ts` is a live mutable object — the globes read it
   at render time, so a palette swap recolours everything without touching
   imports.
+- Clues (`data/clues.ts`) are five per country, best known first; Famous for
+  reads them in that order and the Five clues daily reads them backwards. A
+  clue never names the country, its people or its capital, and never makes a
+  country famous for a war, a disaster or hardship. The tests catch most of
+  it; the rest is read by hand.
 - Anything new that writes to `localStorage` must be added to `LOCAL_KEYS` in
   `lib/localData.ts`, or "clear my data" silently misses it. A test compares
   the list against every key the source writes, so forgetting fails the suite.

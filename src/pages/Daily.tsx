@@ -367,7 +367,7 @@ export default function Daily() {
     <>
       {game}
       {/* Recording, as on every globe round: on by default, tap to stop. */}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-30">
+      <div className="pointer-events-none fixed right-4 top-4 z-30 lg:bottom-4 lg:top-auto">
         <RecordSwitch />
       </div>
       {/* Opened from a friend's challenge: what to beat, over the game. */}

@@ -19,6 +19,7 @@ export const LOCAL_KEYS = [
   "worldguess.achievements.v1",
   "worldguess.mystery.v1",
   "worldguess.connect.v1",
+  "worldguess.clues.v1",
   "worldguess.higherlower.v1",
   "worldguess.appearance.v1",
   "worldguess.learn.v1",
@@ -33,7 +34,7 @@ export const LOCAL_SUMMARY = [
   "Daily challenge history and your streak",
   "Badges, level and XP",
   "Per-country statistics, your practice deck and the countries you have learned",
-  "Mystery, connect and higher-or-lower results, and recordings of your last few rounds",
+  "Mystery, Connect, Five clues and higher-or-lower results, and recordings of your last few rounds",
   "Settings, including your answer about cookies and the name you put on challenges",
 ];
 

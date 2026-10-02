@@ -12,7 +12,7 @@ import type { GameType } from "../data/modes";
  */
 
 /** The games recorded beyond the six globe rounds. */
-export type DailyKind = "mystery" | "connect" | "bigger";
+export type DailyKind = "mystery" | "connect" | "bigger" | "clues";
 
 /** Which game a recording is of, enough to label it and draw its prompts. */
 export type ReplayGame = {
@@ -25,7 +25,7 @@ export type ReplayGame = {
   bucket: string;
   /** The countries being asked about, when that's less than the whole map. */
   inPlay?: string[];
-  /** Mystery: the country being looked for, shown once the round is over. */
+  /** Mystery and Five clues: the country being looked for, shown once the round is over. */
   answer?: string;
   /** Connect: the two countries to link. */
   from?: string;

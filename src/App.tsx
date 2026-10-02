@@ -22,6 +22,7 @@ const Room = lazy(() => import("./pages/Room"));
 const Practice = lazy(() => import("./pages/Practice"));
 // Also a globe round, so it carries three.js too.
 const Mystery = lazy(() => import("./pages/Mystery"));
+const FiveClues = lazy(() => import("./pages/FiveClues"));
 const Connect = lazy(() => import("./pages/Connect"));
 // The list cuts the map into lessons; the lesson itself is a globe.
 const Learn = lazy(() => import("./pages/Learn"));
@@ -61,6 +62,7 @@ function App() {
             <Route path="/voices" element={<Voices />} />
             <Route path="/replay/:id" element={<ReplayPage />} />
             <Route path="/mystery" element={<Mystery />} />
+            <Route path="/clues" element={<FiveClues />} />
             <Route path="/connect" element={<Connect />} />
             <Route path="/bigger" element={<HigherLower />} />
             <Route path="/play-together" element={<PlayTogether />} />

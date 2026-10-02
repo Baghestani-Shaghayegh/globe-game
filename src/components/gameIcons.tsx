@@ -83,6 +83,14 @@ export const DAILY_ICONS = {
   mystery: drawn(
     <path d="M12 3s5 4.2 5 9a5 5 0 0 1-10 0c0-1.8.8-3.3 1.6-4.4.4 1 1 1.7 1.7 2.1.4-2.6.3-4.7 1.7-6.7z" />
   ),
+  // Two cards, one turned over: a clue at a time.
+  clues: drawn(
+    <>
+      <rect x="4" y="6.5" width="11" height="14" rx="2" />
+      <path d="M9 3.5h9a2 2 0 0 1 2 2V16" />
+      <path d="M8 11h3.5M8 14.5h3" />
+    </>
+  ),
   // Two links of a chain.
   connect: drawn(
     <>

@@ -27,7 +27,8 @@ import {
 import { loadMystery, mysteryNumber, type MysteryResult } from "../lib/mystery";
 import { loadConnect, puzzleFor, type ConnectResult } from "../lib/connect";
 import { formatDuration } from "../lib/records";
-import { ConnectPair, HuntSlots, MysteryHeat, NewIn } from "../components/DailyVisuals";
+import { ClueCards, ConnectPair, HuntSlots, MysteryHeat, NewIn } from "../components/DailyVisuals";
+import { clueMarks, foundOn, loadClues, type CluesResult } from "../lib/fiveClues";
 import { dueCount } from "../lib/practice";
 import { learnedCountries } from "../lib/lessons";
 import { flagUrl } from "../data/flags";
@@ -257,7 +258,7 @@ export default function Home() {
 
   const [modeId, setModeId] = useState<ModeId>("easy");
 
-  // Today's three, and how each went if it's finished. Mystery and connect
+  // Today's four, and how each went if it's finished. Mystery and connect
   // count as done only when over — one abandoned halfway is still waiting.
   const today = useMemo(dayKey, []);
   const pair = useMemo(() => puzzleFor(today), [today]);
@@ -265,7 +266,8 @@ export default function Home() {
     hunt: DailyResult | null;
     mystery: MysteryResult | null;
     connect: ConnectResult | null;
-  }>({ hunt: null, mystery: null, connect: null });
+    clues: CluesResult | null;
+  }>({ hunt: null, mystery: null, connect: null, clues: null });
   const [duePractice, setDuePractice] = useState(0);
   const [learnedCount, setLearnedCount] = useState(0);
 
@@ -276,10 +278,12 @@ export default function Home() {
   useEffect(() => {
     const mystery = loadMystery(today);
     const connect = loadConnect(today);
+    const clues = loadClues(today);
     setPlayed({
       hunt: resultFor(today),
       mystery: mystery?.solved || mystery?.gaveUp ? mystery : null,
       connect: connect?.solved ? connect : null,
+      clues: clues?.solved || clues?.lost ? clues : null,
     });
     setDuePractice(dueCount());
     setLearnedCount(Object.keys(learnedCountries()).length);
@@ -333,7 +337,7 @@ export default function Home() {
             </h1>
           </section>
 
-          {/* Today's three first. They are the reason to come back, they are
+          {/* Today's four first. They are the reason to come back, they are
               the same for everyone, and they are over in a few minutes — a
               visitor who has never played should meet something to do, not a
               form to fill in. Free play is under them, where someone who
@@ -351,7 +355,7 @@ export default function Home() {
               Same for everyone · <NewIn />
             </p>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-3 sm:gap-4">
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
               <DailyCard
                 to="/daily"
                 icon={DAILY_ICONS.hunt}
@@ -403,6 +407,22 @@ export default function Home() {
                 }
                 accent="violet"
                 done={played.connect !== null}
+              />
+              <DailyCard
+                to="/clues"
+                icon={DAILY_ICONS.clues}
+                kicker={`#${dayNumber(today)}`}
+                title="Five clues"
+                note={
+                  played.clues
+                    ? played.clues.solved
+                      ? `Found on clue ${foundOn(played.clues)}`
+                      : "Not found today"
+                    : "Hardest clue first"
+                }
+                visual={<ClueCards marks={played.clues ? clueMarks(played.clues) : undefined} />}
+                accent="amber"
+                done={played.clues !== null}
               />
             </div>
           </section>

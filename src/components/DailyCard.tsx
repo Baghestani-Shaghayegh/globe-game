@@ -16,12 +16,13 @@ const CUT = 18;
 const corner = (size: number) =>
   `polygon(0 0, 100% 0, 100% calc(100% - ${size}px), calc(100% - ${size}px) 100%, 0 100%)`;
 
-type Accent = "sky" | "rose" | "violet";
+type Accent = "sky" | "rose" | "violet" | "amber";
 
 const FRAME: Record<Accent, string> = {
   sky: "bg-sky-400/50 hover:bg-sky-300",
   rose: "bg-rose-400/50 hover:bg-rose-300",
   violet: "bg-violet-400/50 hover:bg-violet-300",
+  amber: "bg-amber-400/50 hover:bg-amber-300",
 };
 
 /** The picture's backdrop: the accent, glowing from the middle. */
@@ -30,12 +31,15 @@ const ART: Record<Accent, string> = {
   rose: "[background-image:radial-gradient(120%_90%_at_50%_0%,rgba(251,113,133,0.28),rgba(251,113,133,0.05)_70%)] text-rose-300",
   violet:
     "[background-image:radial-gradient(120%_90%_at_50%_0%,rgba(167,139,250,0.30),rgba(167,139,250,0.06)_70%)] text-violet-300",
+  amber:
+    "[background-image:radial-gradient(120%_90%_at_50%_0%,rgba(251,191,36,0.28),rgba(251,191,36,0.05)_70%)] text-amber-300",
 };
 
 const ACTION: Record<Accent, string> = {
   sky: "bg-sky-300 text-sky-950 group-hover:bg-sky-200",
   rose: "bg-rose-300 text-rose-950 group-hover:bg-rose-200",
   violet: "bg-violet-300 text-violet-950 group-hover:bg-violet-200",
+  amber: "bg-amber-300 text-amber-950 group-hover:bg-amber-200",
 };
 
 /** A faint globe grid behind every picture: these are map games. */
@@ -118,7 +122,7 @@ export default function DailyCard({
 
         {/* The words, and the way in. */}
         {/* Side by side on a phone, where the card has the width; stacked in
-            the three narrow columns, where it hasn't. */}
+            the narrow columns, where it hasn't. */}
         <span className="flex flex-1 items-end gap-3 px-4 pb-5 pt-3.5 sm:flex-col sm:items-stretch sm:px-5">
           <span className="min-w-0 flex-1">
             <span className="block text-lg font-semibold tracking-tight text-zinc-50 sm:text-xl">

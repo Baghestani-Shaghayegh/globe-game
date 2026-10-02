@@ -58,6 +58,81 @@ describe("clue data", () => {
     expect(leaks).toEqual([]);
   });
 
+  it("gives every listed country five clues, for the five-clue daily", () => {
+    const off = Object.entries(CLUES)
+      .filter(([, clues]) => clues.length !== 5)
+      .map(([name, clues]) => `${name}: ${clues.length}`);
+    expect(off).toEqual([]);
+  });
+
+  // The capital round asks that. As a clue it's the answer by another name.
+  it("never states the capital", () => {
+    const told = Object.entries(CLUES).flatMap(([name, clues]) =>
+      clues.filter((c) => /is (its|the) capital/i.test(c)).map((c) => `${name}: "${c}"`)
+    );
+    expect(told).toEqual([]);
+  });
+
+  // The name's stem catches the people and the language as well: "Italian"
+  // in a clue about Italy. The irregular ones are listed.
+  it("doesn't give the country away through its people or language", () => {
+    const IRREGULAR: Record<string, string[]> = {
+      Spain: ["spanish"],
+      Netherlands: ["dutch"],
+      Switzerland: ["swiss"],
+      France: ["french"],
+      Thailand: ["thai"],
+      Finland: ["finn"],
+      Poland: ["polish", "pole"],
+      Ireland: ["irish"],
+      Philippines: ["filipino"],
+      Madagascar: ["malagasy"],
+      Denmark: ["danish", "dane"],
+      Laos: ["lao"],
+      USA: ["american"],
+      England: ["british", "english", "britain"],
+      "New Zealand": ["kiwi bird lives"],
+      Greece: ["greek"],
+    };
+    const GENERIC = new Set([
+      "republic", "islands", "island", "saint", "united", "democratic", "south",
+      "north", "east", "west", "central", "the", "and", "city", "new", "coast",
+      "equatorial", "kingdom", "states", "arab", "great",
+    ]);
+    const plain = (text: string) =>
+      text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const leaks: string[] = [];
+    for (const [geoName, clues] of Object.entries(CLUES)) {
+      const meta = getCountryMeta(geoName);
+      const stems = [meta.displayName, meta.geoName]
+        .flatMap((n) => plain(n).split(/[^a-z]+/))
+        .filter((w) => w.length >= 4 && !GENERIC.has(w))
+        .map((w) => w.slice(0, Math.min(5, Math.max(4, w.length - 3))));
+      const words = [...stems, ...meta.aliases.filter((a) => a.length > 3).map(plain)];
+      const irregular = (IRREGULAR[geoName] ?? []).filter((w) => !w.includes(" "));
+      for (const clue of clues) {
+        const text = plain(clue);
+        const hit =
+          words.find((w) => new RegExp(`\\b${w}`).test(text)) ??
+          irregular.find((w) => new RegExp(`\\b${w}`).test(text));
+        if (hit) leaks.push(`${geoName}: "${clue}" (${hit})`);
+      }
+    }
+    expect(leaks).toEqual([]);
+  });
+
+  // A clue goes on a shared card and is read by people from the place it's
+  // about. These words mark the kind of clue that was taken out in October
+  // 2026: wars, disasters and hardship as the thing a country is known for.
+  it("doesn't make a country famous for war, disaster or hardship", () => {
+    const BANNED =
+      /\b((?<!star )wars?|invaded|invasion|occupation|occupied|genocide|massacre|bomb|nuclear test|poorest|poverty|famine|ethnic|banana republic|slaves?|disaster|chernobyl|divided since)\b/i;
+    const hits = Object.entries(CLUES).flatMap(([name, clues]) =>
+      clues.filter((c) => BANNED.test(c)).map((c) => `${name}: "${c}"`)
+    );
+    expect(hits).toEqual([]);
+  });
+
   it("covers every sovereign country on the map", () => {
     const uncovered = names
       .map(getCountryMeta)

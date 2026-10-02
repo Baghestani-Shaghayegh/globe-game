@@ -23,6 +23,8 @@ export type Frame = {
   right: string | null;
   /** Clicks to ripple out from, newest last, with how far through (0–1). */
   ripples: { name: string; ok: boolean; progress: number }[];
+  /** Every wrong answer so far, oldest first: Five clues keeps them red. */
+  missed: string[];
   /** Past the end: the result is shown. */
   over: boolean;
   /** Mystery: each country guessed, and how far it was. */
@@ -92,6 +94,7 @@ export function frameAt(replay: Replay, t: number): Frame {
   let wrong: string | null = null;
   let right: string | null = null;
   const ripples: Frame["ripples"] = [];
+  const missed: string[] = [];
   const heat = new Map<string, number>();
   let lastGuess: Frame["lastGuess"] = null;
   const placed = new Map<string, string>();
@@ -118,6 +121,7 @@ export function frameAt(replay: Replay, t: number): Frame {
         if (age < RIPPLE_MS) ripples.push({ name: event[2], ok: true, progress: age / RIPPLE_MS });
         break;
       case "x":
+        if (event[2] && !missed.includes(event[2])) missed.push(event[2]);
         if (age < WRONG_MS) wrong = event[2];
         if (event[2] && age < RIPPLE_MS) {
           ripples.push({ name: event[2], ok: false, progress: age / RIPPLE_MS });
@@ -179,6 +183,7 @@ export function frameAt(replay: Replay, t: number): Frame {
     wrong,
     right,
     ripples,
+    missed,
     over: t >= replay.result.ms + END_HOLD_MS,
     heat,
     lastGuess,
