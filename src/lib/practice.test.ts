@@ -13,6 +13,7 @@ import {
   loadDeck,
   nextBox,
   nextSession,
+  practiceSummary,
   recallsFrom,
   review,
   saveReview,
@@ -250,6 +251,30 @@ describe("the stored deck", () => {
     saveReview({ Chad: "clean" }, NOW);
     clearPractice();
     expect(loadDeck()).toEqual({});
+  });
+});
+
+describe("after a round", () => {
+  // Sara's report: eight named right, and the list looked the same. The
+  // eight do leave; the page then shows the next eight, which look alike.
+  it("takes a clean round off the list and rests it until tomorrow", () => {
+    const eight = ["Nepal", "Laos", "Chad", "Mali", "Peru", "Iraq", "Oman", "Fiji"];
+    saveReview(Object.fromEntries(eight.map((n) => [n, "clean"])), NOW - DAY);
+    saveReview(Object.fromEntries(eight.map((n) => [n, "missed"])), NOW - DAY);
+    expect(nextSession(NOW)).toEqual(eight);
+    expect(practiceSummary(NOW)).toMatchObject({ waiting: 8, resting: 0 });
+
+    saveReview(Object.fromEntries(eight.map((n) => [n, "clean"])), NOW);
+    expect(nextSession(NOW)).toEqual([]);
+    expect(practiceSummary(NOW)).toMatchObject({ waiting: 0, resting: 8, learned: 0 });
+    // Back the next day, as promised.
+    expect(nextSession(NOW + DAY)).toHaveLength(8);
+  });
+
+  it("keeps a slip in today's list", () => {
+    saveReview({ Chad: "slow", Mali: "missed", Peru: "clean" }, NOW);
+    expect(nextSession(NOW).sort()).toEqual(["Chad", "Mali"]);
+    expect(practiceSummary(NOW)).toMatchObject({ waiting: 2, resting: 1 });
   });
 });
 

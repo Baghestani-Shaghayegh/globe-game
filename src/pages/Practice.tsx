@@ -16,6 +16,7 @@ import {
   loadDeck,
   masteredCount,
   nextSession,
+  practiceSummary,
   recallsFrom,
   saveReview,
   TOP_BOX,
@@ -66,9 +67,9 @@ function practiceMode(names: string[]): Mode {
   };
 }
 
-/** The deck, as the page needs it: what to ask, and what is put away. */
-function readSession(): { queue: string[]; mastered: number } {
-  return { queue: nextSession(), mastered: masteredCount() };
+/** The deck, as the page needs it: what to ask, and how the rest stands. */
+function readSession() {
+  return { queue: nextSession(), mastered: masteredCount(), summary: practiceSummary() };
 }
 
 /** Countries this way of asking can actually pose a question about. */
@@ -101,12 +102,15 @@ export default function Practice() {
   // Both come from the deck, so they are read together and replaced together.
   // Read once per visit, so the queue can't shuffle under the player while
   // they are looking at it.
-  const [{ queue, mastered }, setSession] = useState(readSession);
+  const [{ queue, mastered, summary }, setSession] = useState(readSession);
   const rows = useMemo(() => {
     const deck = loadDeck();
     return queue.map((name) => ({
       name,
       box: deck[name]?.box ?? 0,
+      // Practised before and missed, as against never practised at all:
+      // both sit at the bottom, but they aren't the same thing to the player.
+      practised: deck[name] !== undefined,
       stat: allCountries().find((row) => row.geoName === name) ?? null,
     }));
   }, [queue]);
@@ -138,7 +142,14 @@ export default function Practice() {
         meet={false}
         heading="Practice"
         back={{ label: "Practice", onClick: backToList }}
-        onFinish={(recalls) => saveReview(recalls)}
+        onFinish={(recalls) => {
+          saveReview(recalls);
+          const values = Object.values(recalls);
+          setJustDone({
+            clean: values.filter((r) => r === "clean").length,
+            total: values.length,
+          });
+        }}
         done={(recalls) => (
           <ReviewDone
             recalls={recalls}
@@ -193,10 +204,29 @@ export default function Practice() {
           here. Each one you get right waits longer before it comes back.
         </p>
 
+        {/* Where the whole deck stands, so a round's work shows: the
+            countries got right move from the first number to the second. */}
+        <div className="mt-5 flex flex-wrap gap-2 text-xs">
+          <span className="rounded-full bg-amber-400/15 px-3 py-1 font-semibold text-amber-200">
+            {summary.waiting} to practise
+          </span>
+          <span
+            title="Got right. Each comes back on its own day, a little later every time."
+            className="rounded-full bg-white/[0.06] px-3 py-1 text-zinc-300"
+          >
+            {summary.resting} coming back later
+          </span>
+          <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-emerald-300">
+            {summary.learned} learned
+          </span>
+        </div>
+
         {justDone && (
-          <p className="mt-5 rounded-xl border border-emerald-400/25 bg-emerald-400/[0.07] px-4 py-3 text-sm text-emerald-200">
-            {justDone.clean} of {justDone.total} clean. The ones you got wait
-            longer; the ones you didn't are ready to go again.
+          <p className="mt-4 rounded-xl border border-emerald-400/25 bg-emerald-400/[0.07] px-4 py-3 text-sm text-emerald-200">
+            {justDone.clean === justDone.total
+              ? `All ${justDone.total} right first time. They're back in a day or more.`
+              : `${justDone.clean} of ${justDone.total} right first time. Those are back in a day or more; the rest stay in.`}
+            {queue.length > 0 && " Here are the next ones."}
           </p>
         )}
 
@@ -219,9 +249,11 @@ export default function Practice() {
         ) : (
           <>
             <div className="mt-5 flex items-center gap-3 px-4 pb-1.5 text-[11px] uppercase tracking-wider text-zinc-600">
-              <span>Country</span>
+              <span>
+                This round · {rows.length} of {summary.waiting}
+              </span>
               <span className="ml-auto w-20 text-right">Times missed</span>
-              <span className="w-24 text-right">Progress</span>
+              <span className="w-32 text-right">Progress</span>
             </div>
 
             <ul className="divide-y divide-white/[0.05] overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]">
@@ -237,12 +269,16 @@ export default function Practice() {
                       not asked this way
                     </span>
                   )}
-                  <span className="ml-auto w-20 text-right tabular-nums text-xs text-rose-300/70">
+                  <span
+                    className={`ml-auto w-20 text-right tabular-nums text-xs ${
+                      entry.stat && entry.stat.missed > 0 ? "text-rose-300/70" : "text-zinc-600"
+                    }`}
+                  >
                     {entry.stat && entry.stat.missed > 0 ? entry.stat.missed : "—"}
                   </span>
                   <span
                     title={boxHint(entry.box)}
-                    className={`w-24 text-right text-xs ${
+                    className={`w-32 whitespace-nowrap text-right text-xs ${
                       entry.box === 0
                         ? "text-zinc-500"
                         : entry.box >= TOP_BOX
@@ -250,7 +286,7 @@ export default function Practice() {
                           : "text-amber-300/80"
                     }`}
                   >
-                    {boxLabel(entry.box)}
+                    {entry.practised ? (entry.box === 0 ? "Missed last time" : boxLabel(entry.box)) : "New"}
                   </span>
                 </li>
               ))}
@@ -358,7 +394,11 @@ function ReviewDone({
             autoFocus
             className="rounded-lg bg-teal-300 px-4 py-2.5 text-sm font-semibold text-teal-950 transition-colors hover:bg-teal-200"
           >
-            Go again · {again.length} →
+            {/* "Go again" only when it is these again; after a clean round
+                the next ones are different countries. */}
+            {again.some((name) => name in recalls)
+              ? `Go again · ${again.length} →`
+              : `Next ${again.length} →`}
           </button>
         )}
         <button

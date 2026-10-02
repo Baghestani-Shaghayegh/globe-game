@@ -214,6 +214,24 @@ export function dueCount(now = Date.now()): number {
   return buildQueue(allCountries(), read(), now, Number.MAX_SAFE_INTEGER).length;
 }
 
+/**
+ * The deck in three numbers, for the top of the Practice page: what's
+ * waiting now (every one of them, not just the next round's), what was got
+ * right and is resting until its day comes, and what's learned for good.
+ */
+export function practiceSummary(now = Date.now()): {
+  waiting: number;
+  resting: number;
+  learned: number;
+} {
+  const cards = Object.values(read()).filter((card): card is Card => isCard(card));
+  return {
+    waiting: dueCount(now),
+    resting: cards.filter((card) => !isDue(card, now) && card.box < TOP_BOX).length,
+    learned: masteredCount(now),
+  };
+}
+
 /** Countries that have graduated — top box, not due for a month. */
 export function masteredCount(now = Date.now()): number {
   return Object.values(read()).filter(
