@@ -65,7 +65,8 @@ without being asked — `main` is what deploys.
   Which is bigger? (that one has no board, so it's watched and saved, not posted).
 - Player feedback (the `/feedback` page, linked from the footer and Settings)
   lands in the `feedback` table: anyone can insert, nobody can read through
-  the API. Sara reads it in the Supabase dashboard (Table Editor → feedback);
+  the API. It keeps the message, the page it was sent from and an optional
+  email; the browser type is deliberately not collected. Sara reads it in the Supabase dashboard (Table Editor → feedback);
   `handled` is hers to tick. A trigger stops floods at 30 per 10 minutes.
 - Ads and the cookie banner stay dark unless `VITE_ADSENSE_CLIENT` and
   `VITE_ADSENSE_SLOT` are set, which they are not in the repo. Set them on the
@@ -73,6 +74,8 @@ without being asked — `main` is what deploys.
 
 ## Conventions
 
+- The site never names Sara. Player-facing text speaks as the game ("Every
+  message is read"), not as a person; comments in the code are fine.
 - Anything a player reads follows `docs/WRITING.md`: short, concrete, in the
   game's voice, and free of the patterns that make text read as AI-written.
 - **Every commit message starts with a Conventional Commits prefix** — `feat:`,

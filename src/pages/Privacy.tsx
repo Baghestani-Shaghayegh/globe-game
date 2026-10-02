@@ -78,10 +78,10 @@ export default function Privacy() {
 
       <Section title="If you send feedback">
         <p>
-          The feedback page stores what you write, the page you came from,
-          your browser type, and the email address if you give one. If you
-          are signed in, it is linked to your account. Only we can read it,
-          and it is used to fix the game and nothing else.
+          The feedback page stores what you write, which page of the game you
+          sent it from, and the email address if you give one. If you are
+          signed in, it is linked to your account. Only we can read it, and it
+          is used to fix the game and nothing else.
         </p>
       </Section>
 

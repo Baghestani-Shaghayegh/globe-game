@@ -4,7 +4,7 @@ import { supabase } from "./supabase";
  * What players send from the Feedback page.
  *
  * Stored in the `feedback` table, which anyone may write to and nobody can
- * read through the API: Sara reads it in the Supabase dashboard. A signed-in
+ * read through the API: it's read in the Supabase dashboard. A signed-in
  * player's row carries their account id, filled in by the database.
  */
 
@@ -32,14 +32,17 @@ export function feedbackProblem(draft: FeedbackDraft): string | null {
   return null;
 }
 
-/** The row as it goes to the database: trimmed, capped, nothing extra. */
-export function feedbackRow(draft: FeedbackDraft, userAgent = "") {
+/**
+ * The row as it goes to the database: trimmed, capped, nothing extra. The
+ * browser type isn't sent: asking a player to accept being fingerprinted to
+ * report a typo is more than a bug report is worth.
+ */
+export function feedbackRow(draft: FeedbackDraft) {
   return {
     kind: draft.kind,
     message: draft.message.trim(),
     contact: draft.contact.trim() || null,
     page: draft.page.slice(0, 200) || null,
-    user_agent: userAgent.slice(0, 400) || null,
   };
 }
 
@@ -49,7 +52,7 @@ export async function sendFeedback(draft: FeedbackDraft): Promise<SendResult> {
   if (!supabase) return "offline";
   const { error } = await supabase
     .from("feedback")
-    .insert(feedbackRow(draft, typeof navigator === "undefined" ? "" : navigator.userAgent));
+    .insert(feedbackRow(draft));
   if (!error) return "sent";
   // The flood guard: too many at once, from everyone.
   if (error.code === "P0001") return "busy";

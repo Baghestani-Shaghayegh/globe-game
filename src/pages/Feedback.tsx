@@ -39,7 +39,8 @@ const NOT_SENT: Record<Exclude<SendResult, "sent">, string> = {
 };
 
 /**
- * Bugs, things that felt wrong, and ideas, straight into a table Sara reads.
+ * Bugs, things that felt wrong, and ideas, straight into a table read from
+ * the dashboard. The page names nobody: it's the game talking.
  * No account needed: the people most likely to hit a bug on the first visit
  * are the ones who haven't made one.
  */
@@ -72,7 +73,7 @@ export default function Feedback() {
         <div className="mx-auto mt-10 max-w-md text-center">
           <p className="text-xs font-medium uppercase tracking-wider text-emerald-300">Sent</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-50">
-            Thank you. Sara reads every one.
+            Thanks for telling us.
           </h1>
           <div className="mt-6 flex justify-center gap-2">
             <button
@@ -104,8 +105,8 @@ export default function Feedback() {
       <div className="mx-auto mt-5 max-w-lg">
         <h1 className="text-3xl font-semibold tracking-tight text-zinc-50">Feedback</h1>
         <p className="mt-2 text-sm text-zinc-400">
-          Found a bug, hit something that felt off, or thought of something to add? Sara reads
-          every message.
+          Found a bug, hit something that felt off, or thought of something to add? Every
+          message is read.
         </p>
 
         <form
@@ -167,12 +168,6 @@ export default function Feedback() {
             </button>
           </div>
         </form>
-        <p className="mt-3 text-xs text-zinc-600">
-          Sent with the page you came from and your browser type, so a bug can be found.{" "}
-          <Link to="/privacy" className="underline underline-offset-2 hover:text-zinc-400">
-            Privacy
-          </Link>
-        </p>
       </div>
     </PageShell>
   );

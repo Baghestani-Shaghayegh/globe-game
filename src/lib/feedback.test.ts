@@ -11,17 +11,15 @@ describe("feedback", () => {
   });
 
   it("sends only what the table takes, trimmed and capped", () => {
-    expect(feedbackRow(draft, "Mozilla/5.0")).toEqual({
+    expect(feedbackRow(draft)).toEqual({
       kind: "bug",
       message: "The globe froze",
       contact: null,
       page: "/clues",
-      user_agent: "Mozilla/5.0",
     });
-    expect(feedbackRow({ ...draft, contact: " a@b.co ", page: "" }, "x".repeat(900))).toMatchObject({
+    expect(feedbackRow({ ...draft, contact: " a@b.co ", page: "" })).toMatchObject({
       contact: "a@b.co",
       page: null,
-      user_agent: "x".repeat(400),
     });
   });
 });
