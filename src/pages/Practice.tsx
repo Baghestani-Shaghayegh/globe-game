@@ -394,9 +394,9 @@ function ReviewDone({
             autoFocus
             className="rounded-lg bg-teal-300 px-4 py-2.5 text-sm font-semibold text-teal-950 transition-colors hover:bg-teal-200"
           >
-            {/* "Go again" only when it is these again; after a clean round
-                the next ones are different countries. */}
-            {again.some((name) => name in recalls)
+            {/* "Go again" only when it is these again; otherwise the next
+                round has new countries in it, and says so. */}
+            {again.every((name) => name in recalls)
               ? `Go again · ${again.length} →`
               : `Next ${again.length} →`}
           </button>

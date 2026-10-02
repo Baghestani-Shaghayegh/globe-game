@@ -154,6 +154,44 @@ describe("buildQueue", () => {
     expect(queue).toEqual(["Chad"]);
   });
 
+  // Sara: "if that 8 comes in front again it feels like I never get to the
+  // others". Yesterday's eight share the round with ones not yet practised.
+  it("keeps half of a round for countries never practised", () => {
+    const deck: Deck = Object.fromEntries(
+      Array.from({ length: 8 }, (_, i) => [
+        `Old ${i}`,
+        { box: 1, dueAt: new Date(NOW - DAY).toISOString() },
+      ])
+    );
+    const fresh = Array.from({ length: 39 }, (_, i) => row(`New ${i}`));
+    const queue = buildQueue(fresh, deck, NOW);
+    expect(queue).toHaveLength(SESSION_SIZE);
+    expect(queue.filter((n) => n.startsWith("Old"))).toHaveLength(4);
+    expect(queue.filter((n) => n.startsWith("New"))).toHaveLength(4);
+    // Nothing is lost from the count on the menu.
+    expect(buildQueue(fresh, deck, NOW, Number.MAX_SAFE_INTEGER)).toHaveLength(47);
+  });
+
+  it("puts the ones just missed first among the reviews", () => {
+    const deck: Deck = {
+      Rested: { box: 2, dueAt: new Date(NOW - 2 * DAY).toISOString() },
+      Missed: { box: 0, dueAt: new Date(NOW - 1000).toISOString() },
+    };
+    const fresh = Array.from({ length: 10 }, (_, i) => row(`New ${i}`));
+    expect(buildQueue(fresh, deck, NOW).slice(0, 2)).toEqual(["Missed", "Rested"]);
+  });
+
+  it("lets either side fill a round when the other runs short", () => {
+    const deck: Deck = Object.fromEntries(
+      Array.from({ length: 10 }, (_, i) => [
+        `Old ${i}`,
+        { box: 1, dueAt: new Date(NOW - DAY).toISOString() },
+      ])
+    );
+    expect(buildQueue([row("Only new")], deck, NOW).filter((n) => n.startsWith("Old"))).toHaveLength(7);
+    expect(buildQueue(Array.from({ length: 20 }, (_, i) => row(`New ${i}`)), {}, NOW)).toHaveLength(8);
+  });
+
   it("keeps a session short", () => {
     const many = Array.from({ length: 40 }, (_, i) => row(`Country ${i}`));
     expect(buildQueue(many, {}, NOW)).toHaveLength(SESSION_SIZE);

@@ -127,6 +127,9 @@ export function isDue(card: Card, now: number): boolean {
   return Number.isNaN(due) || due <= now;
 }
 
+/** How much of a round is kept for countries never practised. */
+export const NEW_SHARE = 0.5;
+
 /**
  * What to practise, worst first.
  *
@@ -134,6 +137,12 @@ export function isDue(card: Card, now: number): boolean {
  * and countries the player has slipped on but never practised. The second is
  * what makes the feature work on day one — the history is already there, so
  * there is something to practise before anyone has practised anything.
+ *
+ * A round is half of each. It used to put every due card first, so a player
+ * with a backlog of 47 and one round a day saw yesterday's eight come back
+ * every morning and never reached the rest. Due cards still go first within
+ * their half, the ones just missed ahead of the rest; any that don't fit wait
+ * for the next round, and when one side runs short the other fills in.
  */
 export function buildQueue(
   countries: CountryRow[],
@@ -162,7 +171,11 @@ export function buildQueue(
     )
     .map((row) => row.geoName);
 
-  return [...new Set([...due, ...unseen])].slice(0, limit);
+  const fresh = unseen.filter((name) => !due.includes(name));
+  if (due.length + fresh.length <= limit) return [...due, ...fresh];
+  const newSlots = Math.min(fresh.length, Math.ceil(limit * NEW_SHARE));
+  const reviews = due.slice(0, limit - newSlots);
+  return [...reviews, ...fresh.slice(0, limit - reviews.length)];
 }
 
 /** Files a round's results and returns the updated deck. */
