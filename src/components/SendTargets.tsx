@@ -34,7 +34,7 @@ export function SendTargets({ message, link }: { message: string; link: string }
         <button
           onClick={() => {
             playTap();
-            void shareToKakao(message, link, `${siteUrl()}/og.png`);
+            void shareToKakao(message, link, `${siteUrl()}/og.png?v=2`);
           }}
           className={tile}
         >
