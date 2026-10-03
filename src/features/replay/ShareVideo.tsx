@@ -298,11 +298,9 @@ function VideoPanel({
                 {saved ? "✓ Saved to Downloads" : "Download"}
               </button>
             </div>
-            {canShare && (
+            {canShare && !computer && (
               <p className="mt-1.5 text-center text-xs text-zinc-500">
-                {computer
-                  ? "Share lists the apps on this computer: Messages, Mail, KakaoTalk and more."
-                  : "Share opens your phone's menu: Instagram, TikTok, WhatsApp, KakaoTalk and more."}
+                Share opens your phone's menu: Instagram, TikTok, WhatsApp, KakaoTalk and more.
               </p>
             )}
 
