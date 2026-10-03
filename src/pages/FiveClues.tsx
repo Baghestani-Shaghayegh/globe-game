@@ -15,6 +15,7 @@ import RecordSwitch from "../features/replay/RecordSwitch";
 import ReplayActions from "../features/replay/ReplayActions";
 import Celebrate from "../components/Celebrate";
 import ShareResult from "../components/ShareResult";
+import SignInNudge from "../components/SignInNudge";
 import { getCountryMeta } from "../data/countries";
 import { nearestNames, resolveName } from "../lib/answerMatch";
 import { landShade, theme } from "../lib/globeTheme";
@@ -514,6 +515,7 @@ export default function FiveClues() {
             />
           </div>
         )}
+        {over && <SignInNudge />}
         {recorded && (
           <div className="pointer-events-auto border-t border-white/[0.07] pt-3">
             <ReplayActions replay={recorded.replay} postedId={recorded.postedId} />

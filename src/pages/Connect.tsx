@@ -1,4 +1,5 @@
 import ShareResult from "../components/ShareResult";
+import SignInNudge from "../components/SignInNudge";
 import RecordSwitch from "../features/replay/RecordSwitch";
 import ReplayActions from "../features/replay/ReplayActions";
 import { useReplayCamera } from "../features/globe-guess/useReplayCamera";
@@ -677,6 +678,7 @@ export default function Connect() {
                 />
               </div>
             )}
+            <SignInNudge />
             {recorded && (
               <div className="pointer-events-auto mt-1 w-full border-t border-white/[0.07] pt-3">
                 <ReplayActions replay={recorded.replay} postedId={recorded.postedId} />

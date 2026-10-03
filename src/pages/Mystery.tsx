@@ -24,6 +24,7 @@ import { featureCentre, type Geometry, worldAltitude } from "../lib/geo";
 import { dayKey, elapsedMs, formatDay } from "../lib/daily";
 import Celebrate from "../components/Celebrate";
 import ShareResult from "../components/ShareResult";
+import SignInNudge from "../components/SignInNudge";
 import RecordSwitch from "../features/replay/RecordSwitch";
 import ReplayActions from "../features/replay/ReplayActions";
 import { useReplayCamera } from "../features/globe-guess/useReplayCamera";
@@ -543,6 +544,7 @@ export default function Mystery() {
                 />
               </div>
             )}
+            <SignInNudge />
             {recorded && (
               <div className="pointer-events-auto mt-3 w-full border-t border-white/[0.07] pt-3">
                 <ReplayActions replay={recorded.replay} postedId={recorded.postedId} />

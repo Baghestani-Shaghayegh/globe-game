@@ -4,6 +4,7 @@ import GlobeGame from "../features/globe-guess/GlobeGame";
 import FindGame from "../features/globe-guess/FindGame";
 import DailyResultGlobe from "../features/globe-guess/DailyResultGlobe";
 import ShareResult from "../components/ShareResult";
+import SignInNudge from "../components/SignInNudge";
 import ReplayActions from "../features/replay/ReplayActions";
 import RecordSwitch from "../features/replay/RecordSwitch";
 import type { Replay } from "../lib/replay";
@@ -296,6 +297,8 @@ export default function Daily() {
               </div>
             )}
           </div>
+
+          <SignInNudge />
 
           {recorded && (
             <div className="mx-auto mt-4 max-w-sm rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
