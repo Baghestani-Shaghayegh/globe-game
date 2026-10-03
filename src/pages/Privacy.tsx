@@ -6,7 +6,7 @@ import { PageShell } from "../components/SiteHeader";
  * an ad network will check, and a policy nobody can reply to is not a policy.
  * Swap this for one on the game's own domain once there is one.
  */
-const CONTACT = "privacy@guessglobe.example";
+const CONTACT = "privacy@guessglobe.com";
 
 /** The date the wording below last changed, not the date it was rendered. */
 const UPDATED = "2 October 2026";

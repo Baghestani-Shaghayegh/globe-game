@@ -34,8 +34,9 @@ This has never been exercised end to end — the sandbox this was built in
 blocks `*.supabase.co` — so click through a real sign-in once before handing
 the link out.
 
-**The contact address.** `CONTACT` in `src/pages/Privacy.tsx` is still
-`privacy@worldguess.example`. Fine for testing, not for anything public.
+**The contact address.** `CONTACT` in `src/pages/Privacy.tsx` is
+`privacy@guessglobe.com`, which Cloudflare Email Routing forwards to Sara's
+inbox. Replies go out from that inbox, not from the privacy address.
 
 ### What does not need configuring
 
