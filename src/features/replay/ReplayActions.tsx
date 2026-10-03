@@ -72,7 +72,7 @@ export default function ReplayActions({
                 ? "Posting…"
                 : state === "failed"
                   ? "Try again"
-                  : "Post to board"}
+                  : "Put on the board"}
           </button>
         ) : (
           // Only a run that has a board to go on asks for a sign-in.
@@ -82,7 +82,7 @@ export default function ReplayActions({
               to="/account"
               className="text-xs text-zinc-400 underline underline-offset-4 hover:text-zinc-100"
             >
-              Sign in to post it
+              Sign in to put it on the board
             </Link>
           )
         )}

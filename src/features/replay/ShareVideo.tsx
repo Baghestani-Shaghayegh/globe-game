@@ -305,7 +305,7 @@ function VideoPanel({
               </p>
             )}
 
-            <p className="mt-4 text-xs text-zinc-500">Post it</p>
+            <p className="mt-4 text-xs text-zinc-500">Share it on</p>
             <div className="mt-1.5 grid grid-cols-3 gap-2">
               {(Object.keys(POSTING) as Platform[]).map((platform) => (
                 <button
