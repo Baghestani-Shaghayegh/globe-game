@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled, supabase, urlAuthError } from "../lib/supabase";
 import {
@@ -749,6 +749,8 @@ function ProfileForm({
 
 export default function Account() {
   const { loading, session } = useAuth();
+  // Sent here from a crown card: say why, since the card only said "Claim it".
+  const fromCrown = (useLocation().state as { reason?: string } | null)?.reason === "crown";
 
   if (!accountsEnabled) {
     return (
@@ -769,6 +771,12 @@ export default function Account() {
       <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
         My profile
       </h1>
+
+      {fromCrown && !loading && (
+        <p className="mt-4 text-teal-300">
+          {session ? "Pick a name to claim a crown." : "Sign in to claim a crown."}
+        </p>
+      )}
 
       {loading ? (
         <p className="mt-6 text-zinc-500">One moment…</p>

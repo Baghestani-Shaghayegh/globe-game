@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../features/account/AuthProvider";
 import {
   allBuckets,
   formatPrecise,
@@ -150,14 +149,11 @@ function Standing({
   mine,
   hintedOnly,
   meId,
-  gate,
 }: {
   crown: Crown;
   mine: number | null;
   hintedOnly: boolean;
   meId: string | null;
-  /** What stands between this player and the board, if anything. */
-  gate: "signin" | "name" | null;
 }) {
   const holder = crown.holder;
   const yours = meId !== null && holder?.user_id === meId;
@@ -175,11 +171,7 @@ function Standing({
     // holder, so this line only has to be the thing you press.
     return (
       <span className="font-medium text-teal-300 group-hover:underline">
-        {gate === "signin"
-          ? "Sign in to claim it"
-          : gate === "name"
-            ? "Pick a name to claim it"
-            : "Claim it"}
+        Claim it
       </span>
     );
   }
@@ -193,13 +185,6 @@ function Standing({
           {crown.metric === "streak"
             ? "Your streaks used hints, and crowns don't count those."
             : "You cleared it with hints, and crowns don't count those."}
-        </span>
-      );
-    }
-    if (gate) {
-      return (
-        <span className="font-medium text-teal-300 group-hover:underline">
-          {gate === "signin" ? "Sign in to claim it" : "Pick a name to claim it"}
         </span>
       );
     }
@@ -257,10 +242,9 @@ function Card({
   const { best: mine, hintedOnly } = myBest(crown, buckets);
 
   // A crown is held by a named account, so a visitor without one is sent to
-  // the account page instead of into a run that could never be posted. Signed
-  // in but unnamed is the same page, asking for the other thing.
-  const { session } = useAuth();
-  const gate: "signin" | "name" | null = meId !== null ? null : session ? "name" : "signin";
+  // the account page instead of into a run that could never be posted. The
+  // card still reads "Claim it"; the account page says why they landed there.
+  const gate = meId === null;
 
   // Where the card sends you. A world crown is its own game type; a continent
   // is contested in all six, so it opens the one it is named for in the
@@ -308,6 +292,7 @@ function Card({
                   ? "/account"
                   : gamePath(type, mode, CROWN_RUN.limit, CROWN_RUN.rules, CROWN_RUN.count)
               }
+              state={gate ? { reason: "crown" } : undefined}
               className="after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none"
             >
               {crown.title}
@@ -371,7 +356,6 @@ function Card({
             mine={mine}
             hintedOnly={hintedOnly}
             meId={meId}
-            gate={gate}
           />
         )}
       </p>
