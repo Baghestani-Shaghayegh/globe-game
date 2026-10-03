@@ -114,8 +114,6 @@ export type DrawOptions = {
   player?: string;
   /** The site's address, for the last card. */
   site?: string;
-  /** A title card over the opening frame, 0–1 opacity. */
-  intro?: number;
 };
 
 export function drawFrame(
@@ -123,7 +121,7 @@ export function drawFrame(
   frame: Frame,
   replay: Replay,
   assets: ReplayAssets,
-  { width: W, height: H, player, site, intro = 0 }: DrawOptions
+  { width: W, height: H, player, site }: DrawOptions
 ) {
   const u = W / 1080;
   const font = (size: number, weight = "400") =>
@@ -567,19 +565,5 @@ export function drawFrame(
       ctx.font = font(40, "500");
       ctx.fillText(site, cx, H * 0.83);
     }
-  }
-
-  // ---- A title over the opening ------------------------------------------
-  if (intro > 0) {
-    ctx.globalAlpha = intro;
-    ctx.fillStyle = "rgba(7,17,28,0.9)";
-    ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = INK;
-    ctx.font = font(84, "800");
-    ctx.fillText(replay.game.label, cx, H * 0.45);
-    ctx.fillStyle = ACCENT;
-    ctx.font = font(44, "600");
-    ctx.fillText(player ? `${player}'s run` : "The run", cx, H * 0.51);
-    ctx.globalAlpha = 1;
   }
 }

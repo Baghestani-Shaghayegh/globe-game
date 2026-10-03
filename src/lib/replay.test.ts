@@ -195,7 +195,11 @@ describe("the video's ending", () => {
     const { frames, at } = videoTimeline(6000);
     const last = at(frames - 1).t;
     expect(last).toBeGreaterThan(6000 + END_HOLD_MS);
-    expect(at(frames - 1).intro).toBe(0);
+  });
+
+  it("opens on the round itself, with no title card first", () => {
+    expect(videoTimeline(6000).at(0).t).toBe(0);
+    expect(videoTimeline(6000).at(1).t).toBeGreaterThan(0);
   });
 });
 

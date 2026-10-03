@@ -14,7 +14,6 @@ import { drawFrame, type ReplayAssets } from "./replayDraw";
 export const VIDEO_WIDTH = 1080;
 export const VIDEO_HEIGHT = 1920;
 const FPS = 30;
-const INTRO_S = 1.2;
 /** The held last moment, then the result card. */
 const OUTRO_S = END_HOLD_MS / 1000 + 2.8;
 /** The round itself is squeezed into at most this long. */
@@ -25,23 +24,21 @@ export function videoSpeed(ms: number): number {
   return Math.max(1, ms / (MAX_MAIN_S * 1000));
 }
 
-/** How many frames, and what moment of the round each one shows. */
-export function videoTimeline(ms: number): { frames: number; at: (i: number) => { t: number; intro: number } } {
+/**
+ * How many frames, and what moment of the round each one shows. It starts
+ * straight on the round: the top line already names the game, and a title
+ * card in front only delayed the first move.
+ */
+export function videoTimeline(ms: number): { frames: number; at: (i: number) => { t: number } } {
   const speed = videoSpeed(ms);
-  const intro = Math.round(INTRO_S * FPS);
   const main = Math.ceil((ms / speed / 1000) * FPS);
   const outro = Math.round(OUTRO_S * FPS);
   return {
-    frames: intro + main + outro,
+    frames: main + outro,
     at: (i) => {
-      if (i < intro) {
-        // Holds, then fades over the last third.
-        const fade = Math.min(1, (intro - i) / (intro / 3));
-        return { t: 0, intro: fade };
-      }
-      if (i < intro + main) return { t: ((i - intro) / FPS) * 1000 * speed, intro: 0 };
+      if (i < main) return { t: (i / FPS) * 1000 * speed };
       // Real time from the end, so the last moment holds and then the card comes up.
-      return { t: ms + ((i - intro - main) / FPS) * 1000, intro: 0 };
+      return { t: ms + ((i - main) / FPS) * 1000 };
     },
   };
 }
@@ -92,13 +89,12 @@ export async function makeReplayVideo(
 
   const { frames, at } = videoTimeline(replay.result.ms);
   for (let i = 0; i < frames; i += 1) {
-    const { t, intro } = at(i);
+    const { t } = at(i);
     drawFrame(ctx, frameAt(replay, t), replay, assets, {
       width: VIDEO_WIDTH,
       height: VIDEO_HEIGHT,
       player,
       site,
-      intro,
     });
     await source.add(i / FPS, 1 / FPS);
     if (i % 8 === 0) {
