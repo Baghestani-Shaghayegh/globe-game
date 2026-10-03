@@ -1,4 +1,4 @@
-# WorldGuess — Marketing Plan
+# GuessGlobe — Marketing Plan
 
 A zero-budget, solo-dev marketing strategy. The theme throughout: **the product does the marketing** — every tactic here works better the more shareable the game itself is.
 
@@ -11,7 +11,7 @@ Marketing a game people bounce off wastes your one launch. Before any public pus
 - [ ] Core game polished: flag + globe modes, difficulty levels, timer, end-of-round summary
 - [ ] **Daily challenge with a shareable result card** — this IS the marketing engine
 - [ ] Works well on phones (most social-media clicks are mobile)
-- [ ] A real domain name (e.g. worldguess.app) — links to `something.vercel.app` look untrustworthy and get shared less
+- [ ] A real domain name (guessglobe.com, bought) — links to `something.vercel.app` look untrustworthy and get shared less
 - [ ] Analytics installed (Plausible or PostHog, both have free tiers) so you can see what's working
 - [ ] Sign-in is optional — never put a login wall in front of the first game
 
@@ -19,7 +19,7 @@ Marketing a game people bounce off wastes your one launch. Before any public pus
 
 ## 1. Positioning: pick the audience before the channel
 
-"Fun geography game" is too vague to market. WorldGuess has three real audiences, each with different channels:
+"Fun geography game" is too vague to market. GuessGlobe has three real audiences, each with different channels:
 
 | Audience | What they want | Where they are |
 |---|---|---|
@@ -34,7 +34,7 @@ Lead with the daily challenge (widest audience), keep hard mode as the hook for 
 ## 2. The viral loop (build once, works forever)
 
 1. Player finishes the daily challenge
-2. Gets a spoiler-free result card: `WorldGuess #87 🌍 8/10 🟩🟩🟥🟩… 🔥12-day streak` + link
+2. Gets a spoiler-free result card: `GuessGlobe #87 🌍 8/10 🟩🟩🟥🟩… 🔥12-day streak` + link
 3. One-tap share to WhatsApp / X / iMessage / copy
 4. Friend is curious, taps link, plays instantly (no signup) → step 1
 

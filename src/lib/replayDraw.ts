@@ -327,7 +327,7 @@ export function drawFrame(
   ctx.textAlign = "center";
   ctx.fillStyle = INK;
   ctx.font = font(40, "700");
-  ctx.fillText("WorldGuess", cx, 96 * u);
+  ctx.fillText("GuessGlobe", cx, 96 * u);
   ctx.fillStyle = MUTED;
   ctx.font = font(30, "500");
   ctx.fillText(

@@ -524,10 +524,10 @@ export default function Mystery() {
                   replay={recorded?.replay}
                   text={
                     result.solved
-                      ? `I found today's WorldGuess mystery country in ${guesses.length} ${guesses.length === 1 ? "guess" : "guesses"}.`
-                      : `Today's WorldGuess mystery country beat me.`
+                      ? `I found today's GuessGlobe mystery country in ${guesses.length} ${guesses.length === 1 ? "guess" : "guesses"}.`
+                      : `Today's GuessGlobe mystery country beat me.`
                   }
-                  filename={`worldguess-mystery-${result.day}.png`}
+                  filename={`guessglobe-mystery-${result.day}.png`}
                   card={(features) => ({
                     eyebrow: `Mystery country #${result.number}`,
                     title: result.solved

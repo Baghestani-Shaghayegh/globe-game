@@ -1,6 +1,6 @@
 {
-  "name": "WorldGuess",
-  "short_name": "WorldGuess",
+  "name": "GuessGlobe",
+  "short_name": "GuessGlobe",
   "description": "How much of the world map can you actually recall? Daily challenges, flags, clues and a mystery country.",
   "start_url": "/",
   "scope": "/",

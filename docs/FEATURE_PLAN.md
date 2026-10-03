@@ -1,4 +1,4 @@
-# WorldGuess — Feature Plan
+# GuessGlobe — Feature Plan
 
 A phased plan: each phase is shippable on its own. Don't start a phase until the previous one is playable and stable — this keeps the game always working while it grows.
 
@@ -52,7 +52,7 @@ Goal: give players a reason to come back every day.
 
 ### 2.3 Daily Challenge ⭐ (the single biggest retention feature)
 - One shared challenge per day for everyone (same 10 countries/flags, same order — generated from the date as a seed)
-- Everyone can compare results → result card ("WorldGuess #142 — 9/10 🟩🟩🟩🟥…") like Wordle. *Built; the squares and `shareText()` are in place.* **Sharing it moved to Phase 4** — see below.
+- Everyone can compare results → result card ("GuessGlobe #142 — 9/10 🟩🟩🟩🟥…") like Wordle. *Built; the squares and `shareText()` are in place.* **Sharing it moved to Phase 4** — see below.
 - Daily streak counter ("🔥 12-day streak") — the #1 habit mechanic
 
 ---

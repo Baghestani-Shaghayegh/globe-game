@@ -1,4 +1,4 @@
-# WorldGuess
+# GuessGlobe
 
 A browser geography game. React + TypeScript + Vite, react-globe.gl over
 three.js, Tailwind v4, Supabase for accounts, leaderboards and multiplayer.

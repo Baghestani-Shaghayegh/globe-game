@@ -41,7 +41,7 @@ function searchFiles(site: string): Plugin {
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [
-    searchFiles(loadEnv(mode, process.cwd(), "VITE_").VITE_SITE_URL || "https://playworldguess.vercel.app"),
+    searchFiles(loadEnv(mode, process.cwd(), "VITE_").VITE_SITE_URL || "https://guessglobe.com"),
     react(),
     tailwindcss(),
     VitePWA({

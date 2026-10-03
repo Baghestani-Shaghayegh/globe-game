@@ -34,7 +34,7 @@ export function shareTargets(): ShareTarget[] {
       ? [{ id: "messages", name: "Messages", href: (m: string, l: string) => `sms:?&body=${enc(`${m} ${l}`)}` }]
       : []),
     { id: "telegram", name: "Telegram", href: (m, l) => `https://t.me/share/url?url=${enc(l)}&text=${enc(m)}` },
-    { id: "email", name: "Email", href: (m, l) => `mailto:?subject=${enc("WorldGuess")}&body=${enc(`${m} ${l}`)}` },
+    { id: "email", name: "Email", href: (m, l) => `mailto:?subject=${enc("GuessGlobe")}&body=${enc(`${m} ${l}`)}` },
     { id: "x", name: "X", href: (m, l) => `https://twitter.com/intent/tweet?text=${enc(m)}&url=${enc(l)}` },
     { id: "facebook", name: "Facebook", href: (_m, l) => `https://www.facebook.com/sharer/sharer.php?u=${enc(l)}` },
   ];
@@ -86,7 +86,7 @@ export async function shareToKakao(message: string, link: string, imageUrl: stri
     sdk.Share.sendDefault({
       objectType: "feed",
       content: {
-        title: "WorldGuess",
+        title: "GuessGlobe",
         description: message,
         imageUrl,
         link: { mobileWebUrl: link, webUrl: link },

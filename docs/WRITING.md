@@ -1,4 +1,4 @@
-# How WorldGuess talks
+# How GuessGlobe talks
 
 Rules for any words a player reads: buttons, prompts, feedback, cards, empty
 states. Written after Sara pointed out that "Five neighbouring countries at a

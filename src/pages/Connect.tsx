@@ -650,8 +650,8 @@ export default function Connect() {
               <div className="pointer-events-auto mt-1 w-full border-t border-white/[0.07] pt-3">
                 <ShareResult
                   replay={recorded?.replay}
-                  text={`I linked ${display(puzzle.from)} to ${display(puzzle.to)} in ${result.chain.length} on today's WorldGuess Connect.`}
-                  filename={`worldguess-connect-${result.day}.png`}
+                  text={`I linked ${display(puzzle.from)} to ${display(puzzle.to)} in ${result.chain.length} on today's GuessGlobe Connect.`}
+                  filename={`guessglobe-connect-${result.day}.png`}
                   card={(features) => {
                     const wrongTurns = Math.max(0, placedOf(result).length - result.chain.length);
                     return {

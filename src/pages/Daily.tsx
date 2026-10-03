@@ -278,8 +278,8 @@ export default function Daily() {
               <div className="mx-auto mt-6 max-w-sm border-t border-white/[0.07] pt-5">
                 <ShareResult
                   replay={recorded?.replay}
-                  text={`I found ${result.found}/${result.total} in ${formatDuration(result.ms)} on today's WorldGuess Country hunt.`}
-                  filename={`worldguess-hunt-${result.day}.png`}
+                  text={`I found ${result.found}/${result.total} in ${formatDuration(result.ms)} on today's GuessGlobe Country hunt.`}
+                  filename={`guessglobe-hunt-${result.day}.png`}
                   card={(features) => ({
                     eyebrow: `Country hunt · ${formatDay(result.day)}`,
                     title: `${result.found} / ${result.total}`,

@@ -6,7 +6,7 @@ import { PageShell } from "../components/SiteHeader";
  * an ad network will check, and a policy nobody can reply to is not a policy.
  * Swap this for one on the game's own domain once there is one.
  */
-const CONTACT = "privacy@worldguess.example";
+const CONTACT = "privacy@guessglobe.example";
 
 /** The date the wording below last changed, not the date it was rendered. */
 const UPDATED = "2 October 2026";
@@ -37,7 +37,7 @@ export default function Privacy() {
       <p className="mt-2 text-sm text-zinc-500">Last updated {UPDATED}</p>
 
       <p className="mt-6 text-sm leading-relaxed text-zinc-300">
-        WorldGuess is a geography game. You can play all of it without an
+        GuessGlobe is a geography game. You can play all of it without an
         account, and most of what it remembers never leaves your device.
       </p>
 

@@ -495,10 +495,10 @@ export default function FiveClues() {
               replay={recorded?.replay}
               text={
                 on
-                  ? `I got today's WorldGuess Five clues on clue ${on}.`
-                  : "Today's WorldGuess Five clues beat me."
+                  ? `I got today's GuessGlobe Five clues on clue ${on}.`
+                  : "Today's GuessGlobe Five clues beat me."
               }
-              filename={`worldguess-clues-${result.day}.png`}
+              filename={`guessglobe-clues-${result.day}.png`}
               card={(features) => ({
                 eyebrow: `Five clues #${result.number}`,
                 title: on ? `Clue ${on} of ${CLUE_COUNT}` : "Not found",

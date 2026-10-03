@@ -28,7 +28,7 @@ export default function ConsentBanner() {
     >
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-3 sm:flex-row sm:items-center">
         <p className="flex-1 text-sm leading-relaxed text-zinc-300">
-          WorldGuess is free because of ads. May we allow advertising cookies?
+          GuessGlobe is free because of ads. May we allow advertising cookies?
           Your scores and settings work either way.{" "}
           <Link
             to="/privacy"

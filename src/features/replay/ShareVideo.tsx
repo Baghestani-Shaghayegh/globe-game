@@ -111,7 +111,7 @@ function VideoPanel({
   const [caption, setCaption] = useState(() => videoCaption(replay, player));
   const computer = onComputer();
 
-  const filename = video ? `worldguess-${replay.game.type}-${replay.game.mode}.${video.ext}` : "";
+  const filename = video ? `guessglobe-${replay.game.type}-${replay.game.mode}.${video.ext}` : "";
   const file = useMemo(
     () => (video ? new File([video.blob], filename, { type: video.blob.type }) : null),
     [video, filename]

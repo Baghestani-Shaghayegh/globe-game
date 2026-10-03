@@ -22,7 +22,7 @@ function loadWorld(): Promise<World | null> {
 type Props = {
   /** The image, built only when asked for. Given the map if it loaded. */
   card: (features: World | null) => CardSpec;
-  /** What goes with the link: "I found 9/10 on today's WorldGuess Country hunt." */
+  /** What goes with the link: "I found 9/10 on today's GuessGlobe Country hunt." */
   text: string;
   filename: string;
   /**

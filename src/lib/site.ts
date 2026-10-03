@@ -9,7 +9,7 @@ export function siteUrl(): string {
   return (fromEnv || window.location.origin).replace(/\/+$/, "");
 }
 
-/** "playworldguess.vercel.app", for the foot of a share card. */
+/** "guessglobe.com", for the foot of a share card. */
 export function siteHost(): string {
   return new URL(siteUrl()).host;
 }

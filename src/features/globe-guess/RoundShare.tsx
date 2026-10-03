@@ -35,8 +35,8 @@ export default function RoundShare({
   return (
     <ShareResult
       replay={replay}
-      text={`I ${said} on WorldGuess (${label}).`}
-      filename={`worldguess-${type}-${mode.id}.png`}
+      text={`I ${said} on GuessGlobe (${label}).`}
+      filename={`guessglobe-${type}-${mode.id}.png`}
       card={(features) => ({
         eyebrow: label,
         title: `${found.length} / ${total}`,

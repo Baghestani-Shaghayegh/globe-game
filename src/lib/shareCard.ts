@@ -195,7 +195,7 @@ export async function drawCard(spec: CardSpec): Promise<Blob> {
 
   ctx.fillStyle = INK;
   ctx.font = font(44, "700");
-  ctx.fillText("WorldGuess", CARD_WIDTH / 2, 150);
+  ctx.fillText("GuessGlobe", CARD_WIDTH / 2, 150);
 
   ctx.fillStyle = MUTED;
   fit(spec.eyebrow.toUpperCase(), 34, "500");

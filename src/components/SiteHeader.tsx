@@ -71,7 +71,7 @@ export default function SiteHeader() {
             <path d="M3.3 9h17.4M3.3 15h17.4" />
           </svg>
           <span className="text-xl font-semibold tracking-tight text-zinc-50">
-            WorldGuess
+            GuessGlobe
           </span>
         </Link>
 

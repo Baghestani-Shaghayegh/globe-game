@@ -1,4 +1,4 @@
-# WorldGuess — Structure & Security Plan
+# GuessGlobe — Structure & Security Plan
 
 How to organize the code so every new feature (flags, timer, multiplayer…) slots in without rewrites, and how to keep the leaderboard and rooms secure.
 

@@ -334,8 +334,8 @@ export default function HigherLower() {
                 <div className="mt-4">
                   <ShareResult
                     replay={recorded}
-                    text={`I got ${ended} in a row on WorldGuess's Which is bigger?`}
-                    filename="worldguess-bigger.png"
+                    text={`I got ${ended} in a row on GuessGlobe's Which is bigger?`}
+                    filename="guessglobe-bigger.png"
                     card={(features) => ({
                       eyebrow: "Which is bigger?",
                       title: `${ended} in a row`,
