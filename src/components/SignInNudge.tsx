@@ -29,11 +29,12 @@ export default function SignInNudge() {
       {days} days running.{" "}
       <Link
         to="/account"
+        target="_blank"
         className="text-zinc-300 underline underline-offset-4 hover:text-zinc-100"
       >
         {session ? "Pick a name" : "Sign in"}
       </Link>{" "}
-      {session ? "and your runs land on the leaderboard." : "to put your runs on the leaderboard."}
+      {session ? "and your next run lands on the leaderboard." : "to put your next run on the leaderboard."}
     </p>
   );
 }

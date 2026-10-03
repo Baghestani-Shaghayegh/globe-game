@@ -78,13 +78,18 @@ export default function ReplayActions({
       </div>
 
       {/* Only a run that has a board to go on asks for a sign-in. On a line of
-          its own, under the row: beside Watch it read as a third button. */}
+          its own, under the row: beside Watch it read as a third button.
+          A new tab, because this screen is the only place the result and the
+          recording exist: going back from the account page starts the game
+          again. And "next run", because a run is filed as it ends, so signing
+          in afterwards can't add this one. */}
       {!scoreId && postedId && !session && (
         <Link
           to="/account"
+          target="_blank"
           className="mt-2 inline-block text-xs text-zinc-400 underline underline-offset-4 hover:text-zinc-100"
         >
-          Sign in to put it on the board
+          Sign in to put your next run on the board
         </Link>
       )}
 
