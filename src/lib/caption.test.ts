@@ -14,41 +14,41 @@ const run = (game: Partial<ReplayGame>, result: Partial<Replay["result"]>, ev: R
 describe("a video's caption", () => {
   it("tells a globe round in its own numbers", () => {
     expect(videoCaption(run({}, { found: 47, total: 50 }))).toBe(
-      "Named 47 of 50 countries in 4:12 on WorldGuess. Tag a friend who can beat that."
+      "Named 47 of 50 countries in 4:12 on GuessGlobe. Tag a friend who can beat that."
     );
     expect(videoCaption(run({ type: "flag" }, { found: 20, total: 20 }))).toBe(
-      "Matched all 20 flags in 4:12 on WorldGuess. Tag a friend who can beat that."
+      "Matched all 20 flags in 4:12 on GuessGlobe. Tag a friend who can beat that."
     );
   });
 
   it("names the daily hunt", () => {
     expect(videoCaption(run({ type: "find", mode: "daily" }, { found: 9, total: 10, ms: 102_000 }))).toBe(
-      "Found 9 of 10 countries in 1:42 on today's WorldGuess Country hunt. Tag a friend who can beat that."
+      "Found 9 of 10 countries in 1:42 on today's GuessGlobe Country hunt. Tag a friend who can beat that."
     );
   });
 
   it("counts a mystery's guesses, and owns up to a loss", () => {
     const g = (km: number): ReplayEvent => [0, "g", "Peru", km];
     expect(videoCaption(run({ type: "mystery", mode: "daily" }, { found: 1, total: 1 }, [g(900), g(300), g(0)]))).toBe(
-      "Found today's WorldGuess mystery country in 3 guesses. Tag a friend who can beat that."
+      "Found today's GuessGlobe mystery country in 3 guesses. Tag a friend who can beat that."
     );
     expect(videoCaption(run({ type: "mystery", mode: "daily" }, { found: 0, total: 1 }))).toBe(
-      "Today's WorldGuess mystery country beat me. Tag a friend who'd get it."
+      "Today's GuessGlobe mystery country beat me. Tag a friend who'd get it."
     );
   });
 
   it("works out the clue from the score", () => {
     expect(videoCaption(run({ type: "clues", mode: "daily" }, { found: 1, total: 1, points: 800 }))).toBe(
-      "Got today's WorldGuess country on clue 2 of 5. Tag a friend who can beat that."
+      "Got today's GuessGlobe country on clue 2 of 5. Tag a friend who can beat that."
     );
   });
 
   it("tells someone else's run in their name", () => {
     expect(videoCaption(run({ type: "bigger", mode: "streak" }, { found: 9, total: 10 }), "Mina")).toBe(
-      "Mina got 9 in a row on WorldGuess's Which is bigger? Tag a friend who can beat that."
+      "Mina got 9 in a row on GuessGlobe's Which is bigger? Tag a friend who can beat that."
     );
     expect(videoCaption(run({ type: "mystery", mode: "daily" }, { found: 0, total: 1 }), "Mina")).toBe(
-      "Today's WorldGuess mystery country beat Mina. Tag a friend who'd get it."
+      "Today's GuessGlobe mystery country beat Mina. Tag a friend who'd get it."
     );
   });
 
