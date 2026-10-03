@@ -7,7 +7,6 @@ import ShareResult from "../components/ShareResult";
 import ReplayActions from "../features/replay/ReplayActions";
 import RecordSwitch from "../features/replay/RecordSwitch";
 import type { Replay } from "../lib/replay";
-import ChallengeBanner from "../components/ChallengeBanner";
 import { CARD_FOUND, CARD_MISSED } from "../features/globe-guess/RoundShare";
 import type { RoundOutcome } from "../features/globe-guess/FindGame";
 import { getCountryMeta } from "../data/countries";
@@ -36,6 +35,7 @@ import Celebrate from "../components/Celebrate";
 import { dayStart, topScores, type BoardRow } from "../lib/leaderboard";
 import { accountsEnabled } from "../lib/supabase";
 import { recordKey } from "../data/modes";
+import { siteHost } from "../lib/site";
 
 /** A mode built for one day: the ten countries the challenge asks for. */
 function dailyMode(challenge: Challenge): Mode {
@@ -277,13 +277,7 @@ export default function Daily() {
             {result.day === dayKey() && (
               <div className="mx-auto mt-6 max-w-sm border-t border-white/[0.07] pt-5">
                 <ShareResult
-                  mine={{
-                    game: `daily:${result.day}`,
-                    score: result.found,
-                    higherWins: true,
-                    ms: result.ms,
-                    said: `found ${result.found}/${result.total} in ${formatDuration(result.ms)}`,
-                  }}
+                  replay={recorded?.replay}
                   text={`I found ${result.found}/${result.total} in ${formatDuration(result.ms)} on today's WorldGuess Country hunt.`}
                   filename={`worldguess-hunt-${result.day}.png`}
                   card={(features) => ({
@@ -296,7 +290,7 @@ export default function Daily() {
                     // The globe, but none of today's ten on it: the card goes
                     // to people who haven't played yet.
                     globe: features ? { features, colors: {} } : undefined,
-                    site: window.location.host,
+                    site: siteHost(),
                   })}
                 />
               </div>
@@ -369,10 +363,6 @@ export default function Daily() {
       {/* Recording, as on every globe round: on by default, tap to stop. */}
       <div className="pointer-events-none fixed right-4 top-4 z-30 lg:bottom-4 lg:top-auto">
         <RecordSwitch />
-      </div>
-      {/* Opened from a friend's challenge: what to beat, over the game. */}
-      <div className="pointer-events-none fixed inset-x-0 top-16 z-40 flex justify-center px-3 lg:top-4">
-        <ChallengeBanner />
       </div>
     </>
   );

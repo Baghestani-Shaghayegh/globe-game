@@ -24,7 +24,6 @@ import { featureCentre, type Geometry, worldAltitude } from "../lib/geo";
 import { dayKey, elapsedMs, formatDay } from "../lib/daily";
 import Celebrate from "../components/Celebrate";
 import ShareResult from "../components/ShareResult";
-import ChallengeBanner from "../components/ChallengeBanner";
 import RecordSwitch from "../features/replay/RecordSwitch";
 import ReplayActions from "../features/replay/ReplayActions";
 import { useReplayCamera } from "../features/globe-guess/useReplayCamera";
@@ -50,6 +49,7 @@ import {
   type Point,
   type Shape,
 } from "../lib/mystery";
+import { siteHost } from "../lib/site";
 
 
 /** How many squares of the trail are worth showing on the result card. */
@@ -458,10 +458,6 @@ export default function Mystery() {
         }
       />
 
-      {/* Opened from a friend's challenge: what to beat. */}
-      <div className="pointer-events-none absolute inset-x-0 top-4 z-30 flex justify-center px-16">
-        <ChallengeBanner />
-      </div>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4">
         <button
@@ -525,15 +521,7 @@ export default function Mystery() {
             {result.day === day && (
               <div className="pointer-events-auto mt-3 w-full border-t border-white/[0.07] pt-3">
                 <ShareResult
-                  mine={{
-                    game: `mystery:${result.day}`,
-                    // Any find beats any give-up; then fewer guesses.
-                    score: result.solved ? guesses.length : 1000 + guesses.length,
-                    higherWins: false,
-                    said: result.solved
-                      ? `found it in ${guesses.length} ${guesses.length === 1 ? "guess" : "guesses"}`
-                      : `gave up after ${guesses.length} ${guesses.length === 1 ? "guess" : "guesses"}`,
-                  }}
+                  replay={recorded?.replay}
                   text={
                     result.solved
                       ? `I found today's WorldGuess mystery country in ${guesses.length} ${guesses.length === 1 ? "guess" : "guesses"}.`
@@ -550,7 +538,7 @@ export default function Mystery() {
                     // no answer: the card goes to people who haven't played.
                     tiles: [...guesses].reverse().slice(-40).map((g) => heatColor(g.km)),
                     globe: features ? { features, colors: {} } : undefined,
-                    site: window.location.host,
+                    site: siteHost(),
                   })}
                 />
               </div>

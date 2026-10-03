@@ -23,7 +23,6 @@ export const LOCAL_KEYS = [
   "worldguess.higherlower.v1",
   "worldguess.appearance.v1",
   "worldguess.learn.v1",
-  "worldguess.sharename.v1",
   "worldguess.replays.v1",
   "worldguess.record.v1",
 ] as const;
@@ -35,7 +34,7 @@ export const LOCAL_SUMMARY = [
   "Badges, level and XP",
   "Per-country statistics, your practice deck and the countries you have learned",
   "Mystery, Connect, Five clues and higher-or-lower results, and recordings of your last few rounds",
-  "Settings, including your answer about cookies and the name you put on challenges",
+  "Settings, including your answer about cookies",
 ];
 
 /** How many of those keys actually hold something right now. */

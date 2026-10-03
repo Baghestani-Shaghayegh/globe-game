@@ -1124,12 +1124,11 @@ export default function FindGame({
               <RoundShare
                 type={type}
                 mode={mode}
-                ruleset={ruleset}
-                limitMs={limitMs}
                 found={[...foundNames]}
                 missed={asked.filter((name) => !foundNames.has(name))}
                 ms={summary.ms}
                 points={summary.points}
+                replay={replay}
               />
             ) : undefined
           }

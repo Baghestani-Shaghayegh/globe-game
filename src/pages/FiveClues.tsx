@@ -15,7 +15,6 @@ import RecordSwitch from "../features/replay/RecordSwitch";
 import ReplayActions from "../features/replay/ReplayActions";
 import Celebrate from "../components/Celebrate";
 import ShareResult from "../components/ShareResult";
-import ChallengeBanner from "../components/ChallengeBanner";
 import { getCountryMeta } from "../data/countries";
 import { nearestNames, resolveName } from "../lib/answerMatch";
 import { landShade, theme } from "../lib/globeTheme";
@@ -40,6 +39,7 @@ import {
   scoreFor,
   type CluesResult,
 } from "../lib/fiveClues";
+import { siteHost } from "../lib/site";
 
 type CountryFeature = {
   properties: { name: string };
@@ -314,9 +314,6 @@ export default function FiveClues() {
         onPolygonHover={(polygon) => globeClick.setHovered(polygon as CountryFeature | null)}
       />
 
-      <div className="pointer-events-none absolute inset-x-0 top-4 z-30 flex justify-center px-16">
-        <ChallengeBanner />
-      </div>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4">
         <button
@@ -495,12 +492,7 @@ export default function FiveClues() {
         {over && result && result.day === day && (
           <div className="pointer-events-auto mt-1 border-t border-white/[0.07] pt-3">
             <ShareResult
-              mine={{
-                game: `clues:${result.day}`,
-                score: on ?? CLUE_COUNT + 1,
-                higherWins: false,
-                said: on ? `got it on clue ${on}` : "didn't get it",
-              }}
+              replay={recorded?.replay}
               text={
                 on
                   ? `I got today's WorldGuess Five clues on clue ${on}.`
@@ -517,7 +509,7 @@ export default function FiveClues() {
                   m === "found" ? CARD_FOUND : m === "missed" ? CARD_MISSED : m === "skipped" ? CARD_SKIPPED : CARD_UNUSED
                 ),
                 globe: features ? { features, colors: {} } : undefined,
-                site: window.location.host,
+                site: siteHost(),
               })}
             />
           </div>

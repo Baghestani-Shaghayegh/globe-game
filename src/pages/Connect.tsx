@@ -1,5 +1,4 @@
 import ShareResult from "../components/ShareResult";
-import ChallengeBanner from "../components/ChallengeBanner";
 import RecordSwitch from "../features/replay/RecordSwitch";
 import ReplayActions from "../features/replay/ReplayActions";
 import { useReplayCamera } from "../features/globe-guess/useReplayCamera";
@@ -49,6 +48,7 @@ import {
 } from "../lib/connect";
 import { nearestNames, resolveName } from "../lib/answerMatch";
 import { useSuggestions } from "../features/globe-guess/useSuggestions";
+import { siteHost } from "../lib/site";
 
 type CountryFeature = {
   properties: { name: string };
@@ -596,10 +596,6 @@ export default function Connect() {
         polygonsTransitionDuration={250}
       />
 
-      {/* Opened from a friend's challenge: what to beat. */}
-      <div className="pointer-events-none absolute inset-x-0 top-4 z-30 flex justify-center px-16">
-        <ChallengeBanner />
-      </div>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-4">
         <button
@@ -653,13 +649,7 @@ export default function Connect() {
             {result.day === day && (
               <div className="pointer-events-auto mt-1 w-full border-t border-white/[0.07] pt-3">
                 <ShareResult
-                  mine={{
-                    game: `connect:${result.day}`,
-                    score: scoreFor(result),
-                    higherWins: true,
-                    ms: shownMs,
-                    said: `linked ${display(puzzle.from)} to ${display(puzzle.to)} for ${scoreFor(result).toLocaleString()} points`,
-                  }}
+                  replay={recorded?.replay}
                   text={`I linked ${display(puzzle.from)} to ${display(puzzle.to)} in ${result.chain.length} on today's WorldGuess Connect.`}
                   filename={`worldguess-connect-${result.day}.png`}
                   card={(features) => {
@@ -681,7 +671,7 @@ export default function Connect() {
                       globe: features
                         ? { features, colors: { [puzzle.from]: "#a78bfa", [puzzle.to]: "#a78bfa" } }
                         : undefined,
-                      site: window.location.host,
+                      site: siteHost(),
                     };
                   }}
                 />

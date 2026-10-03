@@ -261,6 +261,39 @@ export type ShareOutcome = "shared" | "downloaded" | "failed";
  * apps do too. On a desktop there is no share sheet, so the card downloads and
  * the player posts it themselves.
  */
+/**
+ * A computer, as far as sharing goes: a mouse or trackpad rather than a
+ * finger. There the share menu (AirDrop, Mail) is the wrong place for a
+ * picture or a video someone means to keep or upload, and on a Mac it has no
+ * "Save" at all, so the file goes straight to Downloads instead.
+ */
+export function onComputer(): boolean {
+  try {
+    return !window.matchMedia("(pointer: coarse)").matches;
+  } catch {
+    return false;
+  }
+}
+
+/** Saves a file to the browser's downloads. */
+export function downloadFile(blob: Blob, filename: string): ShareOutcome {
+  try {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    // Not straight away: Safari and Firefox can drop a download whose file
+    // is released while it's still being written.
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    return "downloaded";
+  } catch {
+    return "failed";
+  }
+}
+
 export async function shareCard(
   blob: Blob,
   { text, filename }: { text: string; filename: string }
@@ -269,6 +302,7 @@ export async function shareCard(
   const file = new File([blob], filename, { type: blob.type || "image/png" });
 
   const canShareFiles =
+    !onComputer() &&
     typeof navigator !== "undefined" &&
     typeof navigator.canShare === "function" &&
     navigator.canShare({ files: [file] });
@@ -284,15 +318,5 @@ export async function shareCard(
     }
   }
 
-  try {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
-    return "downloaded";
-  } catch {
-    return "failed";
-  }
+  return downloadFile(blob, filename);
 }

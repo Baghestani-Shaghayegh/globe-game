@@ -960,12 +960,11 @@ export default function GlobeGame({
               <RoundShare
                 type={"name"}
                 mode={mode}
-                ruleset={ruleset}
-                limitMs={limitMs}
                 found={[...foundNames]}
                 missed={features.map((f) => f.properties.name).filter((name) => !foundNames.has(name))}
                 ms={summary.ms}
                 points={summary.points}
+                replay={replay}
               />
             ) : undefined
           }

@@ -4,6 +4,7 @@ import { clock, END_HOLD_MS, frameAt } from "../../lib/replayFrame";
 import { drawFrame, loadReplayAssets, type ReplayAssets } from "../../lib/replayDraw";
 import { playTap } from "../../lib/sound";
 import SaveVideoButton from "./SaveVideoButton";
+import { siteHost } from "../../lib/site";
 
 const SPEEDS = [1, 2, 4] as const;
 
@@ -70,7 +71,7 @@ export default function ReplayViewer({
       width: el.width,
       height: el.height,
       player: who,
-      site: window.location.host,
+      site: siteHost(),
     });
   }, [frame, replay, assets, who]);
 

@@ -1,16 +1,8 @@
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
-import { useAuth } from "../features/account/AuthProvider";
-import {
-  challengeFromUrl,
-  challengeLink,
-  cleanName,
-  saveShareName,
-  savedShareName,
-  verdict,
-  type Challenge,
-} from "../lib/challenge";
+import SaveVideoButton from "../features/replay/SaveVideoButton";
+import type { Replay } from "../lib/replay";
 import { drawCard, shareCard, type CardGlobe, type CardSpec } from "../lib/shareCard";
+import { siteUrl } from "../lib/site";
 import { playTap } from "../lib/sound";
 
 type World = CardGlobe["features"];
@@ -27,43 +19,38 @@ function loadWorld(): Promise<World | null> {
 }
 
 type Props = {
-  /** This result as a challenge; the name is added from the box. */
-  mine: Omit<Challenge, "name">;
   /** The image, built only when asked for. Given the map if it loaded. */
   card: (features: World | null) => CardSpec;
-  /** What goes with the link: "I found 9/10 in 2:14 on WorldGuess." */
+  /** What goes with the link: "I found 9/10 on today's WorldGuess Country hunt." */
   text: string;
   filename: string;
+  /**
+   * The round's recording, when there is one. Then the second button shares
+   * it as a video, which is what people post; the still card is only offered
+   * when the round wasn't recorded.
+   */
+  replay?: Replay | null;
 };
 
 /**
- * The end of a game: send it to a friend as a challenge, or post the result
- * as an image. And, if this game was opened from someone's challenge, how
- * you did against them.
+ * The end of a game: send the result to a friend, or post it as an image.
  *
- * The challenge comes first because it brings someone back to play; an image
- * in a story is seen and scrolled past. Both carry the link.
+ * The link is the home page, not this game. It used to be a challenge to
+ * beat this exact round, with a name to type and a banner waiting for the
+ * friend; Sara chose the simpler invitation instead. The result in the
+ * message carries the dare ("Your turn"), and the friend lands where every
+ * game is on offer. The dailies are the same for everyone anyway, so the
+ * comparison makes itself.
  */
-export default function ShareResult({ mine, card, text, filename }: Props) {
-  const { profile } = useAuth();
-  const { search } = useLocation();
-  const [theirs] = useState(() => challengeFromUrl(search));
-  const [name, setName] = useState(() => savedShareName() || profile?.username || "");
+export default function ShareResult({ card, text, filename, replay }: Props) {
   const [linkState, setLinkState] = useState<"idle" | "copied" | "failed">("idle");
   const [imageState, setImageState] = useState<"idle" | "working" | "saved" | "failed">("idle");
 
-  const challenge: Challenge = { ...mine, name: cleanName(name) };
-  const link = challengeLink(challenge, window.location.href);
-  const result = theirs ? verdict(challenge, theirs) : null;
+  const link = `${siteUrl()}/`;
+  const message = `${text} Your turn:`;
 
-  const remember = () => {
-    if (name.trim()) saveShareName(name.trim());
-  };
-
-  const sendChallenge = async () => {
+  const send = async () => {
     playTap();
-    remember();
-    const message = `${text} Beat it:`;
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({ text: message, url: link });
@@ -84,11 +71,10 @@ export default function ShareResult({ mine, card, text, filename }: Props) {
   const shareImage = async () => {
     if (imageState === "working") return;
     playTap();
-    remember();
     setImageState("working");
     try {
       const blob = await drawCard(card(await loadWorld()));
-      const outcome = await shareCard(blob, { text: `${text} ${link}`, filename });
+      const outcome = await shareCard(blob, { text: `${message} ${link}`, filename });
       setImageState(outcome === "downloaded" ? "saved" : outcome === "failed" ? "failed" : "idle");
     } catch {
       setImageState("failed");
@@ -97,52 +83,20 @@ export default function ShareResult({ mine, card, text, filename }: Props) {
   };
 
   return (
-    <div className="text-left">
-      {theirs && result && (
-        <div
-          className={`mb-3 rounded-lg px-3 py-2.5 text-sm ${
-            result === "won"
-              ? "bg-emerald-400/10 text-emerald-200"
-              : result === "lost"
-                ? "bg-rose-400/10 text-rose-200"
-                : "bg-white/5 text-zinc-200"
-          }`}
-        >
-          <p className="font-semibold">
-            {result === "won"
-              ? `You beat ${theirs.name}`
-              : result === "lost"
-                ? `${theirs.name} wins this one`
-                : `A tie with ${theirs.name}`}
-          </p>
-          <p className="mt-0.5 text-xs opacity-80">
-            {theirs.name} {theirs.said}. You {mine.said}.
-          </p>
-        </div>
-      )}
-
-      <label className="block text-xs text-zinc-500" htmlFor="share-name">
-        Your name on it
-      </label>
-      <input
-        id="share-name"
-        value={name}
-        onChange={(e) => setName(e.target.value.slice(0, 16))}
-        placeholder="A friend"
-        autoComplete="nickname"
-        className="mt-1 w-full rounded-md border border-white/15 bg-white/5 px-3 py-1.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
-      />
-      <div className="mt-2.5 flex gap-2">
-        <button
-          onClick={sendChallenge}
-          className="flex-[1.4] whitespace-nowrap rounded-lg bg-teal-300 px-3 py-2 text-sm font-semibold text-teal-950 transition-colors hover:bg-teal-200"
-        >
-          {linkState === "copied"
-            ? "Link copied"
-            : linkState === "failed"
-              ? "Couldn't copy"
-              : "Challenge a friend"}
-        </button>
+    <div className="flex gap-2 text-left">
+      <button
+        onClick={send}
+        className="flex-[1.4] whitespace-nowrap rounded-lg bg-teal-300 px-3 py-2 text-sm font-semibold text-teal-950 transition-colors hover:bg-teal-200"
+      >
+        {linkState === "copied"
+          ? "Link copied"
+          : linkState === "failed"
+            ? "Couldn't copy"
+            : "Send to a friend"}
+      </button>
+      {replay ? (
+        <SaveVideoButton replay={replay} className="flex-1" />
+      ) : (
         <button
           onClick={shareImage}
           disabled={imageState === "working"}
@@ -156,7 +110,7 @@ export default function ShareResult({ mine, card, text, filename }: Props) {
                 ? "Couldn't make it"
                 : "Share image"}
         </button>
-      </div>
+      )}
     </div>
   );
 }

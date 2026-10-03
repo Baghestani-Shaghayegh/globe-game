@@ -1,7 +1,6 @@
 import { Navigate, useParams, useSearchParams } from "react-router-dom";
 import GlobeGame from "../features/globe-guess/GlobeGame";
 import FindGame from "../features/globe-guess/FindGame";
-import ChallengeBanner from "../components/ChallengeBanner";
 import RecordSwitch from "../features/replay/RecordSwitch";
 import {
   getMode,
@@ -31,10 +30,6 @@ export default function Game({ type }: { type: GameType }) {
           the prompt has the bottom edge; bottom right on a wide screen. */}
       <div className="pointer-events-none fixed right-4 top-4 z-30 lg:bottom-4 lg:top-auto">
         <RecordSwitch />
-      </div>
-      {/* Opened from a friend's challenge: what to beat, over the game. */}
-      <div className="pointer-events-none fixed inset-x-0 top-16 z-40 flex justify-center px-3 lg:top-4">
-        <ChallengeBanner />
       </div>
     </>
   );

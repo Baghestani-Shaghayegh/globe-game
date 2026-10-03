@@ -1,46 +1,40 @@
 import ShareResult from "../../components/ShareResult";
-import { GAME_TYPES, type GameType, type Mode, type Ruleset } from "../../data/modes";
+import { GAME_TYPES, type GameType, type Mode } from "../../data/modes";
 import { formatDuration } from "../../lib/records";
+import { siteHost } from "../../lib/site";
+import type { Replay } from "../../lib/replay";
 
 /** The found and missed colours on the card, fixed: the card is always dark. */
 export const CARD_FOUND = "#34d399";
 export const CARD_MISSED = "#fb7185";
 
 /**
- * Sharing a free-play round: the same map, rules and clock, so a friend
- * opening the link plays exactly the round they're being challenged on.
+ * Sharing a free-play round: the result in words and as a card, with a
+ * link to the game's home page.
  */
 export default function RoundShare({
   type,
   mode,
-  ruleset,
-  limitMs,
   found,
   missed,
   ms,
   points,
+  replay,
 }: {
   type: GameType;
   mode: Mode;
-  ruleset: Ruleset;
-  limitMs: number | null;
   found: string[];
   missed: string[];
   ms: number;
   points: number;
+  replay?: Replay | null;
 }) {
   const label = `${GAME_TYPES.find((t) => t.id === type)?.label ?? ""} · ${mode.name}`;
   const total = found.length + missed.length;
   const said = `found ${found.length}/${total} in ${formatDuration(ms)}`;
   return (
     <ShareResult
-      mine={{
-        game: `${type}:${mode.id}:${ruleset}:${limitMs ?? "up"}`,
-        score: found.length,
-        higherWins: true,
-        ms,
-        said,
-      }}
+      replay={replay}
       text={`I ${said} on WorldGuess (${label}).`}
       filename={`worldguess-${type}-${mode.id}.png`}
       card={(features) => ({
@@ -61,7 +55,7 @@ export default function RoundShare({
               ]),
             }
           : undefined,
-        site: window.location.host,
+        site: siteHost(),
       })}
     />
   );

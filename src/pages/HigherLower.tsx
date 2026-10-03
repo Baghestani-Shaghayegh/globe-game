@@ -1,5 +1,4 @@
 import ShareResult from "../components/ShareResult";
-import ChallengeBanner from "../components/ChallengeBanner";
 import { CARD_FOUND } from "../features/globe-guess/RoundShare";
 import RecordSwitch from "../features/replay/RecordSwitch";
 import ReplayActions from "../features/replay/ReplayActions";
@@ -24,6 +23,7 @@ import {
   score,
   type Pair,
 } from "../lib/higherLower";
+import { siteHost } from "../lib/site";
 
 type CountryFeature = { properties: { name: string }; geometry: Geometry };
 
@@ -284,7 +284,6 @@ export default function HigherLower() {
           </span>
         </div>
 
-        <ChallengeBanner className="mt-4" />
         <h1 className="mt-5 text-3xl font-semibold tracking-tight text-zinc-50">
           Which is bigger?
         </h1>
@@ -334,12 +333,7 @@ export default function HigherLower() {
                 </p>
                 <div className="mt-4">
                   <ShareResult
-                    mine={{
-                      game: "bigger",
-                      score: ended,
-                      higherWins: true,
-                      said: `got ${ended} in a row`,
-                    }}
+                    replay={recorded}
                     text={`I got ${ended} in a row on WorldGuess's Which is bigger?`}
                     filename="worldguess-bigger.png"
                     card={(features) => ({
@@ -348,7 +342,7 @@ export default function HigherLower() {
                       subtitle: "Countries by land area",
                       tiles: Array.from({ length: Math.min(ended, 40) }, () => CARD_FOUND),
                       globe: features ? { features, colors: {} } : undefined,
-                      site: window.location.host,
+                      site: siteHost(),
                     })}
                   />
                 </div>
