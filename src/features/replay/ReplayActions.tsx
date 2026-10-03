@@ -60,7 +60,7 @@ export default function ReplayActions({
         >
           ▶ Watch
         </button>
-        {scoreId ? (
+        {scoreId && (
           <button
             onClick={post}
             disabled={state === "posting" || state === "posted"}
@@ -74,19 +74,19 @@ export default function ReplayActions({
                   ? "Try again"
                   : "Put on the board"}
           </button>
-        ) : (
-          // Only a run that has a board to go on asks for a sign-in.
-          postedId &&
-          !session && (
-            <Link
-              to="/account"
-              className="text-xs text-zinc-400 underline underline-offset-4 hover:text-zinc-100"
-            >
-              Sign in to put it on the board
-            </Link>
-          )
         )}
       </div>
+
+      {/* Only a run that has a board to go on asks for a sign-in. On a line of
+          its own, under the row: beside Watch it read as a third button. */}
+      {!scoreId && postedId && !session && (
+        <Link
+          to="/account"
+          className="mt-2 inline-block text-xs text-zinc-400 underline underline-offset-4 hover:text-zinc-100"
+        >
+          Sign in to put it on the board
+        </Link>
+      )}
 
       {watching &&
         createPortal(
