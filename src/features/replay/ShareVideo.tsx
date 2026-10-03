@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { SendTargets } from "../../components/SendTargets";
+import { videoCaption } from "../../lib/caption";
 import type { Replay } from "../../lib/replay";
 import { loadReplayAssets } from "../../lib/replayDraw";
 import { makeReplayVideo, type MadeVideo } from "../../lib/replayVideo";
@@ -107,7 +108,7 @@ function VideoPanel({
   const [posting, setPosting] = useState<Platform | null>(null);
   const [opened, setOpened] = useState<Platform | null>(null);
   const link = `${siteUrl()}/`;
-  const [caption, setCaption] = useState(`My ${replay.game.label} run on WorldGuess. Your turn:`);
+  const [caption, setCaption] = useState(() => videoCaption(replay, player));
   const computer = onComputer();
 
   const filename = video ? `worldguess-${replay.game.type}-${replay.game.mode}.${video.ext}` : "";
