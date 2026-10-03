@@ -238,7 +238,7 @@ function Empty({ children }: { children: React.ReactNode }) {
 }
 
 export default function Leaderboard() {
-  const { profile } = useAuth();
+  const { profile, session, loading } = useAuth();
   const meId = profile?.id ?? null;
 
   // Never all time. An all-time table freezes: whoever played most in the
@@ -487,16 +487,29 @@ export default function Leaderboard() {
             </div>
           )}
 
-          {!profile && (
+          {/* Three players land here: signed out, signed in but unnamed, and
+              named. Only the first two need telling how to get on the board,
+              and they need different things. */}
+          {!loading && !session && (
             <p className="mt-8 text-sm text-zinc-500">
-              Your runs are saved on this device already.{" "}
+              <Link
+                to="/account"
+                className="text-zinc-300 underline underline-offset-4 hover:text-zinc-100"
+              >
+                Sign in
+              </Link>{" "}
+              to post your scores and get a place on the board.
+            </p>
+          )}
+          {!loading && session && !profile && (
+            <p className="mt-8 text-sm text-zinc-500">
               <Link
                 to="/account"
                 className="text-zinc-300 underline underline-offset-4 hover:text-zinc-100"
               >
                 Pick a name
               </Link>{" "}
-              and the next one lands here too.
+              and your next run lands here.
             </p>
           )}
         </>
