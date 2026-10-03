@@ -25,8 +25,9 @@ import { playTap } from "../../lib/sound";
  *   video, copies the caption and opens the upload page. Once approved,
  *   the platform's entry in POSTING turns to "direct" and the same screen
  *   connects the player's account and posts. See docs on approvals.
- * - Send to: WhatsApp, Messages, Telegram, KakaoTalk, email, with the
- *   caption and link, for a computer whose share menu lacks them.
+ * - Send the link: WhatsApp, Messages, Telegram, email and the rest, only
+ *   where the browser has no share menu. Where it has one, Share already
+ *   lists every app installed, KakaoTalk included.
  */
 
 type Platform = "tiktok" | "instagram" | "youtube";
@@ -297,9 +298,11 @@ function VideoPanel({
                 {saved ? "✓ Saved to Downloads" : "Download"}
               </button>
             </div>
-            {canShare && !computer && (
+            {canShare && (
               <p className="mt-1.5 text-center text-xs text-zinc-500">
-                Share opens your phone's menu: Instagram, TikTok, WhatsApp, KakaoTalk and more.
+                {computer
+                  ? "Share lists the apps on this computer: Messages, Mail, KakaoTalk and more."
+                  : "Share opens your phone's menu: Instagram, TikTok, WhatsApp, KakaoTalk and more."}
               </p>
             )}
 
@@ -319,7 +322,7 @@ function VideoPanel({
               ))}
             </div>
 
-            {computer && (
+            {ready && !canShare && (
               <>
                 <p className="mt-4 text-xs text-zinc-500">Send the link</p>
                 <div className="mt-1.5">

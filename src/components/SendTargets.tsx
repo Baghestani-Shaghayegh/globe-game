@@ -6,8 +6,10 @@ import { playTap } from "../lib/sound";
 
 /**
  * A row of places to send a message and link: WhatsApp, Messages, Telegram,
- * KakaoTalk (once its key is set), email, X, Facebook, and Copy. For a
- * computer, whose share menu, where it has one, lacks the chat apps.
+ * KakaoTalk (once its key is set), email, X, Facebook, and Copy. Only for a
+ * browser with no share menu of its own (Firefox on a computer, say). Where
+ * there is one, it already lists every app installed, KakaoTalk included,
+ * and this row would only repeat it.
  */
 export function SendTargets({ message, link }: { message: string; link: string }) {
   const [copied, setCopied] = useState(false);
@@ -58,7 +60,7 @@ export function SendTargets({ message, link }: { message: string; link: string }
   );
 }
 
-/** The same row in a small panel of its own, for "Challenge a friend" on a computer. */
+/** The same row in a small panel of its own, for "Challenge a friend" with no share menu. */
 export function SendMenu({
   message,
   link,

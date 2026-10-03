@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ShareVideo from "../features/replay/ShareVideo";
 import type { Replay } from "../lib/replay";
-import { drawCard, onComputer, shareCard, type CardGlobe, type CardSpec } from "../lib/shareCard";
+import { drawCard, shareCard, type CardGlobe, type CardSpec } from "../lib/shareCard";
 import { siteUrl } from "../lib/site";
 import { playTap } from "../lib/sound";
 import { SendMenu } from "./SendTargets";
@@ -43,13 +43,11 @@ type Props = {
  * game is on offer. The dailies are the same for everyone anyway, so the
  * comparison makes itself.
  *
- * On a phone "Challenge a friend" opens the phone's share menu, which lists
- * every chat app installed. A computer's menu, where there is one, lacks
- * them, so there it opens a panel of its own: WhatsApp, Messages, Telegram,
- * KakaoTalk and the rest.
+ * "Challenge a friend" opens the device's share menu, which lists every app
+ * installed (Messages, WhatsApp, KakaoTalk), on a Mac as on a phone. A
+ * browser without one gets a small panel of send buttons instead.
  */
 export default function ShareResult({ card, text, filename, replay }: Props) {
-  const [linkState, setLinkState] = useState<"idle" | "copied" | "failed">("idle");
   const [imageState, setImageState] = useState<"idle" | "working" | "saved" | "failed">("idle");
   const [menu, setMenu] = useState(false);
 
@@ -58,10 +56,6 @@ export default function ShareResult({ card, text, filename, replay }: Props) {
 
   const send = async () => {
     playTap();
-    if (onComputer()) {
-      setMenu(true);
-      return;
-    }
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({ text: message, url: link });
@@ -70,13 +64,7 @@ export default function ShareResult({ card, text, filename, replay }: Props) {
         if ((error as Error)?.name === "AbortError") return;
       }
     }
-    try {
-      await navigator.clipboard.writeText(`${message} ${link}`);
-      setLinkState("copied");
-    } catch {
-      setLinkState("failed");
-    }
-    window.setTimeout(() => setLinkState("idle"), 2600);
+    setMenu(true);
   };
 
   const shareImage = async () => {
@@ -99,11 +87,7 @@ export default function ShareResult({ card, text, filename, replay }: Props) {
         onClick={send}
         className="flex-[1.4] whitespace-nowrap rounded-lg bg-teal-300 px-3 py-2 text-sm font-semibold text-teal-950 transition-colors hover:bg-teal-200"
       >
-        {linkState === "copied"
-          ? "Link copied"
-          : linkState === "failed"
-            ? "Couldn't copy"
-            : "Challenge a friend"}
+        Challenge a friend
       </button>
       {replay ? (
         <ShareVideo replay={replay} className="flex-1" />
