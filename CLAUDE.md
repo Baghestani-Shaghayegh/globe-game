@@ -74,6 +74,9 @@ without being asked — `main` is what deploys.
 
 ## Conventions
 
+- The home page's Today's challenges block (the header strip and the four
+  daily cards) is settled as of 3 October 2026. Sara asked for it to be left
+  as it is: don't restyle it, or apply a new font to it, unless she asks.
 - The site never names Sara. Player-facing text speaks as the game ("Every
   message is read"), not as a person; comments in the code are fine.
 - Anything a player reads follows `docs/WRITING.md`: short, concrete, in the
