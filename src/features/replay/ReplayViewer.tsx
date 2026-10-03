@@ -3,7 +3,7 @@ import type { Replay } from "../../lib/replay";
 import { clock, END_HOLD_MS, frameAt } from "../../lib/replayFrame";
 import { drawFrame, loadReplayAssets, type ReplayAssets } from "../../lib/replayDraw";
 import { playTap } from "../../lib/sound";
-import SaveVideoButton from "./SaveVideoButton";
+import ShareVideo from "./ShareVideo";
 import { siteHost } from "../../lib/site";
 
 const SPEEDS = [1, 2, 4] as const;
@@ -11,7 +11,7 @@ const SPEEDS = [1, 2, 4] as const;
 /**
  * Plays a recording back: the globe turning as the player turned it, each
  * click, each answer, the clock and the score. Scrub to any moment, or
- * speed it up; and save it as a video from here.
+ * speed it up; and share it as a video from here.
  */
 export default function ReplayViewer({
   replay,
@@ -123,7 +123,7 @@ export default function ReplayViewer({
       </div>
 
       <div className="flex w-full max-w-sm gap-2">
-        <SaveVideoButton replay={replay} player={who} className="flex-1" />
+        <ShareVideo replay={replay} player={who} className="flex-1" />
         {onClose && (
           <button
             onClick={() => {

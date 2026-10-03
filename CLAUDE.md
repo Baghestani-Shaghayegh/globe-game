@@ -68,6 +68,15 @@ without being asked — `main` is what deploys.
   the API. It keeps the message, the page it was sent from and an optional
   email; the browser type is deliberately not collected. Sara reads it in the Supabase dashboard (Table Editor → feedback);
   `handled` is hers to tick. A trigger stops floods at 30 per 10 minutes.
+- Sharing a video goes through one panel (`features/replay/ShareVideo.tsx`):
+  Share (the phone's own menu), Download, Post to TikTok / Instagram /
+  YouTube, and on computers "Send the link" to WhatsApp, Messages,
+  Telegram and the rest (`lib/shareTargets.ts`). Posting is "save the video,
+  copy the caption, open the upload page" until a platform approves the app;
+  then its entry in `POSTING` flips to `"direct"` (the server route for it is
+  still to build). KakaoTalk on computers needs `VITE_KAKAO_JS_KEY` from
+  developers.kakao.com with the site's domain registered; without it the
+  button isn't shown. On phones Kakao is already in the share menu.
 - Ads and the cookie banner stay dark unless `VITE_ADSENSE_CLIENT` and
   `VITE_ADSENSE_SLOT` are set, which they are not in the repo. Set them on the
   command line to see either one.

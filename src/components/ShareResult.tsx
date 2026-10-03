@@ -1,9 +1,10 @@
 import { useState } from "react";
-import SaveVideoButton from "../features/replay/SaveVideoButton";
+import ShareVideo from "../features/replay/ShareVideo";
 import type { Replay } from "../lib/replay";
-import { drawCard, shareCard, type CardGlobe, type CardSpec } from "../lib/shareCard";
+import { drawCard, onComputer, shareCard, type CardGlobe, type CardSpec } from "../lib/shareCard";
 import { siteUrl } from "../lib/site";
 import { playTap } from "../lib/sound";
+import { SendMenu } from "./SendTargets";
 
 type World = CardGlobe["features"];
 
@@ -41,16 +42,26 @@ type Props = {
  * message carries the dare ("Your turn"), and the friend lands where every
  * game is on offer. The dailies are the same for everyone anyway, so the
  * comparison makes itself.
+ *
+ * On a phone "Challenge a friend" opens the phone's share menu, which lists
+ * every chat app installed. A computer's menu, where there is one, lacks
+ * them, so there it opens a panel of its own: WhatsApp, Messages, Telegram,
+ * KakaoTalk and the rest.
  */
 export default function ShareResult({ card, text, filename, replay }: Props) {
   const [linkState, setLinkState] = useState<"idle" | "copied" | "failed">("idle");
   const [imageState, setImageState] = useState<"idle" | "working" | "saved" | "failed">("idle");
+  const [menu, setMenu] = useState(false);
 
   const link = `${siteUrl()}/`;
   const message = `${text} Your turn:`;
 
   const send = async () => {
     playTap();
+    if (onComputer()) {
+      setMenu(true);
+      return;
+    }
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({ text: message, url: link });
@@ -95,7 +106,7 @@ export default function ShareResult({ card, text, filename, replay }: Props) {
             : "Challenge a friend"}
       </button>
       {replay ? (
-        <SaveVideoButton replay={replay} className="flex-1" />
+        <ShareVideo replay={replay} className="flex-1" />
       ) : (
         <button
           onClick={shareImage}
@@ -111,6 +122,7 @@ export default function ShareResult({ card, text, filename, replay }: Props) {
                 : "Share image"}
         </button>
       )}
+      {menu && <SendMenu message={message} link={link} onClose={() => setMenu(false)} />}
     </div>
   );
 }
