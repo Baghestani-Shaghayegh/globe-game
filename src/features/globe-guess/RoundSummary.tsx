@@ -29,7 +29,7 @@ type Props = {
   onPlayAgain: () => void;
   /** Hides the panel so the revealed globe can be studied. */
   onReviewMap: () => void;
-  /** Challenge a friend and share the image; absent where it means nothing. */
+  /** Send to a friend and share the video (or image); absent where it means nothing. */
   share?: ReactNode;  /** The round as recorded, to watch back, post or save as video. */
   replay?: Replay | null;
   /** The run's id on the board, to post the recording against. */
