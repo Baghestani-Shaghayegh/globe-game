@@ -92,7 +92,7 @@ export default function ShareResult({ card, text, filename, replay }: Props) {
           ? "Link copied"
           : linkState === "failed"
             ? "Couldn't copy"
-            : "Send to a friend"}
+            : "Challenge a friend"}
       </button>
       {replay ? (
         <SaveVideoButton replay={replay} className="flex-1" />
