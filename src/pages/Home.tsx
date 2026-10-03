@@ -195,27 +195,28 @@ function todayLabel(day: string): string {
   });
 }
 
-/** One dot per daily, in its card's colour, filled once it's played. */
-const DOT: string[] = ["bg-sky-300", "bg-rose-300", "bg-violet-300", "bg-amber-300"];
+/** The cards' cut corner, for the header that sits over them. */
+const HEADER_CORNER = (size: number) =>
+  `polygon(0 0, 100% 0, 100% calc(100% - ${size}px), calc(100% - ${size}px) 100%, 0 100%)`;
+
+/** One tile per daily, in its card's colour, filled once it's played. */
+const TILE: string[] = ["bg-sky-300", "bg-rose-300", "bg-violet-300", "bg-amber-300"];
 
 function TodayDone({ played }: { played: boolean[] }) {
   const done = played.filter(Boolean).length;
-  const all = done === played.length;
   return (
-    <span
-      className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium tabular-nums ${
-        all ? "bg-emerald-400/15 text-emerald-300" : "bg-white/[0.06] text-zinc-300"
-      }`}
-    >
-      <span aria-hidden="true" className="flex gap-1">
+    <span className="flex items-center gap-2">
+      <span aria-hidden="true" className="flex gap-[3px]">
         {played.map((p, i) => (
           <span
             key={i}
-            className={`h-2 w-2 rounded-full ${p ? DOT[i] : "border border-zinc-500"}`}
+            className={`h-3 w-3 rounded-[2px] ${p ? TILE[i] : "border border-zinc-600"}`}
           />
         ))}
       </span>
-      {all ? "All played" : `${done} of ${played.length} played`}
+      <span className={done === played.length ? "text-emerald-300" : ""}>
+        {done === played.length ? "All four played" : `${done} of ${played.length} played`}
+      </span>
     </span>
   );
 }
@@ -379,48 +380,42 @@ export default function Home() {
               form to fill in. Free play is under them, where someone who
               wants a longer round will look for it. */}
           <section className="mt-[clamp(0.75rem,2.4vh,2rem)]">
-            {/* On a frosted strip of its own: written straight onto the
-                globe, the heading and its small print sat on coastlines and
-                read as part of the map. */}
-            <div className="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-surface/75 px-4 py-3 shadow-sm backdrop-blur-md sm:flex-row sm:justify-between sm:px-5">
-              <div className="text-center sm:text-left">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-300">
-                  {todayLabel(today)} · same for everyone
-                </p>
-                <h2 className="mt-0.5 text-xl font-semibold tracking-tight text-zinc-50 sm:text-2xl">
-                  Today's challenges
+            {/* Framed the way the cards under it are, with the cut corner,
+                so the header belongs to them. It sat straight on the globe
+                once, where it read as part of the map; then on a frosted
+                glass strip with a spaced-out eyebrow and three tinted pills,
+                which is the stock look of a generated landing page. Now:
+                plain words, figures and four tiles. */}
+            <div
+              style={{ clipPath: HEADER_CORNER(14) }}
+              className="bg-white/15 p-px"
+            >
+              <div
+                style={{ clipPath: HEADER_CORNER(13) }}
+                className="flex flex-col items-center gap-x-6 gap-y-2.5 bg-surface px-4 py-3 sm:flex-row sm:justify-between sm:px-5"
+              >
+                <h2 className="text-center text-xl font-semibold tracking-tight text-zinc-50 sm:text-left sm:text-2xl">
+                  Today's challenges{" "}
+                  <span className="whitespace-nowrap text-base font-normal tracking-normal text-zinc-500">
+                    {todayLabel(today)}
+                  </span>
                 </h2>
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <TodayDone
-                  played={[
-                    played.hunt !== null,
-                    played.mystery !== null,
-                    played.connect !== null,
-                    played.clues !== null,
-                  ]}
-                />
-                <span className="flex items-center gap-1.5 rounded-full bg-teal-300/15 px-3 py-1 text-xs font-semibold text-teal-200">
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
-                    <path d="M13 3 5 13.5h6L11 21l8-10.5h-6z" />
-                  </svg>
-                  {DAILY_MULTIPLIER}× points
-                </span>
-                <span className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1 text-xs font-medium tabular-nums text-zinc-300">
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    className="h-3.5 w-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  >
-                    <circle cx="12" cy="12" r="8.5" />
-                    <path d="M12 7.5V12l3 2" />
-                  </svg>
-                  <NewIn />
-                </span>
+                <p className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm tabular-nums text-zinc-400">
+                  <TodayDone
+                    played={[
+                      played.hunt !== null,
+                      played.mystery !== null,
+                      played.connect !== null,
+                      played.clues !== null,
+                    ]}
+                  />
+                  <span className="font-semibold text-teal-300">
+                    {DAILY_MULTIPLIER}× points
+                  </span>
+                  <span>
+                    Same for everyone · <NewIn />
+                  </span>
+                </p>
               </div>
             </div>
 

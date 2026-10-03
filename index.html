@@ -27,8 +27,9 @@
     <title>WorldGuess — how much of the world map can you recall?</title>
     <meta
       name="description"
-      content="Find every country on a 3D globe. A daily challenge, a mystery country, flags, clues, and races against a friend."
+      content="Four daily geography puzzles on a 3D globe: a country hunt, a mystery country, Connect and Five clues. Plus lessons that teach the map, five neighbours at a time."
     />
+    <link rel="canonical" href="%VITE_SITE_URL%/" />
 
     <!-- Installable: home-screen icon, standalone window, no address bar. -->
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -43,21 +44,25 @@
          passing it around, so this is not decoration. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="WorldGuess" />
-    <meta property="og:title" content="WorldGuess" />
+    <meta property="og:url" content="%VITE_SITE_URL%/" />
+    <meta property="og:title" content="WorldGuess — four daily geography puzzles" />
     <meta
       property="og:description"
-      content="How much of the world map can you actually recall?"
+      content="Find, name and link countries on a 3D globe. New puzzles every day, the same for everyone."
     />
-    <meta property="og:image" content="/og.png" />
+    <!-- A full address: link previews ignore a relative one and show no
+         picture at all. -->
+    <meta property="og:image" content="%VITE_SITE_URL%/og.png" />
+    <meta property="og:image:alt" content="A globe with countries lit up, and the WorldGuess name" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="WorldGuess" />
+    <meta name="twitter:title" content="WorldGuess — four daily geography puzzles" />
     <meta
       name="twitter:description"
-      content="How much of the world map can you actually recall?"
+      content="Find, name and link countries on a 3D globe. New puzzles every day, the same for everyone."
     />
-    <meta name="twitter:image" content="/og.png" />
+    <meta name="twitter:image" content="%VITE_SITE_URL%/og.png" />
   </head>
   <body>
     <div id="root"></div>

@@ -1,11 +1,47 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+/**
+ * robots.txt and sitemap.xml, written at build time from VITE_SITE_URL so
+ * they follow the game to its own domain without anyone editing them. Only
+ * pages worth finding from a search are listed: not a player's own records,
+ * a room code or a replay id.
+ */
+function searchFiles(site: string): Plugin {
+  const pages = [
+    "/", "/daily", "/mystery", "/clues", "/connect", "/bigger", "/learn",
+    "/practice", "/leaderboard", "/play/easy", "/find/easy", "/flags/easy",
+    "/famous/easy", "/outlines/easy", "/capitals/easy", "/play/europe", "/play/africa",
+    "/play/asia", "/play/americas", "/play/oceania", "/privacy", "/feedback",
+  ];
+  return {
+    name: "worldguess-search-files",
+    apply: "build",
+    generateBundle() {
+      const base = site.replace(/\/$/, "");
+      this.emitFile({
+        type: "asset",
+        fileName: "robots.txt",
+        source: `User-agent: *\nAllow: /\nDisallow: /voices\n\nSitemap: ${base}/sitemap.xml\n`,
+      });
+      this.emitFile({
+        type: "asset",
+        fileName: "sitemap.xml",
+        source:
+          `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+          pages.map((p) => `  <url><loc>${base}${p}</loc></url>`).join("\n") +
+          `\n</urlset>\n`,
+      });
+    },
+  };
+}
+
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
+    searchFiles(loadEnv(mode, process.cwd(), "VITE_").VITE_SITE_URL || "https://playworldguess.vercel.app"),
     react(),
     tailwindcss(),
     VitePWA({
@@ -75,4 +111,4 @@ export default defineConfig({
   server: {
     host: true,
   },
-});
+}));
