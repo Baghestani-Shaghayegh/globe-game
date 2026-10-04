@@ -460,6 +460,35 @@ export default function LessonRun({
     tryName(typed);
   };
 
+  /**
+   * "Show me": for a country the player doesn't know, rather than guessing
+   * until the answer comes on its own. The same as missing it twice: filed
+   * as missed, so the practice deck brings it back.
+   */
+  const showMe = () => {
+    if (revealed || (phase !== "find" && phase !== "name")) return;
+    playHint();
+    setMisses(MISSES_TO_REVEAL);
+    setSlips((old) => ({ ...old, [current]: "missed" }));
+    setNote({
+      tone: "hint",
+      text:
+        phase === "find"
+          ? `${display(current)}'s the flashing one.`
+          : `It's ${display(current)}.`,
+    });
+  };
+
+  const showMeButton = (
+    <button
+      type="button"
+      onClick={showMe}
+      className="mt-2 rounded-md py-1 text-sm text-zinc-400 underline-offset-4 transition-colors hover:text-zinc-100 hover:underline"
+    >
+      Show me
+    </button>
+  );
+
   /** After the answer was shown: counted as met, and on to the next. */
   const carryOn = () => {
     playTap();
@@ -675,6 +704,7 @@ export default function LessonRun({
               <p className="mt-1 text-3xl font-semibold tracking-tight text-zinc-50">
                 {display(current)}?
               </p>
+              {!revealed && showMeButton}
             </>
           )}
 
@@ -749,6 +779,7 @@ export default function LessonRun({
                   </button>
                 </form>
               )}
+              {!revealed && showMeButton}
             </>
           )}
 
