@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { SendTargets } from "../../components/SendTargets";
 import { videoCaption } from "../../lib/caption";
-import type { Replay } from "../../lib/replay";
+import { playPath, type Replay } from "../../lib/replay";
 import { loadReplayAssets } from "../../lib/replayDraw";
 import { VIDEO_SPEEDS, makeReplayVideo, videoSeconds, type MadeVideo } from "../../lib/replayVideo";
 import { downloadFile, onComputer } from "../../lib/shareCard";
@@ -112,9 +112,10 @@ function VideoPanel({
   const [progress, setProgress] = useState(0);
   const [failed, setFailed] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [shareFailed, setShareFailed] = useState(false);
   const [posting, setPosting] = useState<Platform | null>(null);
   const [opened, setOpened] = useState<Platform | null>(null);
-  const link = `${siteUrl()}/`;
+  const link = `${siteUrl()}${playPath(replay.game)}`;
   const [caption, setCaption] = useState(() => videoCaption(replay, player));
   const computer = onComputer();
 
@@ -137,6 +138,7 @@ function VideoPanel({
   useEffect(() => {
     setSaved(false);
     setOpened(null);
+    setShareFailed(false);
     const kept = made.get(replay)?.get(speed);
     if (kept) {
       setVideo(kept);
@@ -205,10 +207,19 @@ function VideoPanel({
   const share = async () => {
     if (!file) return;
     playTap();
+    setShareFailed(false);
+    const closed = (error: unknown) => (error as Error)?.name === "AbortError";
     try {
       await navigator.share({ files: [file], text: fullCaption });
-    } catch {
-      /* closed the share menu: nothing to undo */
+    } catch (error) {
+      // Closing the menu is not a failure. Anything else is: some browsers
+      // refuse a file sent with text, so the file goes alone before giving up.
+      if (closed(error)) return;
+      try {
+        await navigator.share({ files: [file] });
+      } catch (second) {
+        if (!closed(second)) setShareFailed(true);
+      }
     }
   };
 
@@ -353,6 +364,11 @@ function VideoPanel({
                 {saved ? "✓ Saved to Downloads" : "Download"}
               </button>
             </div>
+            {shareFailed && (
+              <p role="alert" className="mt-1.5 text-center text-xs text-rose-300">
+                This browser wouldn't open its share menu. Download the video and post it from there.
+              </p>
+            )}
             {canShare && !computer && (
               <p className="mt-1.5 text-center text-xs text-zinc-500">
                 Share opens your phone's menu: Instagram, TikTok, WhatsApp, KakaoTalk and more.

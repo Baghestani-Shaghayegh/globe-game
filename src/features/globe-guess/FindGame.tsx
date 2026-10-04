@@ -19,6 +19,7 @@ import { getCountryMeta } from "../../data/countries";
 import {
   BLITZ_SECONDS,
   GAME_TYPES,
+  gamePath,
   recordKey,
   type GameType,
   type Mode,
@@ -1124,6 +1125,7 @@ export default function FindGame({
               <RoundShare
                 type={type}
                 mode={mode}
+                path={gamePath(type, mode.id, limitSeconds, ruleset, count)}
                 found={[...foundNames]}
                 missed={asked.filter((name) => !foundNames.has(name))}
                 ms={summary.ms}

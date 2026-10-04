@@ -6,8 +6,7 @@ import {
   ReplayRecorder,
   savedReplays,
   setRecordingOn,
-  type Replay,
-} from "./replay";
+  type Replay, playPath } from "./replay";
 import { cameraAt, END_HOLD_MS, frameAt } from "./replayFrame";
 import { videoTimeline } from "./replayVideo";
 
@@ -237,5 +236,18 @@ describe("kept on the device", () => {
     expect(recordingOn()).toBe(true);
     setRecordingOn(false);
     expect(recordingOn()).toBe(false);
+  });
+});
+
+describe("the link that goes with a shared video", () => {
+  it("opens the daily it recorded", () => {
+    expect(playPath({ ...mystery().game })).toBe("/mystery");
+    expect(playPath({ type: "clues", mode: "daily", label: "x", bucket: "b" })).toBe("/clues");
+    expect(playPath({ type: "connect", mode: "daily", label: "x", bucket: "b" })).toBe("/connect");
+    expect(playPath({ type: "name", mode: "daily", label: "x", bucket: "b" })).toBe("/daily");
+  });
+
+  it("opens the free-play round it recorded", () => {
+    expect(playPath({ type: "find", mode: "europe", label: "x", bucket: "b" })).toMatch(/^\/[a-z]+\/europe/);
   });
 });

@@ -1,4 +1,4 @@
-import type { GameType } from "../data/modes";
+import { gamePath, type GameType } from "../data/modes";
 
 /**
  * A round, recorded as what happened rather than as video.
@@ -220,6 +220,21 @@ export function todaysReplay(day: string, match: (game: ReplayGame) => boolean):
       (replay) => replay.game.mode === "daily" && replay.at.slice(0, 10) === day && match(replay.game)
     ) ?? null
   );
+}
+
+/**
+ * The page that plays what a recording shows, for the link that goes with a
+ * shared video: the daily's own page, or the free-play round it was, which
+ * is opened with its default length and rules since the recording doesn't
+ * carry them.
+ */
+export function playPath(game: ReplayGame): string {
+  if (game.type === "mystery") return "/mystery";
+  if (game.type === "connect") return "/connect";
+  if (game.type === "clues") return "/clues";
+  if (game.type === "bigger") return "/bigger";
+  if (game.mode === "daily") return "/daily";
+  return gamePath(game.type, game.mode, null);
 }
 
 // ---- The record switch ---------------------------------------------------

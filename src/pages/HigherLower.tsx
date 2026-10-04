@@ -336,6 +336,7 @@ export default function HigherLower() {
                     replay={recorded}
                     text={`I got ${ended} in a row on GuessGlobe's Which is bigger?`}
                     filename="guessglobe-bigger.png"
+                    path="/bigger"
                     card={(features) => ({
                       eyebrow: "Which is bigger?",
                       title: `${ended} in a row`,

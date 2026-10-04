@@ -20,6 +20,7 @@ import { getCountryMeta } from "../../data/countries";
 import {
   BLITZ_SECONDS,
   GAME_TYPES,
+  gamePath,
   recordKey,
   type Mode,
   type Ruleset,
@@ -960,6 +961,7 @@ export default function GlobeGame({
               <RoundShare
                 type={"name"}
                 mode={mode}
+                path={gamePath("name", mode.id, limitSeconds, ruleset, count)}
                 found={[...foundNames]}
                 missed={features.map((f) => f.properties.name).filter((name) => !foundNames.has(name))}
                 ms={summary.ms}

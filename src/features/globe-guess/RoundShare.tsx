@@ -10,7 +10,7 @@ export const CARD_MISSED = "#fb7185";
 
 /**
  * Sharing a free-play round: the result in words and as a card, with a
- * link to the game's home page.
+ * link to the same round.
  */
 export default function RoundShare({
   type,
@@ -19,6 +19,7 @@ export default function RoundShare({
   missed,
   ms,
   points,
+  path,
   replay,
 }: {
   type: GameType;
@@ -27,6 +28,8 @@ export default function RoundShare({
   missed: string[];
   ms: number;
   points: number;
+  /** The round as a link, with its length and rules, so a friend plays the same kind. */
+  path: string;
   replay?: Replay | null;
 }) {
   const label = `${GAME_TYPES.find((t) => t.id === type)?.label ?? ""} · ${mode.name}`;
@@ -35,6 +38,7 @@ export default function RoundShare({
   return (
     <ShareResult
       replay={replay}
+      path={path}
       text={`I ${said} on GuessGlobe (${label}).`}
       filename={`guessglobe-${type}-${mode.id}.png`}
       card={(features) => ({
