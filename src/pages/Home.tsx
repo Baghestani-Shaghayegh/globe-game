@@ -298,32 +298,31 @@ export default function Home() {
   // count as done only when over — one abandoned halfway is still waiting.
   const today = useMemo(dayKey, []);
   const pair = useMemo(() => puzzleFor(today), [today]);
-  const [played, setPlayed] = useState<{
-    hunt: DailyResult | null;
-    mystery: MysteryResult | null;
-    connect: ConnectResult | null;
-    clues: CluesResult | null;
-  }>({ hunt: null, mystery: null, connect: null, clues: null });
-  const [duePractice, setDuePractice] = useState(0);
-  const [learnedCount, setLearnedCount] = useState(0);
-
-  // The picker's counts are the size of each map, so they are read for the
-  // plain country game: they now label a choice that every card shares.
-  const counts = useModeCounts("name");
-
-  useEffect(() => {
+  // Read straight away rather than in an effect: the four cards used to draw
+  // as unplayed for a frame and then flip to their results, which read as the
+  // page loading slowly. Everything here is in this browser's own storage.
+  const [played] = useState(() => {
     const mystery = loadMystery(today);
     const connect = loadConnect(today);
     const clues = loadClues(today);
-    setPlayed({
+    return {
       hunt: resultFor(today),
       mystery: mystery?.solved || mystery?.gaveUp ? mystery : null,
       connect: connect?.solved ? connect : null,
       clues: clues?.solved || clues?.lost ? clues : null,
-    });
-    setDuePractice(dueCount());
-    setLearnedCount(Object.keys(learnedCountries()).length);
-  }, [today]);
+    } as {
+      hunt: DailyResult | null;
+      mystery: MysteryResult | null;
+      connect: ConnectResult | null;
+      clues: CluesResult | null;
+    };
+  });
+  const [duePractice] = useState(() => dueCount());
+  const [learnedCount] = useState(() => Object.keys(learnedCountries()).length);
+
+  // The picker's counts are the size of each map, so they are read for the
+  // plain country game: they now label a choice that every card shares.
+  const counts = useModeCounts("name");
 
   const huntType = GAME_TYPES.find((t) => t.id === dailyType(today))?.label ?? "";
   const guesses = played.mystery?.guesses.length ?? 0;

@@ -1,4 +1,3 @@
-import * as THREE from "three";
 import { globeThemeId, setGlobeThemeId } from "./prefs";
 
 /** The colours one globe is painted in. */
@@ -200,16 +199,6 @@ try {
  * all of them at once without a single import having to change.
  */
 export const theme: Palette = { ...themeById(activeId).palette };
-
-/**
- * One material shared by every globe. Only one is ever on screen at a time,
- * and keeping it in one place means a theme change has a single thing to
- * recolour rather than four copies to chase.
- */
-export const globeMaterial = new THREE.MeshPhongMaterial({
-  color: theme.sphere,
-  shininess: 0,
-});
 
 /**
  * Land that is on screen but not in play.
@@ -425,7 +414,6 @@ function applyPalette() {
   const chosen = themeById(activeId).palette;
   Object.assign(theme, day ? dayPalette(chosen) : chosen);
   shadeCache.clear();
-  globeMaterial.color.set(theme.sphere);
   for (const listener of listeners) listener();
 }
 

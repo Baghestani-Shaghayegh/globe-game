@@ -33,6 +33,9 @@
 
     <!-- Installable: home-screen icon, standalone window, no address bar. -->
     <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- The map every page draws and counts from. Asked for here, it downloads
+         while the scripts do, instead of after they have run. -->
+    <link rel="preload" href="/data/world.geojson" as="fetch" crossorigin />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="GuessGlobe" />

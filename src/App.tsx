@@ -9,7 +9,6 @@ import PlayTogether from "./pages/PlayTogether";
 import Achievements from "./pages/Achievements";
 import Levels from "./pages/Levels";
 import { AuthProvider } from "./features/account/AuthProvider";
-import Daily from "./pages/Daily";
 import Privacy from "./pages/Privacy";
 import Feedback from "./pages/Feedback";
 import Settings from "./pages/Settings";
@@ -23,6 +22,8 @@ const Room = lazy(() => import("./pages/Room"));
 const Practice = lazy(() => import("./pages/Practice"));
 // Also a globe round, so it carries three.js too.
 const Mystery = lazy(() => import("./pages/Mystery"));
+// The daily Country hunt is a globe round too.
+const Daily = lazy(() => import("./pages/Daily"));
 const FiveClues = lazy(() => import("./pages/FiveClues"));
 const Connect = lazy(() => import("./pages/Connect"));
 // The list cuts the map into lessons; the lesson itself is a globe.
