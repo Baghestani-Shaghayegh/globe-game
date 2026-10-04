@@ -1,5 +1,4 @@
 import { useState } from "react";
-import ShareVideo from "../features/replay/ShareVideo";
 import type { Replay } from "../lib/replay";
 import { drawCard, shareCard, type CardGlobe, type CardSpec } from "../lib/shareCard";
 import { siteUrl } from "../lib/site";
@@ -37,9 +36,9 @@ type Props = {
    */
   grid?: string;
   /**
-   * The round's recording, when there is one. Then the second button shares
-   * it as a video, which is what people post; the still card is only offered
-   * when the round wasn't recorded.
+   * The round's recording, when there is one. The video is then shared from
+   * the Watch player, so no second button is drawn here; the still card is
+   * only offered when the round wasn't recorded.
    */
   replay?: Replay | null;
 };
@@ -101,9 +100,10 @@ export default function ShareResult({ card, text, filename, path = "/", grid, re
       >
         Challenge a friend
       </button>
-      {replay ? (
-        <ShareVideo replay={replay} className="flex-1" />
-      ) : (
+      {/* A recorded round has its video shared from inside Watch, so this
+          row is the one button. The still card is only offered when the round
+          wasn't recorded and there is no video to watch. */}
+      {!replay && (
         <button
           onClick={shareImage}
           disabled={imageState === "working"}
