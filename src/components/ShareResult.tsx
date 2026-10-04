@@ -26,6 +26,17 @@ type Props = {
   text: string;
   filename: string;
   /**
+   * Where the link goes, from the site root: "/clues?d=276". Left out, it is
+   * the home page. The dailies send a friend straight to the game, so a
+   * result isn't a puzzle they have to go and find.
+   */
+  path?: string;
+  /**
+   * The row of squares for the result, on a line of its own after the text.
+   * Spoiler-free by construction: see shareGrid.
+   */
+  grid?: string;
+  /**
    * The round's recording, when there is one. Then the second button shares
    * it as a video, which is what people post; the still card is only offered
    * when the round wasn't recorded.
@@ -36,23 +47,24 @@ type Props = {
 /**
  * The end of a game: send the result to a friend, or post it as an image.
  *
- * The link is the home page, not this game. It used to be a challenge to
- * beat this exact round, with a name to type and a banner waiting for the
- * friend; Sara chose the simpler invitation instead. The result in the
- * message carries the dare ("Your turn"), and the friend lands where every
- * game is on offer. The dailies are the same for everyone anyway, so the
- * comparison makes itself.
+ * The link is the home page unless a game gives a path. It used to be a
+ * challenge to beat this exact round, with a name to type and a banner waiting
+ * for the friend; that was dropped for the simpler invitation. The result in
+ * the message carries the dare ("Your turn"). The dailies pass their own page
+ * and number, so the friend lands in the game and not on a menu; a number for
+ * a day that has passed still opens today's, since a day can't be replayed.
+ * The dailies are the same for everyone, so the comparison makes itself.
  *
  * "Challenge a friend" opens the device's share menu, which lists every app
  * installed (Messages, WhatsApp, KakaoTalk), on a Mac as on a phone. A
  * browser without one gets a small panel of send buttons instead.
  */
-export default function ShareResult({ card, text, filename, replay }: Props) {
+export default function ShareResult({ card, text, filename, path = "/", grid, replay }: Props) {
   const [imageState, setImageState] = useState<"idle" | "working" | "saved" | "failed">("idle");
   const [menu, setMenu] = useState(false);
 
-  const link = `${siteUrl()}/`;
-  const message = `${text} Your turn:`;
+  const link = `${siteUrl()}${path}`;
+  const message = grid ? `${text}\n${grid}\nYour turn:` : `${text} Your turn:`;
 
   const send = async () => {
     playTap();

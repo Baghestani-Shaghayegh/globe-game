@@ -16,6 +16,7 @@ import ReplayActions from "../features/replay/ReplayActions";
 import Celebrate from "../components/Celebrate";
 import ShareResult from "../components/ShareResult";
 import SignInNudge from "../components/SignInNudge";
+import { cluesGrid } from "../lib/shareGrid";
 import { getCountryMeta } from "../data/countries";
 import { nearestNames, resolveName } from "../lib/answerMatch";
 import { landShade, theme } from "../lib/globeTheme";
@@ -504,6 +505,8 @@ export default function FiveClues() {
                   : "Today's GuessGlobe Five clues beat me."
               }
               filename={`guessglobe-clues-${result.day}.png`}
+              path={`/clues?d=${result.number}`}
+              grid={cluesGrid(clueMarks(result))}
               card={(features) => ({
                 eyebrow: `Five clues #${result.number}`,
                 title: on ? `Clue ${on} of ${CLUE_COUNT}` : "Not found",

@@ -25,6 +25,7 @@ import { dayKey, elapsedMs, formatDay } from "../lib/daily";
 import Celebrate from "../components/Celebrate";
 import ShareResult from "../components/ShareResult";
 import SignInNudge from "../components/SignInNudge";
+import { mysteryGrid } from "../lib/shareGrid";
 import RecordSwitch from "../features/replay/RecordSwitch";
 import ReplayActions from "../features/replay/ReplayActions";
 import { useReplayCamera } from "../features/globe-guess/useReplayCamera";
@@ -533,6 +534,8 @@ export default function Mystery() {
                       : `Today's GuessGlobe mystery country beat me.`
                   }
                   filename={`guessglobe-mystery-${result.day}.png`}
+                  path={`/mystery?d=${result.number}`}
+                  grid={mysteryGrid(guesses.length, result.solved)}
                   card={(features) => ({
                     eyebrow: `Mystery country #${result.number}`,
                     title: result.solved

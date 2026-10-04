@@ -12,7 +12,7 @@ import { playTap } from "../lib/sound";
  * and this row would only repeat it.
  */
 export function SendTargets({ message, link }: { message: string; link: string }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"copied" | "failed" | null>(null);
   const targets = shareTargets();
   const tile =
     "rounded-lg border border-white/15 px-2 py-2 text-center text-sm text-zinc-100 transition-colors hover:bg-white/10";
@@ -46,15 +46,17 @@ export function SendTargets({ message, link }: { message: string; link: string }
           playTap();
           try {
             await navigator.clipboard.writeText(`${message} ${link}`);
-            setCopied(true);
-            window.setTimeout(() => setCopied(false), 2000);
+            setCopied("copied");
           } catch {
-            /* the text is on screen to select */
+            // The text is on screen to select; say it didn't copy.
+            setCopied("failed");
           }
+          window.setTimeout(() => setCopied(null), 2000);
         }}
+        aria-live="polite"
         className={tile}
       >
-        {copied ? "Copied" : "Copy link"}
+        {copied === "copied" ? "Copied ✓" : copied === "failed" ? "Couldn't copy" : "Copy link"}
       </button>
     </div>
   );
@@ -93,7 +95,7 @@ export function SendMenu({
             ×
           </button>
         </div>
-        <p className="mt-2 rounded-lg bg-white/[0.04] p-3 text-sm text-zinc-200">
+        <p className="mt-2 whitespace-pre-line rounded-lg bg-white/[0.04] p-3 text-sm text-zinc-200">
           {message} <span className="text-teal-300">{link}</span>
         </p>
         <p className="mt-4 text-xs text-zinc-500">Send it with</p>

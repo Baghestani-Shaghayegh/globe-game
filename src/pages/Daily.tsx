@@ -5,6 +5,7 @@ import FindGame from "../features/globe-guess/FindGame";
 import DailyResultGlobe from "../features/globe-guess/DailyResultGlobe";
 import ShareResult from "../components/ShareResult";
 import SignInNudge from "../components/SignInNudge";
+import { huntGrid } from "../lib/shareGrid";
 import ReplayActions from "../features/replay/ReplayActions";
 import RecordSwitch from "../features/replay/RecordSwitch";
 import { todaysReplay, type Replay } from "../lib/replay";
@@ -287,6 +288,8 @@ export default function Daily() {
                   replay={recorded?.replay}
                   text={`I found ${result.found}/${result.total} in ${formatDuration(result.ms)} on today's GuessGlobe Country hunt.`}
                   filename={`guessglobe-hunt-${result.day}.png`}
+                  path={`/daily?d=${result.number}`}
+                  grid={huntGrid(result.outcomes)}
                   card={(features) => ({
                     eyebrow: `Country hunt · ${formatDay(result.day)}`,
                     title: `${result.found} / ${result.total}`,

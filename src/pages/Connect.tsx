@@ -1,5 +1,6 @@
 import ShareResult from "../components/ShareResult";
 import SignInNudge from "../components/SignInNudge";
+import { connectGrid } from "../lib/shareGrid";
 import RecordSwitch from "../features/replay/RecordSwitch";
 import ReplayActions from "../features/replay/ReplayActions";
 import { useReplayCamera } from "../features/globe-guess/useReplayCamera";
@@ -657,6 +658,11 @@ export default function Connect() {
                   replay={recorded?.replay}
                   text={`I linked ${display(puzzle.from)} to ${display(puzzle.to)} in ${result.chain.length} on today's GuessGlobe Connect.`}
                   filename={`guessglobe-connect-${result.day}.png`}
+                  path={`/connect?d=${result.number}`}
+                  grid={connectGrid(
+                    result.chain.length,
+                    Math.max(0, placedOf(result).length - result.chain.length)
+                  )}
                   card={(features) => {
                     const wrongTurns = Math.max(0, placedOf(result).length - result.chain.length);
                     return {
