@@ -314,8 +314,21 @@ describe("the short forms people type", () => {
     ["bosnia", "Bosnia and Herzegovina"],
     ["st lucia", "Saint Lucia"],
     ["dprk", "North Korea"],
+    ["south georgia", "South Georgia and the South Sandwich Islands"],
+    ["south sandwich islands", "South Georgia and the South Sandwich Islands"],
+    ["st helena", "Saint Helena"],
+    ["st martin", "Saint Martin"],
+    ["st maarten", "Sint Maarten"],
+    ["st barts", "Saint Barthelemy"],
+    ["surinam", "Suriname"],
   ])("accepts %s for %s", (typed, geoName) => {
     expect(isCorrectGuess(typed, getCountryMeta(geoName))).toBe(true);
+  });
+
+  it("keeps Georgia and South Georgia apart", () => {
+    expect(isCorrectGuess("georgia", getCountryMeta("Georgia"))).toBe(true);
+    expect(isCorrectGuess("georgia", getCountryMeta("South Georgia and the South Sandwich Islands"))).toBe(false);
+    expect(isCorrectGuess("south georgia", getCountryMeta("Georgia"))).toBe(false);
   });
 
   it("gives an ambiguous one to nobody", () => {

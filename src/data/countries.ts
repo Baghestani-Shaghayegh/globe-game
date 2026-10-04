@@ -53,6 +53,17 @@ const OVERRIDES: Record<string, { displayName?: string; aliases?: string[] }> = 
   "Antigua and Barbuda": { aliases: ["antigua"] },
   "Saint Kitts and Nevis": { aliases: ["st kitts", "st kitts and nevis"] },
   "Saint Lucia": { aliases: ["st lucia"] },
+  // The short forms people type. Only the full names were accepted, so
+  // "South Georgia" read as wrong while "South Georgia and the South Sandwich
+  // Islands" was right.
+  "South Georgia and the South Sandwich Islands": {
+    aliases: ["south georgia", "south sandwich islands", "south georgia and south sandwich islands"],
+  },
+  "Saint Helena": { aliases: ["st helena"] },
+  "Saint Martin": { aliases: ["st martin"] },
+  "Sint Maarten": { aliases: ["st maarten", "saint maarten"] },
+  "Saint Barthelemy": { aliases: ["st barthelemy", "st barts", "saint barts", "st barths"] },
+  "Saint Pierre and Miquelon": { aliases: ["st pierre and miquelon", "st pierre", "saint pierre"] },
   "Saint Vincent and the Grenadines": { aliases: ["st vincent", "svg"] },
   "Sao Tome and Principe": { aliases: ["sao tome"] },
   "Vatican City": { aliases: ["vatican", "holy see"] },
