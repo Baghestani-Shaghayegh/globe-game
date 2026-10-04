@@ -28,7 +28,7 @@ import SignInNudge from "../components/SignInNudge";
 import RecordSwitch from "../features/replay/RecordSwitch";
 import ReplayActions from "../features/replay/ReplayActions";
 import { useReplayCamera } from "../features/globe-guess/useReplayCamera";
-import { keepReplay, recordingOn, ReplayRecorder, type Replay } from "../lib/replay";
+import { keepReplay, recordingOn, ReplayRecorder, todaysReplay, type Replay } from "../lib/replay";
 import { END_HOLD_MS } from "../lib/replayFrame";
 import { playSolved, playWarm, playWrong, playLose } from "../lib/sound";
 import {
@@ -138,6 +138,10 @@ export default function Mystery() {
     const saved = loaded && (loaded.solved || loaded.gaveUp) ? loaded : null;
     // A fresh hunt is recorded from its first moment, like every round.
     recorder.current = saved ? null : new ReplayRecorder();
+    if (saved) {
+      const kept = todaysReplay(day, (game) => game.type === "mystery");
+      if (kept) setRecorded({ replay: kept });
+    }
     setResult(
       saved ?? {
         day,

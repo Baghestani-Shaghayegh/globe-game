@@ -7,7 +7,7 @@ import ShareResult from "../components/ShareResult";
 import SignInNudge from "../components/SignInNudge";
 import ReplayActions from "../features/replay/ReplayActions";
 import RecordSwitch from "../features/replay/RecordSwitch";
-import type { Replay } from "../lib/replay";
+import { todaysReplay, type Replay } from "../lib/replay";
 import { CARD_FOUND, CARD_MISSED } from "../features/globe-guess/RoundShare";
 import type { RoundOutcome } from "../features/globe-guess/FindGame";
 import { getCountryMeta } from "../data/countries";
@@ -147,11 +147,17 @@ export default function Daily() {
   const day = dayKey();
   const [names, setNames] = useState<string[] | null>(null);
   const [result, setResult] = useState<DailyResult | null>(() => resultFor(day));
-  /** Today's round as just recorded, to watch back and post; not kept past a reload. */
+  /** Today's round as recorded, to watch back and post. A finished daily that
+   *  is opened again gets its recording back from the device, without a board
+   *  entry to post to: that was settled when the round ended. */
   const [recorded, setRecorded] = useState<{
     replay: Replay;
-    postedId: () => Promise<number | null>;
-  } | null>(null);
+    postedId?: () => Promise<number | null>;
+  } | null>(() => {
+    if (!resultFor(day)) return null;
+    const kept = todaysReplay(day, (game) => !["mystery", "connect", "bigger", "clues"].includes(game.type));
+    return kept ? { replay: kept } : null;
+  });
   const [burst, setBurst] = useState(0);
 
   useEffect(() => {

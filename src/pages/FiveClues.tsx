@@ -22,7 +22,7 @@ import { landShade, theme } from "../lib/globeTheme";
 import { landMaterial } from "../lib/globeTerrain";
 import { featureCentre, type Geometry, worldAltitude } from "../lib/geo";
 import { dayKey, dayNumber, formatDay } from "../lib/daily";
-import { keepReplay, recordingOn, ReplayRecorder, type Replay } from "../lib/replay";
+import { keepReplay, recordingOn, ReplayRecorder, todaysReplay, type Replay } from "../lib/replay";
 import { END_HOLD_MS } from "../lib/replayFrame";
 import { playLose, playSolved, playStep, playWrong } from "../lib/sound";
 import {
@@ -116,6 +116,10 @@ export default function FiveClues() {
     const loaded = loadClues(day);
     const saved = loaded && (loaded.solved || loaded.lost) ? loaded : null;
     recorder.current = saved ? null : new ReplayRecorder();
+    if (saved) {
+      const kept = todaysReplay(day, (game) => game.type === "clues");
+      if (kept) setRecorded({ replay: kept });
+    }
     setResult(
       saved ?? {
         day,

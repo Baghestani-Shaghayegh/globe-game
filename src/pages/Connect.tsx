@@ -3,7 +3,7 @@ import SignInNudge from "../components/SignInNudge";
 import RecordSwitch from "../features/replay/RecordSwitch";
 import ReplayActions from "../features/replay/ReplayActions";
 import { useReplayCamera } from "../features/globe-guess/useReplayCamera";
-import { keepReplay, recordingOn, ReplayRecorder, type Replay } from "../lib/replay";
+import { keepReplay, recordingOn, ReplayRecorder, todaysReplay, type Replay } from "../lib/replay";
 import { END_HOLD_MS } from "../lib/replayFrame";
 import { CARD_FOUND, CARD_MISSED } from "../features/globe-guess/RoundShare";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
@@ -158,6 +158,10 @@ export default function Connect() {
     // again from nothing — Sara's rule for all three dailies: leaving without
     // finishing doesn't use up the day, and doesn't carry over either.
     recorder.current = saved?.solved ? null : new ReplayRecorder();
+    if (saved?.solved) {
+      const kept = todaysReplay(day, (game) => game.type === "connect");
+      if (kept) setRecorded({ replay: kept });
+    }
     setResult(
       (saved?.solved ? saved : null) ?? {
         day,
@@ -178,7 +182,7 @@ export default function Connect() {
   const recorder = useRef<ReplayRecorder | null>(null);
   const [recorded, setRecorded] = useState<{
     replay: Replay;
-    postedId: () => Promise<number | null>;
+    postedId?: () => Promise<number | null>;
   } | null>(null);
   const look = useCallback(
     (lat: number, lng: number, altitude: number, force?: boolean) =>

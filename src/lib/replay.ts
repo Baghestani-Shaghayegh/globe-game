@@ -205,6 +205,23 @@ export function keepReplay(replay: Replay) {
   }
 }
 
+/**
+ * Today's recording of a daily, if this browser still has it.
+ *
+ * A finished daily comes back from its saved result, but the recording was
+ * only ever held in memory, so leaving and returning lost Watch and Share
+ * video. The last few rounds are already kept on the device; this finds the
+ * one for the day. The caller says which game it is, since a Mystery and a
+ * Connect finished on the same day share the store.
+ */
+export function todaysReplay(day: string, match: (game: ReplayGame) => boolean): Replay | null {
+  return (
+    savedReplays().find(
+      (replay) => replay.game.mode === "daily" && replay.at.slice(0, 10) === day && match(replay.game)
+    ) ?? null
+  );
+}
+
 // ---- The record switch ---------------------------------------------------
 
 const SWITCH_KEY = "worldguess.record.v1";
