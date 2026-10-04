@@ -243,6 +243,29 @@ function biggestPiece(geometry, arcs) {
   return biggest;
 }
 
+/**
+ * Outlines the source has lost, drawn in by hand.
+ *
+ * Natural Earth's 10m file is quantised to a grid about 400 metres across,
+ * and Vatican City is smaller than that: its outline arrives as three points
+ * on one line. Grown to SMALLEST, that line was all a player saw, a sliver
+ * 76 km tall beside Rome that couldn't be clicked. This is its boundary
+ * traced from the Leonine walls round to St Peter's Square, close enough to
+ * be the right shape once grown.
+ */
+const OUTLINE = {
+  "Vatican City": {
+    type: "Polygon",
+    coordinates: [[
+      [12.4457, 41.9031], [12.4469, 41.9059], [12.4497, 41.9071],
+      [12.4533, 41.9075], [12.4563, 41.9068], [12.4580, 41.9051],
+      [12.4584, 41.9026], [12.4576, 41.9017], [12.4546, 41.9010],
+      [12.4519, 41.9002], [12.4489, 41.9006], [12.4464, 41.9016],
+      [12.4457, 41.9031],
+    ]],
+  },
+};
+
 const topo = JSON.parse(readFileSync(SOURCE, "utf8"));
 const arcs = decodeArcs(topo);
 
@@ -275,7 +298,7 @@ for (const f of world.features) {
   const raw = f.properties.name;
   if (!raw || NOT_A_PLACE.has(raw)) continue;
   const name = RENAME[raw] ?? raw;
-  const simplified = simplify(f.geometry);
+  const simplified = OUTLINE[name] ?? simplify(f.geometry);
   if (!simplified.coordinates.length) continue;
   const { geometry, tiny } = enlarge(simplified);
   features.push({
