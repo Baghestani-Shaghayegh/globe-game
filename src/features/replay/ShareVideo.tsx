@@ -4,7 +4,7 @@ import { SendTargets } from "../../components/SendTargets";
 import { videoCaption } from "../../lib/caption";
 import type { Replay } from "../../lib/replay";
 import { loadReplayAssets } from "../../lib/replayDraw";
-import { makeReplayVideo, type MadeVideo } from "../../lib/replayVideo";
+import { VIDEO_SPEEDS, makeReplayVideo, videoSeconds, type MadeVideo } from "../../lib/replayVideo";
 import { downloadFile, onComputer } from "../../lib/shareCard";
 import { siteHost, siteUrl } from "../../lib/site";
 import { playTap } from "../../lib/sound";
@@ -59,8 +59,14 @@ const POSTING: Record<Platform, { name: string; mode: "upload" | "direct"; uploa
   },
 };
 
-/** Made videos, kept for the visit, so the panel never makes one twice. */
-const made = new WeakMap<Replay, MadeVideo>();
+/** Made videos, kept for the visit by speed, so the panel never makes one twice. */
+const made = new WeakMap<Replay, Map<number, MadeVideo>>();
+
+/** 34 seconds as "0:34", for how long a video will run. */
+function clock(seconds: number): string {
+  const whole = Math.round(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
 
 export default function ShareVideo({
   replay,
@@ -101,7 +107,8 @@ function VideoPanel({
   player?: string;
   onClose: () => void;
 }) {
-  const [video, setVideo] = useState<MadeVideo | null>(() => made.get(replay) ?? null);
+  const [speed, setSpeed] = useState(1);
+  const [video, setVideo] = useState<MadeVideo | null>(() => made.get(replay)?.get(1) ?? null);
   const [progress, setProgress] = useState(0);
   const [failed, setFailed] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -125,9 +132,19 @@ function VideoPanel({
     }
   }, [file]);
 
-  // Made as soon as the panel opens; kept for next time.
+  // Made as soon as the panel opens, and again when the speed is changed;
+  // every speed made is kept for next time.
   useEffect(() => {
-    if (video) return;
+    setSaved(false);
+    setOpened(null);
+    const kept = made.get(replay)?.get(speed);
+    if (kept) {
+      setVideo(kept);
+      return;
+    }
+    setVideo(null);
+    setProgress(0);
+    setFailed(false);
     let cancelled = false;
     (async () => {
       try {
@@ -135,9 +152,13 @@ function VideoPanel({
         const result = await makeReplayVideo(replay, assets, {
           player,
           site: siteHost(),
+          speed,
+          isCancelled: () => cancelled,
           onProgress: (share) => !cancelled && setProgress(share),
         });
-        made.set(replay, result);
+        const bySpeed = made.get(replay) ?? new Map<number, MadeVideo>();
+        bySpeed.set(speed, result);
+        made.set(replay, bySpeed);
         if (!cancelled) setVideo(result);
       } catch {
         if (!cancelled) setFailed(true);
@@ -146,13 +167,17 @@ function VideoPanel({
     return () => {
       cancelled = true;
     };
-  }, [replay, player, video]);
+  }, [replay, player, speed]);
 
   // A preview of what's being posted, played from the made file. Made and
   // revoked in the same effect, so a remount never leaves a dead URL.
   const [preview, setPreview] = useState<string | null>(null);
   useEffect(() => {
-    if (!video) return;
+    if (!video) {
+      // A new speed is being made: show its progress, not the old video.
+      setPreview(null);
+      return;
+    }
     const url = URL.createObjectURL(video.blob);
     setPreview(url);
     return () => URL.revokeObjectURL(url);
@@ -288,6 +313,35 @@ function VideoPanel({
           // ---- Everything else ---------------------------------------------
           <>
             <div className="mt-3 flex justify-center">{previewBox("w-36")}</div>
+
+            {/* Picked before anything is saved or posted: the video is made
+                again at the new speed, and this says how long it will run. */}
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-xs text-zinc-500">
+                <span id="video-speed-label">Speed</span>
+                <span className="tabular-nums">{clock(videoSeconds(replay.result.ms, speed))} long</span>
+              </div>
+              <div role="radiogroup" aria-labelledby="video-speed-label" className="mt-1.5 grid grid-cols-4 gap-2">
+                {VIDEO_SPEEDS.map((option) => (
+                  <button
+                    key={option}
+                    role="radio"
+                    aria-checked={option === speed}
+                    onClick={() => {
+                      playTap();
+                      setSpeed(option);
+                    }}
+                    className={`rounded-lg border px-2 py-1.5 text-sm tabular-nums transition-colors ${
+                      option === speed
+                        ? "border-teal-300 bg-teal-300/15 text-teal-200"
+                        : "border-white/15 text-zinc-100 hover:bg-white/10"
+                    }`}
+                  >
+                    {option}×
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="mt-4 flex gap-2">
               {canShare && (

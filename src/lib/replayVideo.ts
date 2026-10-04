@@ -19,9 +19,27 @@ const OUTRO_S = END_HOLD_MS / 1000 + 2.8;
 /** The round itself is squeezed into at most this long. */
 const MAX_MAIN_S = 40;
 
-/** How fast a round plays in its video: real time, or faster to fit. */
-export function videoSpeed(ms: number): number {
-  return Math.max(1, ms / (MAX_MAIN_S * 1000));
+/**
+ * The speeds on offer before a video is made, as a multiple of the usual one.
+ * 1 is what the video has always been: real time for a short round, squeezed
+ * to fit for a long one. The rest speed it up or slow it down from there.
+ */
+export const VIDEO_SPEEDS = [0.5, 1, 2, 4];
+
+/** The slowest a video may play, so a pick of 0.5 on a short round isn't a crawl. */
+const SLOWEST = 0.25;
+
+/**
+ * How fast a round plays in its video: real time, or faster to fit, times
+ * whatever the player picked.
+ */
+export function videoSpeed(ms: number, factor = 1): number {
+  return Math.max(SLOWEST, Math.max(1, ms / (MAX_MAIN_S * 1000)) * factor);
+}
+
+/** How long the finished video runs, in seconds, for a round at a picked speed. */
+export function videoSeconds(ms: number, factor = 1): number {
+  return videoTimeline(ms, factor).frames / FPS;
 }
 
 /**
@@ -29,8 +47,11 @@ export function videoSpeed(ms: number): number {
  * straight on the round: the top line already names the game, and a title
  * card in front only delayed the first move.
  */
-export function videoTimeline(ms: number): { frames: number; at: (i: number) => { t: number } } {
-  const speed = videoSpeed(ms);
+export function videoTimeline(
+  ms: number,
+  factor = 1
+): { frames: number; at: (i: number) => { t: number } } {
+  const speed = videoSpeed(ms, factor);
   const main = Math.ceil((ms / speed / 1000) * FPS);
   const outro = Math.round(OUTRO_S * FPS);
   return {
@@ -51,8 +72,18 @@ export async function makeReplayVideo(
   {
     player,
     site,
+    speed = 1,
     onProgress,
-  }: { player?: string; site?: string; onProgress?: (share: number) => void }
+    isCancelled,
+  }: {
+    player?: string;
+    site?: string;
+    /** A multiple of the usual speed: see VIDEO_SPEEDS. */
+    speed?: number;
+    onProgress?: (share: number) => void;
+    /** Asked between frames, so a picked speed that is changed again stops the old render. */
+    isCancelled?: () => boolean;
+  }
 ): Promise<MadeVideo> {
   const {
     BufferTarget,
@@ -87,8 +118,12 @@ export async function makeReplayVideo(
   output.addVideoTrack(source, { frameRate: FPS });
   await output.start();
 
-  const { frames, at } = videoTimeline(replay.result.ms);
+  const { frames, at } = videoTimeline(replay.result.ms, speed);
   for (let i = 0; i < frames; i += 1) {
+    if (isCancelled?.()) {
+      await output.cancel();
+      throw new Error("The video was cancelled.");
+    }
     const { t } = at(i);
     drawFrame(ctx, frameAt(replay, t), replay, assets, {
       width: VIDEO_WIDTH,
