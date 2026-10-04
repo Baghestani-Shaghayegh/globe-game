@@ -24,11 +24,11 @@ import {
   resultFor,
   type DailyResult,
 } from "../lib/daily";
-import { loadMystery, mysteryNumber, type MysteryResult } from "../lib/mystery";
-import { loadConnect, puzzleFor, type ConnectResult } from "../lib/connect";
+import { loadMystery, mysteryNumber, scoreFor as mysteryScore, type MysteryResult } from "../lib/mystery";
+import { loadConnect, puzzleFor, scoreFor as connectScore, type ConnectResult } from "../lib/connect";
 import { formatDuration } from "../lib/records";
 import { ClueCards, ConnectPair, HuntSlots, MysteryHeat, NewIn } from "../components/DailyVisuals";
-import { clueMarks, foundOn, loadClues, type CluesResult } from "../lib/fiveClues";
+import { clueMarks, foundOn, loadClues, scoreFor as cluesScore, type CluesResult } from "../lib/fiveClues";
 import { dueCount } from "../lib/practice";
 import { learnedCountries } from "../lib/lessons";
 import { flagUrl } from "../data/flags";
@@ -432,7 +432,7 @@ export default function Home() {
                 title="Country hunt"
                 note={
                   played.hunt
-                    ? `${played.hunt.found}/${played.hunt.total} in ${formatDuration(played.hunt.ms)}`
+                    ? `${played.hunt.found}/${played.hunt.total} in ${formatDuration(played.hunt.ms)} · ${played.hunt.points.toLocaleString()} pts`
                     : `Ten countries, ${DAILY_LIMIT_SECONDS / 60} minutes`
                 }
                 visual={<HuntSlots outcomes={played.hunt?.outcomes} />}
@@ -447,7 +447,7 @@ export default function Home() {
                 note={
                   played.mystery
                     ? played.mystery.solved
-                      ? `Found in ${guesses} ${guesses === 1 ? "guess" : "guesses"}`
+                      ? `Found in ${guesses} ${guesses === 1 ? "guess" : "guesses"} · ${mysteryScore(played.mystery).toLocaleString()} pts`
                       : `Gave up after ${guesses}`
                     : "See how close each guess is"
                 }
@@ -462,7 +462,7 @@ export default function Home() {
                 title="Connect"
                 note={
                   played.connect
-                    ? `${played.connect.chain.length} ${played.connect.chain.length === 1 ? "step" : "steps"} · par ${played.connect.par}`
+                    ? `${played.connect.chain.length} ${played.connect.chain.length === 1 ? "step" : "steps"} · par ${played.connect.par} · ${connectScore(played.connect).toLocaleString()} pts`
                     : "Link these two by land"
                 }
                 visual={
@@ -485,7 +485,7 @@ export default function Home() {
                 note={
                   played.clues
                     ? played.clues.solved
-                      ? `Found on clue ${foundOn(played.clues)}`
+                      ? `Found on clue ${foundOn(played.clues)} · ${cluesScore(played.clues).toLocaleString()} pts`
                       : "Not found today"
                     : "Hardest clue first"
                 }
