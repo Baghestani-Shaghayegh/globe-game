@@ -132,6 +132,64 @@ const TERRITORIES = new Set([
   "Åland",
 ]);
 
+/**
+ * The country each territory is part of, for the rounds that don't ask about
+ * territories. Left out, Hong Kong was a grey speck on China's coast that
+ * couldn't be clicked, and read as something the player had missed. Now it
+ * takes China's colour and a click on it is a click on China.
+ *
+ * Only where nobody disputes it. Kosovo, Northern Cyprus, Somaliland, Western
+ * Sahara, the Falklands, South Georgia, Gibraltar and the Chagos Islands stay
+ * grey, as do the Cook Islands and Niue, which run their own affairs.
+ * Map names: "USA" and "England" are the United States and United Kingdom.
+ */
+export const BELONGS_TO: Record<string, string> = {
+  "American Samoa": "USA",
+  Guam: "USA",
+  "Northern Mariana Islands": "USA",
+  "Puerto Rico": "USA",
+  "United States Virgin Islands": "USA",
+  Anguilla: "England",
+  Bermuda: "England",
+  "British Virgin Islands": "England",
+  "Cayman Islands": "England",
+  Guernsey: "England",
+  "Isle of Man": "England",
+  Jersey: "England",
+  Montserrat: "England",
+  "Pitcairn Islands": "England",
+  "Saint Helena": "England",
+  "Turks and Caicos Islands": "England",
+  "French Polynesia": "France",
+  "French Southern and Antarctic Lands": "France",
+  "New Caledonia": "France",
+  "Saint Barthelemy": "France",
+  "Saint Martin": "France",
+  "Saint Pierre and Miquelon": "France",
+  "Wallis and Futuna": "France",
+  Aruba: "Netherlands",
+  "Curaçao": "Netherlands",
+  "Sint Maarten": "Netherlands",
+  "Faroe Islands": "Denmark",
+  Greenland: "Denmark",
+  "Heard Island and McDonald Islands": "Australia",
+  "Norfolk Island": "Australia",
+  "Hong Kong": "China",
+  Macao: "China",
+  "Åland": "Finland",
+};
+
+/**
+ * Which country a click on `name` is about: the place itself when the round
+ * asks about it, else the country it belongs to when that one is asked.
+ * Null for scenery the round has nothing to do with.
+ */
+export function standsFor(name: string, inPlay: ReadonlySet<string>): string | null {
+  if (inPlay.has(name)) return name;
+  const owner = BELONGS_TO[name];
+  return owner && inPlay.has(owner) ? owner : null;
+}
+
 export function getCountryMeta(geoName: string): CountryMeta {
   const override = OVERRIDES[geoName];
   return {

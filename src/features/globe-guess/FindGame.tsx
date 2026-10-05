@@ -15,7 +15,7 @@ import { recordRound } from "../../lib/countryStats";
 import { pulseMark } from "./globeMarks";
 import { useGlobeClick } from "./useGlobeClick";
 import { useLeaveGuard } from "./useLeaveGuard";
-import { getCountryMeta } from "../../data/countries";
+import { getCountryMeta, standsFor } from "../../data/countries";
 import {
   BLITZ_SECONDS,
   GAME_TYPES,
@@ -579,8 +579,9 @@ export default function FindGame({
     }, FLIGHT_MS + REVEAL_HOLD_MS);
   };
 
+  // A click on a territory is a click on its country: Hong Kong is China.
   const globeClick = useGlobeClick<CountryFeature>((feature) =>
-    handleClick(feature.properties.name)
+    handleClick(standsFor(feature.properties.name, inPlaySet) ?? feature.properties.name)
   );
 
   // The browser's Back, and the trackpad swipe that is the same thing, now
@@ -712,7 +713,9 @@ export default function FindGame({
    * is not.
    */
   const fillFor = useMemo(
-    () => (name: string): { color: string; answer: boolean } => {
+    () => (place: string): { color: string; answer: boolean } => {
+      // A territory wears its country's colour (Hong Kong goes with China).
+      const name = standsFor(place, inPlaySet) ?? place;
       if (name === wrongName) return { color: theme.missed, answer: true };
       if (name === revealed) return { color: theme.selected, answer: true };
       if (foundNames.has(name)) return { color: theme.found, answer: true };
@@ -766,7 +769,7 @@ export default function FindGame({
       // Off-board scenery keeps no border at all: an outline in the land
       // colour worked while the land was flat, but a lit fill moves and an
       // unlit stroke does not, and the hidden map leaked through the gap.
-      if (!inPlaySet.has(name)) return null;
+      if (standsFor(name, inPlaySet) === null) return null;
       const fill = fillFor(name);
       // A border in the one pale stroke vanishes the moment a country is
       // filled in — measured against the palettes it lands at 1.06 on
@@ -779,11 +782,11 @@ export default function FindGame({
 
   const altitude = useCallback(
     (d: object) => {
-      const { name } = (d as CountryFeature).properties;
-      if (name === revealed) return 0.06;
+      const name = standsFor((d as CountryFeature).properties.name, inPlaySet);
+      if (name !== null && name === revealed) return 0.06;
       // Lifted, so the ones being drilled stand off the sphere and read
       // as raised even where the colour alone would not carry.
-      if (showInPlay && inPlaySet.has(name)) return 0.035;
+      if (showInPlay && name !== null) return 0.035;
       return 0.008;
     },
     [revealed, showInPlay, inPlaySet]

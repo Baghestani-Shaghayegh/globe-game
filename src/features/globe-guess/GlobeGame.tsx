@@ -16,7 +16,7 @@ import { recordRound } from "../../lib/countryStats";
 import { useGlobeClick } from "./useGlobeClick";
 import { useLeaveGuard } from "./useLeaveGuard";
 import type { RoundOutcome } from "./FindGame";
-import { getCountryMeta } from "../../data/countries";
+import { getCountryMeta, standsFor } from "../../data/countries";
 import {
   BLITZ_SECONDS,
   GAME_TYPES,
@@ -644,17 +644,23 @@ export default function GlobeGame({
 
   /** The back arrow only interrupts when there is progress worth keeping. */
   const selectCountry = useCallback(
-    (feature: CountryFeature) => {
-      const { name } = feature.properties;
-      if (summary || foundNames.has(name) || expired.has(name)) return;
+    (clicked: CountryFeature) => {
       // The backdrop is scenery. Clicking it opens nothing rather than opening
       // a country that cannot be scored — a modal you can type into but never
-      // get credit for would read as the game being broken.
-      if (!inPlaySet.has(name)) return;
+      // get credit for would read as the game being broken. A territory opens
+      // its country.
+      const name = standsFor(clicked.properties.name, inPlaySet);
+      if (name === null) return;
+      if (summary || foundNames.has(name) || expired.has(name)) return;
+      const feature =
+        name === clicked.properties.name
+          ? clicked
+          : features.find((f) => f.properties.name === name);
+      if (!feature) return;
       setSelected(feature);
       mark(["s", name]);
     },
-    [summary, foundNames, expired, backdrop, inPlaySet, mark]
+    [summary, foundNames, expired, backdrop, inPlaySet, mark, features]
   );
   const globeClick = useGlobeClick<CountryFeature>(selectCountry);
 
@@ -688,11 +694,13 @@ export default function GlobeGame({
    * would eventually outline a country in a shade of a colour it is not.
    */
   const fillFor = useCallback(
-    (name: string): { color: string; answer: boolean } => {
+    (place: string): { color: string; answer: boolean } => {
+      // A territory wears its country's colour (Hong Kong goes with China).
+      const name = standsFor(place, inPlaySet);
       // Scenery first, ahead of every other rule — including the one that paints
       // the whole board "missed" once the round is over, which would otherwise
       // turn the entire world red at the end of a daily.
-      if (!inPlaySet.has(name))
+      if (name === null)
         return { color: backdropColor(), answer: false };
       if (foundNames.has(name)) return { color: theme.found, answer: true };
       if (expired.has(name)) return { color: theme.missed, answer: true };
@@ -743,11 +751,11 @@ export default function GlobeGame({
 
   const altitude = useCallback(
     (d: object) => {
-      const { name } = (d as CountryFeature).properties;
+      const name = standsFor((d as CountryFeature).properties.name, inPlaySet);
       // Lifted, so the ones in play stand off the sphere and read as
       // raised even where the colour alone would not carry.
-      if (showInPlay && inPlaySet.has(name)) return 0.035;
-      if (!inPlaySet.has(name)) return 0.008;
+      if (showInPlay && name !== null) return 0.035;
+      if (name === null) return 0.008;
       return 0.012;
     },
     [showInPlay, inPlaySet, backdrop]
@@ -817,7 +825,7 @@ export default function GlobeGame({
           // No pointer over the scenery. The cursor is the only thing that
           // says "this one isn't yours to click" before you try it.
           const playable =
-            !feature || (name !== undefined && inPlaySet.has(name));
+            !feature || (name !== undefined && standsFor(name, inPlaySet) !== null);
           globeClick.setHovered(playable ? feature : null);
         }}
       />
