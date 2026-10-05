@@ -198,6 +198,9 @@ export function SiteFooter({ className = "" }: { className?: string }) {
       <Link to="/privacy" className="transition-colors hover:text-zinc-300">
         Privacy
       </Link>
+      <Link to="/terms" className="transition-colors hover:text-zinc-300">
+        Terms
+      </Link>
       {KOFI_URL && (
         <a
           href={KOFI_URL}

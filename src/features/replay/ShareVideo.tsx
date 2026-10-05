@@ -8,6 +8,8 @@ import { VIDEO_SPEEDS, makeReplayVideo, videoSeconds, type MadeVideo } from "../
 import { downloadFile, onComputer } from "../../lib/shareCard";
 import { siteHost, siteUrl } from "../../lib/site";
 import { playTap } from "../../lib/sound";
+import { youtubeDirect } from "../../lib/youtube";
+import PostToYouTube from "./PostToYouTube";
 
 /**
  * One way to do everything with a round's video: watch it, save it, share
@@ -25,7 +27,8 @@ import { playTap } from "../../lib/sound";
  *   Until a platform approves the game for posting, its button saves the
  *   video, copies the caption and opens the upload page. Once approved,
  *   the platform's entry in POSTING turns to "direct" and the same screen
- *   connects the player's account and posts. See docs on approvals.
+ *   connects the player's account and posts. YouTube is built (see
+ *   PostToYouTube and api/youtube); TikTok and Instagram are not.
  * - Send the link: WhatsApp, Messages, Telegram, email and the rest, only
  *   where the browser has no share menu. Where it has one, Share already
  *   lists every app installed, KakaoTalk included.
@@ -53,7 +56,9 @@ const POSTING: Record<Platform, { name: string; mode: "upload" | "direct"; uploa
   },
   youtube: {
     name: "YouTube",
-    mode: "upload",
+    // Direct once VITE_YOUTUBE_DIRECT=1: the server route is built, but while
+    // the app is unverified only listed test users can connect.
+    mode: youtubeDirect() ? "direct" : "upload",
     upload: "https://www.youtube.com/upload",
     tip: "Drop the video into YouTube's upload page. Vertical and short, it becomes a Short.",
   },
@@ -318,7 +323,9 @@ function VideoPanel({
                     : `Saves the video, copies the caption and opens ${POSTING[posting].name} in a new tab. ${POSTING[posting].tip}`}
                 </p>
               </>
-            ) : null}
+            ) : (
+              <PostToYouTube video={video} caption={fullCaption} onByHand={() => uploadTo("youtube")} button={button} />
+            )}
           </div>
         ) : (
           // ---- Everything else ---------------------------------------------

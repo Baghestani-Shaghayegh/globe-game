@@ -9,7 +9,7 @@ import { PageShell } from "../components/SiteHeader";
 const CONTACT = "privacy@guessglobe.com";
 
 /** The date the wording below last changed, not the date it was rendered. */
-const UPDATED = "2 October 2026";
+const UPDATED = "4 October 2026";
 
 function Section({
   title,
@@ -82,6 +82,50 @@ export default function Privacy() {
           sent it from, and the email address if you give one. If you are
           signed in, it is linked to your account. Only we can read it, and it
           is used to fix the game and nothing else.
+        </p>
+      </Section>
+
+      <Section title="If you post a video to YouTube">
+        <p>
+          The share screen can post a round&rsquo;s video to your YouTube channel. It asks Google for one permission:
+          to upload videos. It cannot see your channel, your other videos, your subscribers or your email address, and
+          it cannot change or delete anything on YouTube.
+        </p>
+        <p>
+          When you agree, Google gives the game a key that lasts about an hour. It is held in your browser&rsquo;s
+          memory while the page is open and is gone when you close it. We do not store it, and the video goes from
+          your browser to YouTube without passing through our server. You can take the permission back at any time
+          at{" "}
+          <a
+            href="https://myaccount.google.com/permissions"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-zinc-200 underline underline-offset-4 hover:text-zinc-50"
+          >
+            myaccount.google.com/permissions
+          </a>
+          .
+        </p>
+        <p>
+          GuessGlobe&rsquo;s use and transfer of information received from Google APIs adheres to the{" "}
+          <a
+            href="https://developers.google.com/terms/api-services-user-data-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-zinc-200 underline underline-offset-4 hover:text-zinc-50"
+          >
+            Google API Services User Data Policy
+          </a>
+          , including the Limited Use requirements. YouTube&rsquo;s own handling of what you post is covered by{" "}
+          <a
+            href="https://policies.google.com/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-zinc-200 underline underline-offset-4 hover:text-zinc-50"
+          >
+            Google&rsquo;s privacy policy
+          </a>
+          .
         </p>
       </Section>
 

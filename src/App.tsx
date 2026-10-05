@@ -10,6 +10,7 @@ import Achievements from "./pages/Achievements";
 import Levels from "./pages/Levels";
 import { AuthProvider } from "./features/account/AuthProvider";
 import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import Feedback from "./pages/Feedback";
 import Settings from "./pages/Settings";
 import ConsentBanner from "./components/ConsentBanner";
@@ -56,6 +57,7 @@ function App() {
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
             <Route path="/feedback" element={<Feedback />} />
             <Route path="/achievements" element={<Achievements />} />
             <Route path="/levels" element={<Levels />} />

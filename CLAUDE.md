@@ -77,6 +77,18 @@ without being asked — `main` is what deploys.
   then its entry in `POSTING` flips to `"direct"` (the server route for it is
   still to build). `VITE_KAKAO_JS_KEY` (developers.kakao.com) only adds a Kakao
   button to that fallback row; it's optional and not set.
+- Posting straight to YouTube is built and dark. `api/youtube/start.ts` and
+  `callback.ts` (Vercel functions; `_youtube.ts` is their shared helper) trade
+  Google's code for a one-hour token using `YOUTUBE_CLIENT_ID` and
+  `YOUTUBE_CLIENT_SECRET` (server-only, set in Vercel, never `VITE_`). The
+  browser then uploads to YouTube itself, so the video never touches the
+  server. `VITE_YOUTUBE_DIRECT=1` turns the button on: leave it off for the
+  public until the Google app is published and verified, because in Testing
+  only listed test users can connect. Every host the game lives on needs
+  `https://<host>/api/youtube/callback` registered on the OAuth client.
+  Nothing in `api/` may be a test file: it would deploy as a route.
+  `npm test` has 13 files failing on Node 20 ("native WebSocket not found",
+  they import supabase.ts); that is the same at HEAD, so use Node 22.
 - Ads and the cookie banner stay dark unless `VITE_ADSENSE_CLIENT` and
   `VITE_ADSENSE_SLOT` are set, which they are not in the repo. Set them on the
   command line to see either one.
