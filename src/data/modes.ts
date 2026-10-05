@@ -324,6 +324,18 @@ export const MODES: Mode[] = [
   },
 ];
 
+/**
+ * Whether a place is drawn on the globe in a round of `mode`. A territory is
+ * drawn only when the mode asks about territories: in Countries only and the
+ * continent rounds, Hong Kong, Greenland and the rest are not on the map at
+ * all. Sara chose that over drawing them grey, which read as land the player
+ * had missed, knowing the bigger ones (Greenland, Western Sahara, Kosovo,
+ * Somaliland) then show as sea.
+ */
+export function drawnIn(mode: Pick<Mode, "includes">, meta: CountryMeta): boolean {
+  return meta.tier !== "territory" || mode.includes(meta);
+}
+
 export function getMode(id: string | undefined): Mode | undefined {
   return MODES.find((mode) => mode.id === id);
 }

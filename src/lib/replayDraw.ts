@@ -6,6 +6,7 @@ import {
   type GeoGeometryObjects,
 } from "d3-geo";
 import { getCountryMeta } from "../data/countries";
+import { drawnIn, getMode } from "../data/modes";
 import { capitalOf } from "../data/capitals";
 import { cluesFor } from "../data/clues";
 import { flagUrl } from "../data/flags";
@@ -14,7 +15,9 @@ import { areaOf } from "../data/areas";
 import { bigger, formatArea } from "./higherLower";
 import { heatColor } from "./mystery";
 import { CLUE_COUNT, dailyClues } from "./fiveClues";
-import type { Replay } from "./replay";
+import type { DailyKind, Replay } from "./replay";
+
+const DAILY_KINDS = new Set<string>(["mystery", "connect", "bigger", "clues"] satisfies DailyKind[]);
 import { clock, type Frame } from "./replayFrame";
 
 /**
@@ -195,7 +198,13 @@ export function drawFrame(
     };
     ctx.lineWidth = Math.max(0.6, 0.9 * u);
     ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    // A globe round's video shows the map as the round did: no territories
+    // unless the mode asks about them. The daily hunt asks only countries.
+    const round = DAILY_KINDS.has(replay.game.type)
+      ? null
+      : getMode(replay.game.mode) ?? { includes: (m: { tier: string }) => m.tier === "country" };
     for (const f of assets.features) {
+      if (round && !drawnIn(round, getCountryMeta(f.properties.name))) continue;
       ctx.beginPath();
       path(f.geometry);
       ctx.fillStyle = colour(f.properties.name);
