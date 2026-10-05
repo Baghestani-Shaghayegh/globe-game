@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { pickVoice, speak } from "./speech";
+import { readFileSync } from "node:fs";
+import { DEVICE_SAY, pickVoice, speak } from "./speech";
 
 const voice = (lang: string, localService = true) =>
   ({ lang, localService, name: lang }) as SpeechSynthesisVoice;
@@ -42,5 +43,40 @@ describe("saying a name", () => {
     speak("Andorra la Vella");
     expect(said).toEqual(["Andorra", "Andorra la Vella"]);
     expect(cancel).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("names the device voice reads wrong", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("says the respelling, not the spelling", () => {
+    const said: string[] = [];
+    vi.stubGlobal("speechSynthesis", {
+      cancel: () => {},
+      getVoices: () => [voice("en-GB")],
+      speak: (u: { text: string }) => said.push(u.text),
+    });
+    vi.stubGlobal(
+      "SpeechSynthesisUtterance",
+      class {
+        text: string;
+        constructor(text: string) {
+          this.text = text;
+        }
+      }
+    );
+    speak("Czechia");
+    speak("Portugal");
+    expect(said).toEqual(["Checkia", "Portugal"]);
+  });
+
+  it("only respells names the recorded voice has a pronunciation for", () => {
+    const lexicon = new Set(
+      readFileSync("scripts/voice/lexicon.tsv", "utf8")
+        .split("\n")
+        .filter((line) => line && !line.startsWith("#"))
+        .map((line) => line.split("\t")[0])
+    );
+    for (const name of Object.keys(DEVICE_SAY)) expect(lexicon.has(name), name).toBe(true);
   });
 });

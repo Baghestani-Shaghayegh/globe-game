@@ -19,6 +19,7 @@ import type { RoundOutcome } from "./FindGame";
 import { getCountryMeta } from "../../data/countries";
 import {
   BLITZ_SECONDS,
+  drawnIn,
   GAME_TYPES,
   gamePath,
   recordKey,
@@ -373,6 +374,8 @@ export default function GlobeGame({
    * player reported Kosovo and Somaliland "not showing up altogether".
    * Anything the mode would take if it were a country is its ground to
    * draw; the backdrop, when there is one, already draws the whole world.
+   * Territories are the exception since: a round that doesn't ask about them
+   * leaves them off (see `drawnIn`), Kosovo and Greenland included.
    */
   const scenery = useMemo(() => {
     if (backdrop) return [];
@@ -380,13 +383,16 @@ export default function GlobeGame({
     return world.filter((f) => {
       if (asked.has(f.properties.name)) return false;
       const meta = getCountryMeta(f.properties.name);
-      return mode.includes({ ...meta, tier: "country" });
+      return drawnIn(mode, meta) && mode.includes({ ...meta, tier: "country" });
     });
   }, [backdrop, world, features, mode]);
 
   const drawn = useMemo(
-    () => (backdrop ? world : [...features, ...scenery]),
-    [backdrop, world, features, scenery]
+    () =>
+      backdrop
+        ? world.filter((f) => drawnIn(mode, getCountryMeta(f.properties.name)))
+        : [...features, ...scenery],
+    [backdrop, world, features, scenery, mode]
   );
 
   /** The countries the round is actually about, by name. */

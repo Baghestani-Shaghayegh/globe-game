@@ -31,6 +31,20 @@ export function pickVoice(
   );
 }
 
+/**
+ * How the device voice should be told to say a name it reads wrong from the
+ * spelling. The recorded clips are made from the IPA in
+ * scripts/voice/lexicon.tsv; the device voice takes no IPA, so for it the name
+ * is respelled the way it sounds. Only what's said changes, never what's
+ * shown. Add a line when a device voice is heard getting one wrong.
+ */
+export const DEVICE_SAY: Record<string, string> = {
+  // "CHEK-ee-uh", not "ZEK-ee-uh".
+  Czechia: "Checkia",
+  // "KIRR-ih-bass": the "ti" is said like an "s".
+  Kiribati: "Kiribass",
+};
+
 let clip: HTMLAudioElement | null = null;
 
 function speakWithDevice(text: string, onEnd?: () => void) {
@@ -39,7 +53,7 @@ function speakWithDevice(text: string, onEnd?: () => void) {
     return;
   }
   const synth = globalThis.speechSynthesis;
-  const utterance = new SpeechSynthesisUtterance(text);
+  const utterance = new SpeechSynthesisUtterance(DEVICE_SAY[text] ?? text);
   const voice = pickVoice(synth.getVoices());
   if (voice) utterance.voice = voice;
   utterance.lang = voice?.lang ?? "en-GB";

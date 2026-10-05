@@ -18,6 +18,7 @@ import { useLeaveGuard } from "./useLeaveGuard";
 import { getCountryMeta } from "../../data/countries";
 import {
   BLITZ_SECONDS,
+  drawnIn,
   GAME_TYPES,
   gamePath,
   recordKey,
@@ -344,13 +345,16 @@ export default function FindGame({
         // there, sea where land should be. A player reported Kosovo and
         // Somaliland missing. The backdrop had the same gap, for territories:
         // Greenland was absent from the daily's globe. What isn't asked is
-        // scenery now, drawn and set back, not deleted.
+        // scenery now, drawn and set back, not deleted. Territories are the
+        // exception since: a round that doesn't ask about them leaves them
+        // off (see `drawnIn`), Kosovo and Greenland included.
+        // Territories aside, in a round that doesn't ask about them.
         setFeatures(
-          backdrop
-            ? data.features
-            : data.features.filter((f) =>
-                mode.includes({ ...getCountryMeta(f.properties.name), tier: "country" })
-              )
+          data.features.filter((f) => {
+            const meta = getCountryMeta(f.properties.name);
+            if (!drawnIn(mode, meta)) return false;
+            return backdrop || mode.includes({ ...meta, tier: "country" });
+          })
         );
         setInPlay(names);
         const order = fixedOrder
