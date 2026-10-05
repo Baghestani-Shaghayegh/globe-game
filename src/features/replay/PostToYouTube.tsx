@@ -128,7 +128,7 @@ export default function PostToYouTube({
         </div>
       ) : (
         <p className="mt-2 text-xs text-zinc-500">
-          Asks YouTube for permission to upload this one video, and nothing else.
+          Lets GuessGlobe upload videos to your channel. It can't see or change anything else.
         </p>
       )}
 
