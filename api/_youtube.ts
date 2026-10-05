@@ -82,8 +82,10 @@ export async function exchangeCode(
       grant_type: "authorization_code",
     }),
   });
-  const body = (await res.json().catch(() => ({}))) as { access_token?: string; expires_in?: number };
-  if (!res.ok || !body.access_token) throw new Error("Google would not give a token.");
+  const body = (await res.json().catch(() => ({}))) as { access_token?: string; expires_in?: number; error?: string };
+  // Google's reason is a short code (invalid_client, invalid_grant, redirect_uri_mismatch):
+  // safe to show, and the quickest way to see which setting is wrong.
+  if (!res.ok || !body.access_token) throw new Error(body.error ?? `status ${res.status}`);
   return { token: body.access_token, expiresIn: body.expires_in ?? 3600 };
 }
 

@@ -85,8 +85,11 @@ describe("callback", () => {
 
   it("passes on a refusal from the player or from Google", async () => {
     expect(await (await callback(withState("error=access_denied&state=abc"))).text()).toContain('"ok":false');
-    vi.stubGlobal("fetch", async () => Response.json({ error: "invalid_grant" }, { status: 400 }));
-    expect(await (await callback(withState("code=x&state=abc"))).text()).toContain('"ok":false');
+    vi.stubGlobal("fetch", async () => Response.json({ error: "invalid_client" }, { status: 401 }));
+    const refused = await (await callback(withState("code=x&state=abc"))).text();
+    expect(refused).toContain('"ok":false');
+    expect(refused).toContain("invalid_client");
+    expect(refused).not.toContain("shh");
   });
 });
 

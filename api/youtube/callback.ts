@@ -20,7 +20,9 @@ export async function GET(request: Request): Promise<Response> {
   try {
     const { token, expiresIn } = await exchangeCode(config, origin, code);
     return resultPage(origin, { ok: true, token, expiresIn });
-  } catch {
-    return resultPage(origin, { ok: false, error: "YouTube wasn't connected." });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "unknown";
+    console.error("youtube token exchange failed:", reason);
+    return resultPage(origin, { ok: false, error: `YouTube wasn't connected (${reason}).` });
   }
 }
