@@ -64,6 +64,14 @@ const POSTING: Record<Platform, { name: string; mode: "upload" | "direct"; uploa
   },
 };
 
+/**
+ * The "Share it on" row (TikTok, Instagram, YouTube) and its compose step.
+ * Hidden while the platforms review the app: players get Share and Download,
+ * which already reach every app on their device. `VITE_SHOW_POSTING=1` brings
+ * the row back.
+ */
+const SHOW_POSTING = import.meta.env.VITE_SHOW_POSTING === "1";
+
 /** Made videos, kept for the visit by speed, so the panel never makes one twice. */
 const made = new WeakMap<Replay, Map<number, MadeVideo>>();
 
@@ -382,21 +390,25 @@ function VideoPanel({
               </p>
             )}
 
-            <p className="mt-4 text-xs text-zinc-500">Share it on</p>
-            <div className="mt-1.5 grid grid-cols-3 gap-2">
-              {(Object.keys(POSTING) as Platform[]).map((platform) => (
-                <button
-                  key={platform}
-                  onClick={() => {
-                    playTap();
-                    setPosting(platform);
-                  }}
-                  className="rounded-lg border border-white/15 px-2 py-2 text-sm text-zinc-100 transition-colors hover:bg-white/10"
-                >
-                  {POSTING[platform].name}
-                </button>
-              ))}
-            </div>
+            {SHOW_POSTING && (
+              <>
+                <p className="mt-4 text-xs text-zinc-500">Share it on</p>
+                <div className="mt-1.5 grid grid-cols-3 gap-2">
+                  {(Object.keys(POSTING) as Platform[]).map((platform) => (
+                    <button
+                      key={platform}
+                      onClick={() => {
+                        playTap();
+                        setPosting(platform);
+                      }}
+                      className="rounded-lg border border-white/15 px-2 py-2 text-sm text-zinc-100 transition-colors hover:bg-white/10"
+                    >
+                      {POSTING[platform].name}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
 
             {ready && !canShare && (
               <>
