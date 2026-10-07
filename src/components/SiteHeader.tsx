@@ -178,7 +178,7 @@ export default function SiteHeader() {
  * site, and a way to chip in that asks nothing of anyone who scrolls past it.
  *
  * The chipping in was a text link beside Privacy, where nobody looks. It is
- * now a round coffee button above the links, centred on every page, after
+ * now a round coffee button above the links, "Support the game", centred on every page, after
  * the one heatmapquest.com has (docs/REFERENCES.md).
  */
 export function SiteFooter({ className = "" }: { className?: string }) {
@@ -198,7 +198,7 @@ export function SiteFooter({ className = "" }: { className?: string }) {
             <CoffeeIcon />
           </span>
           <span className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-300 transition-colors group-hover:text-zinc-50">
-            Buy the game a coffee
+            Support the game
           </span>
         </a>
       )}
