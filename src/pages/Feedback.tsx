@@ -10,6 +10,7 @@ import {
   type SendResult,
 } from "../lib/feedback";
 import { playTap } from "../lib/sound";
+import { SUPPORT_URL } from "../lib/site";
 
 const KINDS: { key: FeedbackKind; label: string; value: FeedbackKind }[] = [
   { key: "bug", label: "Something's broken", value: "bug" },
@@ -94,6 +95,20 @@ export default function Feedback() {
               Back to the game →
             </Link>
           </div>
+          {SUPPORT_URL && (
+            <p className="mt-8 text-sm text-zinc-500">
+              GuessGlobe is free.{" "}
+              <a
+                href={SUPPORT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-zinc-300 underline underline-offset-4 hover:text-zinc-100"
+              >
+                Buy it a coffee
+              </a>{" "}
+              to help pay for the servers.
+            </p>
+          )}
         </div>
       </PageShell>
     );

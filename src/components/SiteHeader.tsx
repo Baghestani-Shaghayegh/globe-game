@@ -4,6 +4,7 @@ import { useAuth } from "../features/account/AuthProvider";
 import { accountsEnabled } from "../lib/supabase";
 import { TabLink, TabRow } from "./Tabs";
 import ThemeToggle from "./ThemeToggle";
+import { SUPPORT_URL } from "../lib/site";
 
 /**
  * The masthead, on every page that isn't a round in progress.
@@ -170,12 +171,6 @@ export default function SiteHeader() {
 }
 
 /**
- * Sara's Ko-fi page. Empty hides the link, so the footer never points at a
- * page that isn't there.
- */
-const KOFI_URL: string = "";
-
-/**
  * The footer, wherever the masthead is.
  *
  * The links every page needs within reach: a way to report a bug or send
@@ -201,14 +196,14 @@ export function SiteFooter({ className = "" }: { className?: string }) {
       <Link to="/terms" className="transition-colors hover:text-zinc-300">
         Terms
       </Link>
-      {KOFI_URL && (
+      {SUPPORT_URL && (
         <a
-          href={KOFI_URL}
+          href={SUPPORT_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="transition-colors hover:text-zinc-300"
         >
-          Support on Ko-fi
+          Support the game
         </a>
       )}
     </footer>

@@ -18,6 +18,7 @@ import {
 import { GLOBE_THEMES, activeThemeId } from "../lib/globeTheme";
 import { PageShell } from "../components/SiteHeader";
 import PaletteSwatch from "../components/PaletteSwatch";
+import { SUPPORT_URL } from "../lib/site";
 
 /**
  * A lightbulb, struck through when hints are off. Drawn to the same weight as
@@ -235,6 +236,21 @@ export default function Settings() {
             </span>
           </Link>
         </Row>
+        {SUPPORT_URL && (
+          <Row title="Support the game" hint="GuessGlobe is free. A coffee helps pay for the servers.">
+            <a
+              href={SUPPORT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.05] px-3 py-1.5 text-sm font-medium text-zinc-100 transition-colors hover:border-teal-300/50 hover:bg-white/[0.09]"
+            >
+              Buy the game a coffee
+              <span aria-hidden="true" className="text-zinc-500">
+                ↗
+              </span>
+            </a>
+          </Row>
+        )}
       </Panel>
 
     </PageShell>
