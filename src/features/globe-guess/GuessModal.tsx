@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import type { Suggestable } from "../../lib/answerMatch";
 import { wrongNameQuip } from "../../lib/quips";
 import { useSuggestions } from "./useSuggestions";
+import ClearButton from "../../components/ClearButton";
 
 type Props = {
   open: boolean;
@@ -105,21 +106,24 @@ export default function GuessModal({
           )}
         </div>
 
-        <input
-          id="guess-input"
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={(e) => handleChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Start typing a name"
-          autoComplete="off"
-          className={`mt-2 w-full rounded-lg border bg-white/5 px-3 py-2 text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 ${
-            isWrong
-              ? "border-red-500/60 focus:border-red-500"
-              : "border-white/10 focus:border-white/40"
-          }`}
-        />
+        <div className="relative mt-2">
+          <input
+            id="guess-input"
+            ref={inputRef}
+            type="text"
+            value={value}
+            onChange={(e) => handleChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Start typing a name"
+            autoComplete="off"
+            className={`w-full rounded-lg border bg-white/5 px-3 py-2 pr-9 text-zinc-100 outline-none transition-colors placeholder:text-zinc-500 ${
+              isWrong
+                ? "border-red-500/60 focus:border-red-500"
+                : "border-white/10 focus:border-white/40"
+            }`}
+          />
+          <ClearButton show={value !== ""} inputId="guess-input" onClear={() => handleChange("")} />
+        </div>
 
         {isWrong && <p className="mt-2 text-sm text-red-400">{jab}</p>}
 

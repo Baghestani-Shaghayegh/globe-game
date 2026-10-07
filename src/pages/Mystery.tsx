@@ -52,6 +52,7 @@ import {
   type Shape,
 } from "../lib/mystery";
 import { siteHost } from "../lib/site";
+import ClearButton from "../components/ClearButton";
 
 
 /** How many squares of the trail are worth showing on the result card. */
@@ -593,7 +594,16 @@ export default function Mystery() {
                   role="combobox"
                   aria-expanded={matches.length > 0}
                   aria-controls="guess-suggestions"
-                  className="w-44 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
+                  className="w-44 rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 pr-8 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
+                />
+                <ClearButton
+                  show={typed !== ""}
+                  inputId="guess"
+                  onClear={() => {
+                    setTyped("");
+                    setHighlighted(-1);
+                    setDidYouMean([]);
+                  }}
                 />
                 {matches.length > 0 && (
                   <ul

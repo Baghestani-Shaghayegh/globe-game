@@ -50,6 +50,7 @@ import {
   worldAltitude,
 } from "../../lib/geo";
 import { VIEW, outlinePath } from "../../lib/outline";
+import ClearButton from "../../components/ClearButton";
 
 type CountryFeature = {
   properties: { name: string };
@@ -979,19 +980,22 @@ export default function FindGame({
                 <label htmlFor="typed-answer" className="sr-only">
                   Type the country
                 </label>
-                <input
-                  id="typed-answer"
-                  autoFocus
-                  value={typed}
-                  onChange={(e) => setTyped(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") submitTyped();
-                    if (e.key === "Escape") setTyping(false);
-                  }}
-                  placeholder="Country name"
-                  autoComplete="off"
-                  className="w-44 rounded-md border border-white/15 bg-white/5 px-2 py-1 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
-                />
+                <span className="relative">
+                  <input
+                    id="typed-answer"
+                    autoFocus
+                    value={typed}
+                    onChange={(e) => setTyped(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") submitTyped();
+                      if (e.key === "Escape") setTyping(false);
+                    }}
+                    placeholder="Country name"
+                    autoComplete="off"
+                    className="w-44 rounded-md border border-white/15 bg-white/5 px-2 py-1 pr-8 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
+                  />
+                  <ClearButton show={typed !== ""} inputId="typed-answer" onClear={() => setTyped("")} />
+                </span>
                 <button
                   onClick={submitTyped}
                   className="rounded-md bg-white/10 px-2 py-1 text-xs font-medium text-zinc-100 hover:bg-white/15"

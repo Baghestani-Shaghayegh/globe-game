@@ -31,6 +31,7 @@ import { GLOBE_SURFACE, useGlobeLook } from "../globe-guess/useGlobeLook";
 import { useSuggestions } from "../globe-guess/useSuggestions";
 import { markLat, markLng, namePill, pulseMark } from "../globe-guess/globeMarks";
 import type { CountryFeature } from "./useLessons";
+import ClearButton from "../../components/ClearButton";
 
 /**
  * The engine under a lesson and a practice round: a few countries, in up to
@@ -743,7 +744,15 @@ export default function LessonRun({
                       role="combobox"
                       aria-expanded={matches.length > 0}
                       aria-controls="lesson-suggestions"
-                      className="w-full rounded-md border border-white/15 bg-white/5 px-3 py-2 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
+                      className="w-full rounded-md border border-white/15 bg-white/5 px-3 py-2 pr-8 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
+                    />
+                    <ClearButton
+                      show={typed !== ""}
+                      inputId="lesson-name"
+                      onClear={() => {
+                        setTyped("");
+                        setHighlighted(-1);
+                      }}
                     />
                     {matches.length > 0 && (
                       <ul

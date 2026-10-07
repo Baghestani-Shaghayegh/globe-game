@@ -42,6 +42,7 @@ import {
   type CluesResult,
 } from "../lib/fiveClues";
 import { siteHost } from "../lib/site";
+import ClearButton from "../components/ClearButton";
 
 type CountryFeature = {
   properties: { name: string };
@@ -421,7 +422,16 @@ export default function FiveClues() {
                   role="combobox"
                   aria-expanded={matches.length > 0}
                   aria-controls="clue-suggestions"
-                  className="w-full rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
+                  className="w-full rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 pr-8 text-sm text-zinc-100 outline-none placeholder:text-zinc-500 focus:border-white/40"
+                />
+                <ClearButton
+                  show={typed !== ""}
+                  inputId="clue-guess"
+                  onClear={() => {
+                    setTyped("");
+                    setHighlighted(-1);
+                    setDidYouMean([]);
+                  }}
                 />
                 {matches.length > 0 && (
                   <ul
