@@ -176,37 +176,70 @@ export default function SiteHeader() {
  * The links every page needs within reach: a way to report a bug or send
  * an idea, a privacy policy an ad network can find from anywhere on the
  * site, and a way to chip in that asks nothing of anyone who scrolls past it.
+ *
+ * The chipping in was a text link beside Privacy, where nobody looks. It is
+ * now a round coffee button above the links, centred on every page, after
+ * the one heatmapquest.com has (docs/REFERENCES.md).
  */
 export function SiteFooter({ className = "" }: { className?: string }) {
   const { pathname } = useLocation();
   return (
     <footer
-      className={`relative z-10 flex w-full flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-white/[0.07] px-5 pb-[clamp(0.75rem,2.2vh,1.5rem)] pt-3.5 text-sm text-zinc-500 sm:px-8 lg:px-12 ${className}`}
+      className={`relative z-10 flex w-full flex-col items-center gap-4 border-t border-white/[0.07] px-5 pb-[clamp(0.75rem,2.2vh,1.5rem)] pt-5 text-sm text-zinc-500 sm:px-8 lg:px-12 ${className}`}
     >
-      {/* Carries the page it was pressed on, so a bug report says where. */}
-      <Link
-        to={pathname === "/feedback" ? "/feedback" : `/feedback?from=${encodeURIComponent(pathname)}`}
-        className="transition-colors hover:text-zinc-300"
-      >
-        Feedback
-      </Link>
-      <Link to="/privacy" className="transition-colors hover:text-zinc-300">
-        Privacy
-      </Link>
-      <Link to="/terms" className="transition-colors hover:text-zinc-300">
-        Terms
-      </Link>
       {SUPPORT_URL && (
         <a
           href={SUPPORT_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="transition-colors hover:text-zinc-300"
+          className="group flex flex-col items-center gap-2"
         >
-          Support the game
+          <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-teal-300/60 bg-teal-300/10 text-teal-300 transition-colors group-hover:border-teal-300 group-hover:bg-teal-300/20">
+            <CoffeeIcon />
+          </span>
+          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-300 transition-colors group-hover:text-zinc-50">
+            Buy the game a coffee
+          </span>
         </a>
       )}
+      <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+        {/* Carries the page it was pressed on, so a bug report says where. */}
+        <Link
+          to={pathname === "/feedback" ? "/feedback" : `/feedback?from=${encodeURIComponent(pathname)}`}
+          className="transition-colors hover:text-zinc-300"
+        >
+          Feedback
+        </Link>
+        <Link to="/privacy" className="transition-colors hover:text-zinc-300">
+          Privacy
+        </Link>
+        <Link to="/terms" className="transition-colors hover:text-zinc-300">
+          Terms
+        </Link>
+      </div>
     </footer>
+  );
+}
+
+/** A cup with steam, for the support button. */
+function CoffeeIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="26"
+      height="26"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M8 2.5c-.6.8-.6 1.7 0 2.5M11.5 2.5c-.6.8-.6 1.7 0 2.5M15 2.5c-.6.8-.6 1.7 0 2.5" />
+      <path d="M4 8h13v5.5A5.5 5.5 0 0 1 11.5 19h-2A5.5 5.5 0 0 1 4 13.5V8Z" />
+      <path d="M17 9.5h1.5a2.5 2.5 0 0 1 0 5H17" />
+      <path d="M5 21.5h11" />
+    </svg>
   );
 }
 

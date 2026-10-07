@@ -22,3 +22,13 @@ corner, under a "Discover our other games" heading. The home page's "Discover
 more games" section came from it.
 
 Added 2026-09-28.
+
+## https://heatmapquest.com/
+
+**A reference for the support link, nothing else.** Sara pointed at how it
+asks for support: a round coffee-cup button over "SUPPORT THE PROJECT",
+centred above the footer links on every page, rather than a text link beside
+Privacy. The footer's support button came from it. Its red theme, league
+boards and game cards aren't being borrowed.
+
+Added 2026-10-07.
