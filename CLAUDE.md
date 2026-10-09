@@ -84,7 +84,10 @@ without being asked — `main` is what deploys.
   browser then uploads to YouTube itself, so the video never touches the
   server. `VITE_YOUTUBE_DIRECT=1` turns the button on: leave it off for the
   public until the Google app is published and verified, because in Testing
-  only listed test users can connect. Every host the game lives on needs
+  only listed test users can connect. For Google's reviewers,
+  `guessglobe.com/?review=youtube` turns the posting row and direct YouTube
+  posting on for that tab only (`reviewMode` in `lib/youtube.ts`), so the
+  live site serves as the test link without Vercel changes. Every host the game lives on needs
   `https://<host>/api/youtube/callback` registered on the OAuth client.
   Nothing in `api/` may be a test file: it would deploy as a route.
   `npm test` has 13 files failing on Node 20 ("native WebSocket not found",

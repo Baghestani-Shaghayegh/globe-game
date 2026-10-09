@@ -21,7 +21,29 @@ export const PRIVACY_OPTIONS: { value: Privacy; label: string }[] = [
   { value: "private", label: "Private" },
 ];
 
-export const youtubeDirect = () => import.meta.env.VITE_YOUTUBE_DIRECT === "1";
+export const youtubeDirect = () => import.meta.env.VITE_YOUTUBE_DIRECT === "1" || reviewMode();
+
+/**
+ * Review mode, for Google's reviewers. Opening the site with ?review=youtube
+ * shows the share panel's posting row, YouTube's direct posting included, in
+ * that tab only; everyone else still sees neither until the app is approved.
+ * Google asks that an unverified permission be reachable like this rather than
+ * by every player. Kept for the tab (main.tsx reads it on load), so a round
+ * can be played first without losing it.
+ */
+const REVIEW_KEY = "guessglobe-review";
+
+export function reviewMode(): boolean {
+  try {
+    if (new URLSearchParams(location.search).get("review") === "youtube") {
+      sessionStorage.setItem(REVIEW_KEY, "youtube");
+      return true;
+    }
+    return sessionStorage.getItem(REVIEW_KEY) === "youtube";
+  } catch {
+    return false;
+  }
+}
 
 const UPLOAD_URL = "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status";
 

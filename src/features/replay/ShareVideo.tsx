@@ -8,7 +8,7 @@ import { VIDEO_SPEEDS, makeReplayVideo, videoSeconds, type MadeVideo } from "../
 import { downloadFile, onComputer } from "../../lib/shareCard";
 import { siteHost, siteUrl } from "../../lib/site";
 import { playTap } from "../../lib/sound";
-import { youtubeDirect } from "../../lib/youtube";
+import { reviewMode, youtubeDirect } from "../../lib/youtube";
 import PostToYouTube from "./PostToYouTube";
 
 /**
@@ -70,7 +70,7 @@ const POSTING: Record<Platform, { name: string; mode: "upload" | "direct"; uploa
  * which already reach every app on their device. `VITE_SHOW_POSTING=1` brings
  * the row back.
  */
-const SHOW_POSTING = import.meta.env.VITE_SHOW_POSTING === "1";
+const SHOW_POSTING = import.meta.env.VITE_SHOW_POSTING === "1" || reviewMode();
 
 /** Made videos, kept for the visit by speed, so the panel never makes one twice. */
 const made = new WeakMap<Replay, Map<number, MadeVideo>>();
