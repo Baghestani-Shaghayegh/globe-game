@@ -9,7 +9,7 @@ import { PageShell } from "../components/SiteHeader";
 const CONTACT = "privacy@guessglobe.com";
 
 /** The date the wording below last changed, not the date it was rendered. */
-const UPDATED = "4 October 2026";
+const UPDATED = "10 October 2026";
 
 function Section({
   title,
@@ -150,10 +150,20 @@ export default function Privacy() {
         </p>
       </Section>
 
+      <Section title="Visit counts">
+        <p>
+          We count visits with Vercel Web Analytics, from the company that
+          hosts the site. It records the page you opened, the site that sent
+          you here, and your browser, device type and country. It sets no
+          cookies, stores nothing on your device, and can&rsquo;t tell one
+          visitor from another after a day. Nothing you type in a game is sent.
+        </p>
+      </Section>
+
       <Section title="What we don't do">
         <p>
-          There is no analytics script, no tracking pixel, and no third-party
-          code on the page beyond the ad slots described above. We do not sell
+          There is no tracking pixel, and no third-party code on the page
+          beyond the visit counter and the ad slots described above. We do not sell
           anything to anyone, and we do not email you except to send a sign-in
           link you asked for.
         </p>
