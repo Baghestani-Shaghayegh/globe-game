@@ -11,12 +11,15 @@ startAppearance()
 reviewMode()
 
 // Page views go to Vercel Web Analytics (cookieless). Sign-in links and the
-// YouTube callback carry tokens in the query and hash, so only `ref` — the tag
-// on links we post elsewhere — survives into what is sent.
+// YouTube callback carry tokens in the query and hash, so only the tags on
+// links we post elsewhere — `ref` and `utm_*` — survive into what is sent.
 function keepOnlyRef(event: BeforeSendEvent): BeforeSendEvent {
   const url = new URL(event.url)
-  const ref = url.searchParams.get('ref')
-  url.search = ref ? `?ref=${encodeURIComponent(ref)}` : ''
+  const kept = new URLSearchParams()
+  url.searchParams.forEach((value, key) => {
+    if (key === 'ref' || key.startsWith('utm_')) kept.append(key, value)
+  })
+  url.search = kept.toString()
   url.hash = ''
   return { ...event, url: url.toString() }
 }
